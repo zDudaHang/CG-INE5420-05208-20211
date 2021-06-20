@@ -23,9 +23,9 @@ class Controller():
 
     
     def new_object_dialog_submitted_handler(self):
-        # print(self.new_object_dialog.comboBox.currentText())
-        # print(self.new_object_dialog.coordinates.text())
-        self.parse_coordinates(self.new_object_dialog.coordinates.text())
+        type = self.new_object_dialog.comboBox.currentText()
+        coordinates = self.parse_coordinates(self.new_object_dialog.coordinates.text())
+        print(f'Objeto novo: [tipo={type}, coordenadas={coordinates}]')
 
     def new_object_dialog_cancelled_handler(self):
         self.new_object_dialog.clear_inputs()
@@ -35,18 +35,14 @@ class Controller():
         self.new_object_dialog.exec()
 
     def parse_coordinates(self, coordinates_expr: str) -> list:
+        tuples = re.findall(r"(\d+,\d+)", coordinates_expr)
+
         coordinates = []
 
-        value = ''
-        for c in coordinates_expr:
-            if c == '(':
-                while c != ',': value += c
-                coordinates.append(value)
-                value = ''
-                while c != ')': value += c
-                coordinates.append(value)
-                value = ''
-        print(coordinates)
+        for t in tuples:
+            coordinates.extend(t.split(','))
+        
+        return coordinates
 
     def start(self):
         self.app.exec()
