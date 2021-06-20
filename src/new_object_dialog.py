@@ -12,9 +12,12 @@ class NewObjectDialog(QDialog):
         layout = QVBoxLayout()
         formLayout = QFormLayout()
 
-        self.comboBox = QComboBox()
-        self.comboBox.addItems([g.value for g in GraphicObjectEnum])
-        formLayout.addRow('Tipo', self.comboBox)
+        self.combo_box = QComboBox()
+        self.combo_box.addItems([g.value for g in GraphicObjectEnum])
+        formLayout.addRow('Tipo', self.combo_box)
+
+        self.name_input = QLineEdit()
+        formLayout.addRow('Nome', self.name_input)
         
         self.coordinates = QLineEdit()
         formLayout.addRow('Coordenadas', self.coordinates )
@@ -28,5 +31,6 @@ class NewObjectDialog(QDialog):
         self.setLayout(layout)
 
     def clear_inputs(self):
-        self.comboBox.setCurrentText(self.combo_box_default)
+        self.combo_box.setCurrentText(self.combo_box_default)
+        self.name_input.clear()
         self.coordinates.clear()

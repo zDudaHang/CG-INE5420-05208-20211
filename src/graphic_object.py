@@ -4,7 +4,16 @@ from enum import Enum
 class GraphicObjectEnum(Enum):
     POINT = "Ponto"
     LINE = "Reta"
-    POLYGON = "Polígono"
+    WIREFRAME = "Wireframe"
+
+    def valueOf(value: str) :
+        if (value == GraphicObjectEnum.POINT.value):
+            return GraphicObjectEnum.POINT
+        if (value == GraphicObjectEnum.LINE.value):
+            return GraphicObjectEnum.LINE
+        if (value == GraphicObjectEnum.WIREFRAME.value):
+            return GraphicObjectEnum.WIREFRAME
+        return None
 
 
 class GraphicObject(ABC):
@@ -37,10 +46,10 @@ class Line(GraphicObject):
     def draw(self):
         print(f'LINHA: {self.coordinates}')
 
-class Polygon(GraphicObject):
+class WireFrame(GraphicObject):
 
     def __init__(self, name: str, coordinates: list):
-        super().__init__(name, GraphicObjectEnum.POLYGON, coordinates)
+        super().__init__(name, GraphicObjectEnum.WIREFRAME, coordinates)
     
     def draw(self):
-        print(f'POLÍGONO: {self.coordinates}')
+        print(f'WIREFRAME: {self.coordinates}')

@@ -11,7 +11,7 @@ class Controller():
         self.main_window = MainWindow()
         self.main_window.show()
         self.new_object_dialog = NewObjectDialog(self.main_window)
-        self.objects = []
+        self.objects : list[GraphicObject] = []
 
         self.set_handlers()
 
@@ -21,11 +21,14 @@ class Controller():
         self.new_object_dialog.buttons_box.accepted.connect(self.new_object_dialog_submitted_handler)
         self.new_object_dialog.buttons_box.rejected.connect(self.new_object_dialog_cancelled_handler)
 
+# ====================== HANDLERS:
     
     def new_object_dialog_submitted_handler(self):
-        type = self.new_object_dialog.comboBox.currentText()
+        type = self.new_object_dialog.combo_box.currentText()
         coordinates = self.parse_coordinates(self.new_object_dialog.coordinates.text())
-        print(f'Objeto novo: [tipo={type}, coordenadas={coordinates}]')
+        name = self.new_object_dialog.name_input.text()
+        self.new_object_dialog.clear_inputs()
+        self.add_new_object(name, coordinates, type)
 
     def new_object_dialog_cancelled_handler(self):
         self.new_object_dialog.clear_inputs()
@@ -33,6 +36,8 @@ class Controller():
 
     def open_dialog_handler(self):
         self.new_object_dialog.exec()
+
+# ====================== UTILITIES:        
 
     def parse_coordinates(self, coordinates_expr: str) -> list:
         tuples = re.findall(r"(\d+,\d+)", coordinates_expr)
@@ -43,6 +48,20 @@ class Controller():
             coordinates.extend(t.split(','))
         
         return coordinates
+
+    def add_new_object(self, name: str, coordinates: str, type: str):
+        type_enum = GraphicObjectEnum.valueOf(type)
+        
+        graphic_obj : GraphicObject
+        if (type_enum == GraphicObjectEnum.POINT):
+            graphic_obj = Point(name, coordinates)
+        if (type_enum == GraphicObjectEnum.LINE):
+            graphic_obj = Line(name, coordinates)
+        if (type_enum == GraphicObjectEnum.WIREFRAME):
+            graphic_obj = WireFrame(name, coordinates)
+        
+        self.objects.append(graphic_obj)
+        self.main_window.functions_menu.object_list.add_object(graphic_obj)
 
     def start(self):
         self.app.exec()

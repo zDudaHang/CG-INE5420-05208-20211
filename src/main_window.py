@@ -4,7 +4,7 @@ from PyQt5.QtCore import *
 
 from functions_menu import FunctionsMenu
 from viewport import *
-from graphic_object import Point, Line, Polygon
+from graphic_object import Point, Line, WireFrame
 from log import *
 from new_object_dialog import *
 
@@ -22,14 +22,8 @@ class MainWindow(QMainWindow):
         self.generalLayout = QGridLayout()
         self._centralWidget.setLayout(self.generalLayout)
 
-        objects = []
-
-        objects.append(Point('Ponto1', [0,0]))
-        objects.append(Line('Linha1', [0,0,1,1]))
-        objects.append(Polygon('Polígono1', [0,0,1,1,2,2]))
-
-        self.functionsMenu = FunctionsMenu(objects)
-        self.generalLayout.addWidget(self.functionsMenu, 0, 0)
+        self.functions_menu = FunctionsMenu()
+        self.generalLayout.addWidget(self.functions_menu, 0, 0)
 
         self.viewport = Viewport()
         self.generalLayout.addWidget(self.viewport, 0, 1)

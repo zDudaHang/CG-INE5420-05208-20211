@@ -4,15 +4,15 @@ from objects_list import *
 from window_menu import *
 
 class FunctionsMenu(QWidget):
-    def __init__(self, objects: list):
+    def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
         self.layout.addWidget(QLabel("Menu de funções"))
 
-        self.objectList = ObjectsList(objects)
-        self.layout.addWidget(self.objectList)
+        self.object_list = ObjectsList()
+        self.layout.addWidget(self.object_list)
 
-        self.windowMenu = WindowMenu()
-        self.layout.addWidget(self.windowMenu)
+        self.window_menu = WindowMenu()
+        self.layout.addWidget(self.window_menu)
 
         self.setLayout(self.layout)
