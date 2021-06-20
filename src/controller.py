@@ -52,16 +52,21 @@ class Controller():
     def add_new_object(self, name: str, coordinates: str, type: str):
         type_enum = GraphicObjectEnum.valueOf(type)
         
-        graphic_obj : GraphicObject
-        if (type_enum == GraphicObjectEnum.POINT):
-            graphic_obj = Point(name, coordinates)
-        if (type_enum == GraphicObjectEnum.LINE):
-            graphic_obj = Line(name, coordinates)
-        if (type_enum == GraphicObjectEnum.WIREFRAME):
-            graphic_obj = WireFrame(name, coordinates)
-        
-        self.objects.append(graphic_obj)
-        self.main_window.functions_menu.object_list.add_object(graphic_obj)
+        graphic_obj : GraphicObject = None
+
+        try:
+            if (type_enum == GraphicObjectEnum.POINT):
+                graphic_obj = Point(name, coordinates)
+            if (type_enum == GraphicObjectEnum.LINE):
+                graphic_obj = Line(name, coordinates)
+            if (type_enum == GraphicObjectEnum.WIREFRAME):
+                graphic_obj = WireFrame(name, coordinates)
+        except ValueError as e:
+            print(e)
+
+        if graphic_obj != None:
+            self.objects.append(graphic_obj)
+            self.main_window.functions_menu.object_list.add_object(graphic_obj)
 
     def start(self):
         self.app.exec()
