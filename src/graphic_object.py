@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
+from PyQt5.QtGui import QPainter
+
 class GraphicObjectEnum(Enum):
     POINT = "Ponto"
     LINE = "Reta"
@@ -24,7 +26,7 @@ class GraphicObject(ABC):
         self.coordinates = coordinates
 
     @abstractmethod
-    def draw(self):
+    def draw(self, painter: QPainter):
         ...
 
     def __str__(self):
@@ -37,8 +39,8 @@ class Point(GraphicObject):
             raise ValueError("Um ponto deve ter apenas um par de coordenadas (x,y).")
         super().__init__(name, GraphicObjectEnum.POINT, coordinates)
     
-    def draw(self):
-        print(f'PONTO: {self.coordinates}')
+    def draw(self, painter: QPainter):
+        painter.drawPoint(self.coordinates[0], self.coordinates[1])
         
 class Line(GraphicObject):
 
@@ -48,8 +50,8 @@ class Line(GraphicObject):
         # TODO: Validar se essas coordenadas nao podem representar um ponto x1 = x2 e y1 = y2
         super().__init__(name, GraphicObjectEnum.LINE, coordinates)
     
-    def draw(self):
-        print(f'LINHA: {self.coordinates}')
+    def draw(self, painter: QPainter):
+        painter.drawLine(self.coordinates[0], self.coordinates[1], self.coordinates[2], self.coordinates[3])
 
 class WireFrame(GraphicObject):
 
@@ -60,5 +62,11 @@ class WireFrame(GraphicObject):
             raise ValueError("Um wireframe deve ter no mínimo três pares de coordenadas.")
         super().__init__(name, GraphicObjectEnum.WIREFRAME, coordinates)
     
-    def draw(self):
-        print(f'WIREFRAME: {self.coordinates}')
+    def draw(self, painter: QPainter):
+        for i in range(0, len(self.coordinates)-2, 2):
+            # Liga a i-esima tupla na i-esima + 1 tupla
+            painter.drawLine(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
+        # Liga a primeira tupla na ultima tupla
+        painter.drawLine(self.coordinates[0], self.coordinates[1], self.coordinates[-2], self.coordinates[-1])
+
+

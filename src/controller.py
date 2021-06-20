@@ -29,6 +29,7 @@ class Controller():
         name = self.new_object_dialog.name_input.text()
         self.new_object_dialog.clear_inputs()
         self.add_new_object(name, coordinates, type)
+        self.main_window.viewport.draw_objects(self.objects)
 
     def new_object_dialog_cancelled_handler(self):
         self.new_object_dialog.clear_inputs()
@@ -46,8 +47,8 @@ class Controller():
 
         for t in tuples:
             coordinates.extend(t.split(','))
-        
-        return coordinates
+
+        return list(map(lambda c: float(c), coordinates))
 
     def add_new_object(self, name: str, coordinates: str, type: str):
         type_enum = GraphicObjectEnum.valueOf(type)
