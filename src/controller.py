@@ -1,7 +1,7 @@
 import re
 from main_window import *
 from new_object_dialog import *
-
+from graphic_object import GraphicObject
 from PyQt5.QtCore import *
 
 class Controller():
@@ -24,6 +24,9 @@ class Controller():
 # ====================== HANDLERS:
     
     def new_object_dialog_submitted_handler(self):
+        if len(self.new_object_dialog.name_input.text()) == 0:
+            self.main_window.log.add_log("[ERRO] O nome não pode ser vazio!")
+            return
         type = self.new_object_dialog.combo_box.currentText()
         coordinates = self.parse_coordinates(self.new_object_dialog.coordinates.text())
         name = self.new_object_dialog.name_input.text()
@@ -63,11 +66,12 @@ class Controller():
             if (type_enum == GraphicObjectEnum.WIREFRAME):
                 graphic_obj = WireFrame(name, coordinates)
         except ValueError as e:
-            print(e)
+            self.main_window.log.add_log(e)
 
         if graphic_obj != None:
             self.objects.append(graphic_obj)
             self.main_window.functions_menu.object_list.add_object(graphic_obj)
+        self.main_window.log.add_log(f'[INFO] Objeto {name} do tipo {type}, cujas coordenadas são {coordinates}, foi criado com sucesso!')
 
     def start(self):
         self.app.exec()

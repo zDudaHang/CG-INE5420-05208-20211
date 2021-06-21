@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QFormLayout, QVBoxLayout, QLineEdit, QComboBox, QDialogButtonBox
+from PyQt5.QtCore import QRegExp
+from PyQt5.QtGui import QRegExpValidator
 
 from graphic_object import GraphicObjectEnum
 
@@ -17,10 +19,16 @@ class NewObjectDialog(QDialog):
         formLayout.addRow('Tipo', self.combo_box)
 
         self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText('Digite um nome')
         formLayout.addRow('Nome', self.name_input)
         
         self.coordinates = QLineEdit()
-        formLayout.addRow('Coordenadas', self.coordinates )
+        self.coordinates.setPlaceholderText('Digite as coordenadas: (x1,y1),(x2,y2),...')
+
+        # Validar a entrada deixando apenas funcionar se encaixar na regex
+        self.coordinates.setValidator(QRegExpValidator(QRegExp(r"(\(\d+,\d+\)(,?))+")))
+
+        formLayout.addRow('Coordenadas', self.coordinates)
         layout.addLayout(formLayout)
         
         self.buttons_box = QDialogButtonBox()

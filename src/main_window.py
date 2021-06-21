@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         self.viewport = Viewport()
         self.generalLayout.addWidget(self.viewport, 0, 1)
 
-        self.log = Log(["Added a polygon, Added a line"])
+        self.log = Log()
         self.generalLayout.addWidget(self.log, 1, 1)
 
     def keyPressEvent(self, event):

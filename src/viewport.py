@@ -5,7 +5,16 @@ from PyQt5.QtCore import Qt
 class Viewport(QLabel):
     def __init__(self):
         super().__init__()
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(400)
         self.objects = []
+        stylesheet = '''
+            QLabel {
+                background-color: white;
+                border: 1px solid black
+            }
+        '''
+        self.setStyleSheet(stylesheet)
 
     def draw_objects(self, objects: list):
         self.objects = objects

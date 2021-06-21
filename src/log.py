@@ -1,12 +1,19 @@
-from PyQt5.QtWidgets import QVBoxLayout, QLabel, QWidget
-from graphic_object import GraphicObject
+from PyQt5.QtWidgets import QLabel
 
-class Log(QWidget):
-    def __init__(self, actions: list):
+
+class Log(QLabel):
+    def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(QLabel("Log"))
-        for action in actions:
-            self.layout.addWidget(QLabel(f'[LOG] {action}'))
-        self.setLayout(self.layout)
-        
+        stylesheet = '''
+            QLabel {
+                background-color: white;
+                border: 1px solid black
+            }
+        '''
+        self.text = 'Log\n'
+        self.setText(self.text)
+        self.setStyleSheet(stylesheet)
+    
+    def add_log(self, text: str):
+        self.text += f'{text}\n'
+        self.setText(self.text)
