@@ -12,9 +12,16 @@ class Controller():
         self.main_window.show()
         self.new_object_dialog = NewObjectDialog(self.main_window)
         self.objects : list[GraphicObject] = []
-
+        self.set_window_values()
         self.set_handlers()
 
+    def set_window_values(self):
+        self.x_w_min = 0
+        self.y_w_min = 0
+
+        self.x_w_max = 600
+        self.y_w_max = 600
+        
     
     def set_handlers(self):
         self.main_window.action_open_dialog.triggered.connect(self.open_dialog_handler)
@@ -32,7 +39,7 @@ class Controller():
         name = self.new_object_dialog.name_input.text()
         self.new_object_dialog.clear_inputs()
         self.add_new_object(name, coordinates, type)
-        self.main_window.viewport.draw_objects(self.objects)
+        self.main_window.viewport.draw_objects(self.objects, self.x_w_min, self.y_w_min, self.x_w_max, self.y_w_max)
 
     def new_object_dialog_cancelled_handler(self):
         self.new_object_dialog.clear_inputs()
