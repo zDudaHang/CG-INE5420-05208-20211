@@ -1,10 +1,10 @@
 import sys
+from PyQt5.QtGui import QWheelEvent
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 from functions_menu import FunctionsMenu
 from viewport import *
-from graphic_object import Point, Line, WireFrame
 from log import *
 from new_object_dialog import *
 
@@ -37,4 +37,5 @@ class MainWindow(QMainWindow):
 
     def put_actions(self):
         self.action_open_dialog = QAction("Open dialog", self)
+
 
