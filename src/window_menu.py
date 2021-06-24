@@ -1,46 +1,49 @@
-'''from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QPushButton
-from graphic_object import GraphicObject
-from PyQt5.QtCore import *
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QWidget, QPushButton
 
 class WindowMenu(QWidget):
     def __init__(self):
         super().__init__()
+
         self.layout = QVBoxLayout()
-        self.box = QHBoxLayout()
+
         self.layout.addWidget(QLabel("Window"))
+
+        # ZOOM:
+        self.zoom_box = QHBoxLayout()
+        self.zoom_box.addWidget(QLabel("Zoom"))
         
-        # ZOOM:
-        self.box.addWidget(QLabel("Zoom"))
+        self.zoom_in_button = QPushButton('+')
+        self.zoom_in_button.setFixedSize(QSize(50,20))
+        self.zoom_box.addWidget(self.zoom_in_button)
 
-        zoom_mais = QPushButton('+')
-        #zoom_mais.setFixedSize(QSize(15, 15))
-        zoom_mais.resize(15,15)
-        self.box.addWidget(zoom_mais)
+        self.zoom_out_button = QPushButton('-')
+        self.zoom_out_button.setFixedSize(QSize(50,20))
+        self.zoom_box.addWidget(self.zoom_out_button)
 
-        zoom_menos = QPushButton('-')
-        zoom_menos.setFixedSize(QSize(15, 15))
-        self.box.addWidget(zoom_menos)
+        self.layout.addLayout(self.zoom_box)
 
-        self.box.setSpacing(0)
-        #self.box.addWidget(QPushButton('+'))
-        #self.box.addWidget(QPushButton('-'))
+        # Direction:
+        self.direction_box = QGridLayout()
 
-        self.layout.addLayout(self.box)
-        self.setLayout(self.layout)'''
-from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QPushButton
-from graphic_object import GraphicObject
+        self.direction_box.addWidget(QLabel("Direção"), 0, 0)
+        
+        self.left_button = QPushButton('◄')
+        self.left_button.setFixedSize(QSize(50,20))
+        self.direction_box.addWidget(self.left_button, 2, 0)
 
-class WindowMenu(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.layout = QVBoxLayout()
-        self.box = QHBoxLayout()
-        self.layout.addWidget(QLabel("Window"))
+        self.right_button = QPushButton('►')
+        self.right_button.setFixedSize(QSize(50,20))
+        self.direction_box.addWidget(self.right_button, 2, 2)
 
-        # ZOOM:
-        self.box.addWidget(QLabel("Zoom"))
-        self.box.addWidget(QPushButton('+'))
-        self.box.addWidget(QPushButton('-'))
+        self.up_button = QPushButton('▲')
+        self.up_button.setFixedSize(QSize(50,20))
+        self.direction_box.addWidget(self.up_button, 1, 1)
 
-        self.layout.addLayout(self.box)
+        self.down_button = QPushButton('▼')
+        self.down_button.setFixedSize(QSize(50,20))
+        self.direction_box.addWidget(self.down_button, 2, 1)
+
+        self.layout.addLayout(self.direction_box)
+        
         self.setLayout(self.layout)
