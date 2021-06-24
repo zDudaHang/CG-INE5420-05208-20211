@@ -17,8 +17,6 @@ A adição de um novo objeto (Ponto, Reta, Wireframe) é feita através dos atal
 ```
 Shift + A, Ctrl + A: Adicionar um novo objeto
 Ctrl + Q: Encerrar o programa
-Ctrl + +: Zoom In
-Ctrl + -: Zoom Out
 ```
 ## Execução
 
