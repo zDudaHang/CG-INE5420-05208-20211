@@ -4,7 +4,6 @@ from PyQt5.QtGui import QRegExpValidator
 
 from graphic_object import GraphicObjectEnum
 
-
 class NewObjectDialog(QDialog):
     combo_box_default = GraphicObjectEnum.POINT.value
 
