@@ -27,7 +27,7 @@ Ctrl + Q: Encerrar o programa
 Para rodar o programa, no diretório **src** executar:
 
 ```
-python3 main.py
+python3 src/main.py
 ```
 
 ## Alunos
