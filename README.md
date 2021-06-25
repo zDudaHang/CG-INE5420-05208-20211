@@ -2,6 +2,10 @@
 Sistema básico de Computação Gráfica 2D da disciplina INE5420 - UFSC. 
 O programa apresenta o display file para 2D capaz de representar pontos, segmentos de retas e polígonos. Cada objeto possui um nome, um tipo e sua lista de coordenadas de tamanho variável dependendo de seu tipo. O programa executa a transformação de viewport em 2D, funções de Panning/navegação 2D e funções de Zooming.
 
+Dimensões utilizadas:
+- Window: (600,600)
+- Viewport: (400,400)
+
 ## Requisitos
 - Python3 3.6.5
 - PyQt 5.0
@@ -23,7 +27,7 @@ Ctrl + Q: Encerrar o programa
 Para rodar o programa, no diretório **src** executar:
 
 ```
-python main.py
+python3 main.py
 ```
 
 ## Alunos
