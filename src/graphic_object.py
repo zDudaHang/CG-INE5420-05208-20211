@@ -49,7 +49,7 @@ class GraphicObject(ABC):
 class Point(GraphicObject):
 
     def __init__(self, name: str, coordinates: List[Point2D]):
-        if len(coordinates) != 1:
+        if len(coordinates) > 1:
             raise ValueError("[ERRO] Um ponto deve ter apenas um par de coordenadas (x,y)!")
         super().__init__(name, GraphicObjectEnum.POINT, coordinates)
     
@@ -60,8 +60,10 @@ class Point(GraphicObject):
 class Line(GraphicObject):
 
     def __init__(self, name: str, coordinates: List[Point2D]):
-        if len(coordinates) != 2:
+        if len(coordinates) > 2:
             raise ValueError("[ERRO] Uma linha deve ter apenas 2 pares de coordenadas (x1,y1) e (x2, y2)!")
+        if len(coordinates) < 2:
+            raise ValueError("[ERRO] Uma linha deve ter pelo menos 2 pares de coordenadas (x1,y1) e (x2, y2)!")
         super().__init__(name, GraphicObjectEnum.LINE, coordinates)
     
     def draw(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
