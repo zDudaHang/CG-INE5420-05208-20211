@@ -10,3 +10,4 @@ class ObjectsList(QWidget):
 
     def add_object(self, object: GraphicObject):
         self.layout.addWidget(QLabel(object.__str__()))
+

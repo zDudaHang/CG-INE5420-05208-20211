@@ -4,28 +4,28 @@ from PyQt5.QtCore import *
 
 from functions_menu import FunctionsMenu
 from viewport import *
-from graphic_object import Point, Line, WireFrame
 from log import *
 from new_object_dialog import *
 from text import *
+
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, step: int):
         super().__init__()
-        self.init_gui()
+        self.init_gui(step)
         self.put_actions()
-              
+        
     
-    def init_gui(self):
-
-        #self.Width = 600
-        #self.height = int(0.618 * self.Width)
-        #self.resize(self.Width, self.height)
-
+    def init_gui(self, step):
         self.setWindowTitle('Computação gráfica')
+
         self._centralWidget = QWidget(self)
         self.setCentralWidget(self._centralWidget)
+
         self.generalLayout = QGridLayout()
         self._centralWidget.setLayout(self.generalLayout)
+
+        self.functions_menu = FunctionsMenu(step)
+        self.generalLayout.addWidget(self.functions_menu, 0, 0)
 
         self.menuBar = self.menuBar()
 
@@ -50,14 +50,18 @@ class MainWindow(QMainWindow):
         about.triggered.connect(self.abt)
         helpMenu.addAction(about)        
 
-        self.functions_menu = FunctionsMenu()
-        self.generalLayout.addWidget(self.functions_menu, 0, 0)
-
         self.viewport = Viewport()
         self.generalLayout.addWidget(self.viewport, 0, 1)
 
         self.log = Log()
         self.generalLayout.addWidget(self.log, 1, 1)
+
+        self.width = 600
+        self.height = int(0.618 * self.width)
+        self.resize(self.width, self.height)
+        
+        self.setMaximumHeight(self.height)
+        self.setMaximumWidth(self.width)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_A and QApplication.keyboardModifiers() == Qt.ShiftModifier:
@@ -70,19 +74,27 @@ class MainWindow(QMainWindow):
         self.action_open_dialog.trigger()
 
     def abt(self):
-        about = QDialog(self)
-        about.resize(250, 150)
-        about.setWindowTitle('Computação Gráfica')
-        text = QLabel(ABOUT, about)
-        text.move(20,20)
-        about.exec_()
-
-    def get_started(self):
+        QMessageBox.about(
+            self,
+            self.tr("Computação Gráfica"),
+            self.tr(
+               "COMPUTAÇÃO GRÁFICA\n\n\nDesenvolvido pelos alunos:\n\n   Maria Eduarda de Melo Hang (17202304)\n   Ricardo Giuliani (17203922)"
+            ),
+        )
+    
+    def get_started(self): 
         gt_started = QDialog(self)
-        gt_started.resize(380, 150)
-        gt_started.setWindowTitle('Getting Started')
-        text = QLabel(GETTING_STARTED, gt_started)
-        text2 = QLabel(INSTRUCTIONS, gt_started)        
-        text.move(20,20)
-        text2.move(20, 80)
-        gt_started.exec_()        
+        gt_started.setMinimumHeight(200)
+        gt_started.setMinimumWidth(800)
+        gt_started.setMaximumWidth(800)
+        gt_started.setMaximumHeight(200)
+        gt_started.setWindowTitle('Getting Started') 
+        text = QLabel(GETTING_STARTED, gt_started) 
+        text2 = QLabel(GETTING_STARTED_2, gt_started) 
+        text3 = QLabel(INSTRUCTIONS, gt_started)       
+        text4 = QLabel(ATALHOS, gt_started)         
+        text.move(20,20) 
+        text2.move(20, 40) 
+        text3.move(20, 80) 
+        text4.move(20, 110) 
+        gt_started.exec_()
