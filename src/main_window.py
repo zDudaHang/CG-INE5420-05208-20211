@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
         self._centralWidget.setLayout(self.generalLayout)
 
         self.functions_menu = FunctionsMenu(step)
-        self.generalLayout.addWidget(self.functions_menu, 0, 0)
+        self.generalLayout.addWidget(self.functions_menu, 0, 0, 2, 1)
 
         self.menuBar = self.menuBar()
 
@@ -53,8 +53,8 @@ class MainWindow(QMainWindow):
         self.viewport = Viewport()
         self.generalLayout.addWidget(self.viewport, 0, 1)
 
-        self.log = Log()
-        self.generalLayout.addWidget(self.log, 1, 1)
+        self.log = Log[str]('=== LOG ===')
+        self.generalLayout.addWidget(self.log, 2, 0, 1, 2)
 
         self.width = 600
         self.height = int(0.618 * self.width)

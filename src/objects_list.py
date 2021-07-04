@@ -1,11 +1,25 @@
 from typing import Callable
-from PyQt5.QtWidgets import QAction, QHBoxLayout, QPushButton, QVBoxLayout, QLabel, QWidget
+from PyQt5.QtWidgets import QAction, QHBoxLayout, QPushButton, QScrollArea, QVBoxLayout, QLabel, QWidget
 from graphic_object import GraphicObject
 
 class ObjectsList(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
+
         self.layout = QVBoxLayout()
+
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+
+        self.layout.addWidget(self.scroll_area)
+
+        self.scroll_area_content = QWidget()
+        self.scroll_area_content.setGeometry( 0, 0, 400, 400 )
+        self.scroll_area.setWidget(self.scroll_area_content)
+
+        self.scroll_area_layout = QVBoxLayout(self.scroll_area_content)
+
+        self.scroll_area_layout.addWidget(QLabel("Objetos"))
 
         self.edit_object_state = None
 
@@ -13,20 +27,18 @@ class ObjectsList(QWidget):
 
         self.addAction(self.action_edit_object)
 
-        self.layout.addWidget(QLabel("Objetos"))
-
         self.setLayout(self.layout)
 
-    def add_object(self, object: GraphicObject):
-        self.layout.addWidget(ObjectView(object, self.handle_edit))
+    def add_object(self, object: GraphicObject) -> None:
+        self.scroll_area_layout.addWidget(ObjectView(object, self.handle_edit))
 
-    def handle_edit(self, object: GraphicObject):
+    def handle_edit(self, object: GraphicObject) -> None:
         self.edit_object_state = object
         self.action_edit_object.trigger()
 
 class ObjectView(QWidget):
 
-    def __init__(self, object: GraphicObject, handle_edit: Callable):
+    def __init__(self, object: GraphicObject, handle_edit: Callable) -> None:
         super().__init__()
 
         self.object : GraphicObject = object
@@ -41,8 +53,8 @@ class ObjectView(QWidget):
         self.edit_button = QPushButton('Editar')
         self.edit_button.clicked.connect(self.on_edit)
         self.layout.addWidget(self.edit_button)
-
+        
         self.setLayout(self.layout)
 
-    def on_edit(self):
+    def on_edit(self) -> None:
         self.handle_edit(self.object)
