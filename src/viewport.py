@@ -26,6 +26,9 @@ class Viewport(QLabel):
 
         self.action_scroll_zoom_in = QAction("Zoom In", self)
         self.action_scroll_zoom_out = QAction("Zoom Out", self)
+        
+        self.addAction(self.action_scroll_zoom_in)
+        self.addAction(self.action_scroll_zoom_out)
 
     def wheelEvent(self, event: QWheelEvent):
         if (event.angleDelta().y() > 0):

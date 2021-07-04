@@ -1,10 +1,10 @@
-import re
 from main_window import *
 from new_object_dialog import *
 from graphic_object import GraphicObject, Line, Point, WireFrame
 from PyQt5.QtCore import *
 from point import Point2D
 from transform import scale_object, translate_object
+from transform_dialog import TransformDialog
 
 class Controller():
 
@@ -13,6 +13,7 @@ class Controller():
         self.step = 0.1 # 10%
         self.main_window = MainWindow(self.step)
         self.main_window.show()
+        self.tranform_dialog = TransformDialog(self.main_window)
 
         self.new_object_dialog = NewObjectDialog(self.main_window)
         self.display_file : list[GraphicObject] = []
@@ -37,6 +38,8 @@ class Controller():
         
     
     def set_handlers(self):
+
+        self.main_window.functions_menu.object_list.action_edit_object.triggered.connect(self.on_edit_object)
 
         # NEW OBJECT DIALOG:
         self.main_window.action_open_dialog.triggered.connect(self.open_dialog_handler)
@@ -74,6 +77,9 @@ class Controller():
         name = values[0]
         coordinates_str = values[1]
 
+        self.new_object_dialog.clear_inputs(type)
+        self.new_object_dialog.close()
+
         if len(name) == 0:
             self.main_window.log.add_log("[ERRO] O nome não pode ser vazio!")
             return
@@ -94,6 +100,11 @@ class Controller():
 
     def open_dialog_handler(self):
         self.new_object_dialog.exec()
+
+    def on_edit_object(self):
+        obj : GraphicObject = self.main_window.functions_menu.object_list.edit_object_state
+        self.tranform_dialog.setWindowTitle(f'Aplicando transformações no objeto {obj.name}')
+        self.tranform_dialog.exec()
 
     def zoom_handler(self, direction: str):
         scale = 1.0
@@ -135,18 +146,21 @@ class Controller():
         self.main_window.functions_menu.window_menu.update_step_value(self.step)
 
 
-# ====================== UTILITIES:        
+# ====================== UTILITIES:
 
     def parse_coordinates(self, coordinates_expr: str) -> list:
         values = []
         number = ''
         i = 0
         while i < len(coordinates_expr) - 1:
+            # Se ver um abre parenteses, leia ate encontrar uma virgula
             if coordinates_expr[i] == '(':
                 i += 1
+                # Se ver um sinal de menos, adicione
                 if (coordinates_expr[i] == '-'):
                     number += coordinates_expr[i]
                     i += 1
+                # Enquanto nao achar uma virgula, adicione os numeros ou o ponto da fracao
                 while (coordinates_expr[i] != ','):
                     if (coordinates_expr[i].isnumeric() or coordinates_expr[i] == '.'):
                         number += coordinates_expr[i]
@@ -206,9 +220,9 @@ class Controller():
             self.main_window.log.add_log(e.__str__())
 
         if graphic_obj != None:
-            self.display_file.append(graphic_obj)
+            self.display_file.append(graphic_obj)        
             self.main_window.functions_menu.object_list.add_object(graphic_obj)
-        self.main_window.log.add_log(f'[INFO] Objeto {name} do tipo {type.value}, cujas coordenadas são {[str(c) for c in coordinates]}, foi criado com sucesso!')
+            self.main_window.log.add_log(f'[INFO] Objeto {graphic_obj.name} do tipo {graphic_obj.type.value}, cujas coordenadas são {[str(c) for c in graphic_obj.coordinates]}, foi criado com sucesso!')
 
     def start(self):
         self.app.exec()
