@@ -4,6 +4,7 @@ from graphic_object import GraphicObject, Line, Point, WireFrame
 from PyQt5.QtCore import *
 from point import Point2D
 from transform import scale_object, translate_object
+from util import parse
 from transform_dialog import TransformDialog
 
 class Controller():
@@ -17,7 +18,7 @@ class Controller():
         self.tranform_dialog = TransformDialog(self.main_window)
 
         self.new_object_dialog = NewObjectDialog(self.main_window)
-        
+
         self.display_file : list[GraphicObject] = []
 
         self.set_window_values()
@@ -44,7 +45,7 @@ class Controller():
         # TRANSFORM DIALOG:
         self.main_window.functions_menu.object_list.action_edit_object.triggered.connect(self.on_edit_object)
         self.tranform_dialog.apply_transformations_button.clicked.connect(self.on_transform_dialog_submit)
-        self.tranform_dialog.cancel_button.clicked.connect(self.tranform_dialog.clear_inputs)
+        self.tranform_dialog.cancel_button.clicked.connect(self.on_transform_dialog_cancel)
 
         # NEW OBJECT DIALOG:
         self.main_window.action_open_dialog.triggered.connect(self.open_dialog_handler)
@@ -92,7 +93,7 @@ class Controller():
         coordinates = self.parse_coordinates(coordinates_str)
 
         if (coordinates == None):
-            self.main_window.log.add_item("[ERRO] O nome não pode ser vazio!")
+            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
             return
 
         self.add_new_object(name, coordinates, type)
@@ -115,6 +116,10 @@ class Controller():
         print(f'Transformações no objeto: {self.main_window.functions_menu.object_list.edit_object_state.__str__()}')
         for t in self.tranform_dialog.transformations:
             print(t.__str__())
+    
+    def on_transform_dialog_cancel(self):
+        self.tranform_dialog.clear_inputs()
+        self.tranform_dialog.close()
 
     def zoom_handler(self, direction: str):
         scale = 1.0
@@ -160,54 +165,14 @@ class Controller():
 
     def parse_coordinates(self, coordinates_expr: str) -> list:
         values = []
-        number = ''
-        i = 0
-        while i < len(coordinates_expr) - 1:
-            # Se ver um abre parenteses, leia ate encontrar uma virgula
-            if coordinates_expr[i] == '(':
-                i += 1
-                # Se ver um sinal de menos, adicione
-                if (coordinates_expr[i] == '-'):
-                    number += coordinates_expr[i]
-                    i += 1
-                # Enquanto nao achar uma virgula, adicione os numeros ou o ponto da fracao
-                while (coordinates_expr[i] != ','):
-                    if (coordinates_expr[i].isnumeric() or coordinates_expr[i] == '.'):
-                        number += coordinates_expr[i]
-                        i += 1
-                        if (coordinates_expr[i] == ','): 
-                            continue
-                    else: 
-                        return None
-
-                i += 1
-                values.append(number)
-                number = ''
-
-                if (coordinates_expr[i] == '-'):
-                    number += coordinates_expr[i]
-                    i += 1
-                while (coordinates_expr[i] != ')'):
-                    if (coordinates_expr[i].isnumeric() or coordinates_expr[i] == '.'):
-                        number += coordinates_expr[i]
-                        i += 1
-                        if (coordinates_expr[i] == ')'): 
-                            continue
-                    else: 
-                        return None
-                
-                values.append(number)
-                number = ''
-
-                if (i == len(coordinates_expr) - 1):
-                    break
-                i += 1
-                if (coordinates_expr[i] == ','):
-                    i += 1
-                    continue
-            else: 
-                return None
-
+        try:
+            values = parse(coordinates_expr)
+        except IndexError:
+            return None
+        
+        if values == None:
+            return None
+        
         coordinates : list[Point2D] = []
 
         for i in range(0, len(values)-1, 2):
