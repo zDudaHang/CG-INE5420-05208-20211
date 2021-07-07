@@ -1,10 +1,30 @@
-def parse(text: str) -> list:
+from point import Point2D
+from typing import Union, List
+
+def parse(text: str) -> Union[None, List[Point2D]]:
+    if (len(text) == 0):
+        return None
+    try:
+        values = _parse(text)
+    except IndexError:
+        return None
+        
+    if values == None:
+        return None
+
+    coordinates : list[Point2D] = []
+    
+    for i in range(0, len(values)-1, 2):
+        coordinates.append(Point2D(float(values[i]), float(values[i+1])))
+
+    return coordinates
+    
+def _parse(text: str) -> Union[None, List[str]]:
     values = []
     number = ''
     i = 0
 
     while i < len(text):
-        # print(f'Procurando por ( {text[i]}')
         if text[i] == '(':
             # Avanca um
             i += 1
@@ -86,3 +106,19 @@ def parse(text: str) -> list:
         else:
             return None  
     return values  
+
+def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
+    result = []
+
+    # Populate the result matrix with zeros
+    for i in range(0, len(a)):
+        result.append([])
+        for j in range(0, len(b[0])):
+            result[i].append(0)
+
+    for i in range(len(a)):
+        for j in range(len(b[0])):
+            for k in range(len(b)):
+                result[i][j] += a[i][k] * b[k][j]
+
+    return result

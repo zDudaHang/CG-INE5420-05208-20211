@@ -1,3 +1,4 @@
+from util import matrix_multiplication
 from point import Point2D
 from typing import List
 from math import sin, cos, radians
@@ -23,19 +24,19 @@ def viewport_transform(object_coordinates: Point2D, window_min: Point2D, window_
 
     return Point2D(x_v, y_v)
 
-def generate_translation_matrix(dx: float, dy: float):
+def generate_translation_matrix(dx: float, dy: float) -> List[List[float]]:
     return [
         [1, 0, 0],
         [0, 1, 0],
         [dx, dy, 1]]
 
-def generate_scaling_matrix(sx: float, sy: float):
+def generate_scaling_matrix(sx: float, sy: float) -> List[List[float]]:
     return [
         [sx, 0, 0],
         [0, sy, 0],
         [0, 0, 1]]
 
-def generate_rotation_matrix(angleGraus: float):
+def generate_rotation_matrix(angleGraus: float) -> List[List[float]]:
     angle = radians(angleGraus)
     return [
         [cos(angle), -sin(angle), 0],
@@ -43,43 +44,21 @@ def generate_rotation_matrix(angleGraus: float):
         [0, 0, 1]
     ]
 
-# TODO: Mandar essa funcao para util.py
-def matrix_multiplication(a: list, b: list) -> list:
-    result = []
-
-    # Populate the result matrix with zeros
-    for i in range(0, len(a)):
-        result.append([])
-        for j in range(0, len(b[0])):
-            result[i].append(0)
-
-    for i in range(len(a)):
-        for j in range(len(b[0])):
-            for k in range(len(b)):
-                result[i][j] += a[i][k] * b[k][j]
-
-    return result
-
-def translate_object(object_coordinates: list, dx: float, dy: float) -> list:
+def translate_object(object_coordinates: list, dx: float, dy: float) -> List[List[float]]:
     t = generate_translation_matrix(dx, dy)
 
     for coord in object_coordinates:
         coord.coordinates = matrix_multiplication(coord.coordinates, t)
     return object_coordinates
 
-def scale_object(object_coordinates: list, cx: float, cy: float, sx: float, sy: float) -> list :
-    t1 = generate_translation_matrix(-cx, -cy)
-    scale = generate_scaling_matrix(sx, sy)
-    t2 = generate_translation_matrix(cx, cy)
-
-    r = matrix_multiplication(t1, scale)
-    final_operation = matrix_multiplication(r, t2)
+def scale_object(object_coordinates: list, cx: float, cy: float, sx: float, sy: float) -> List[List[float]]:
+    final_operation = generate_scale_operation_matrix(cx, cy, sx, sy)
     
     for coord in object_coordinates:
         coord.coordinates = matrix_multiplication(coord.coordinates, final_operation)
     return object_coordinates
 
-def generate_scale_operation_matrix(cx: float, cy: float, sx: float, sy: float):
+def generate_scale_operation_matrix(cx: float, cy: float, sx: float, sy: float) -> List[List[float]]:
     t1 = generate_translation_matrix(-cx, -cy)
     scale = generate_scaling_matrix(sx, sy)
     t2 = generate_translation_matrix(cx, cy)
@@ -87,45 +66,10 @@ def generate_scale_operation_matrix(cx: float, cy: float, sx: float, sy: float):
     r = matrix_multiplication(t1, scale)
     return matrix_multiplication(r, t2)
 
-def generate_rotate_operation_matrix(dx: float, dy: float, angle: float):
+def generate_rotate_operation_matrix(dx: float, dy: float, angle: float) -> List[List[float]]:
     t1 = generate_translation_matrix(-dx, -dy)
     rot = generate_rotation_matrix(angle)
     t2 = generate_translation_matrix(dx, dy)
 
-    temp = matrix_multiplication(t1, rot)
-    return matrix_multiplication(temp, t2)
-
-def rotate_over_world(object_coordinates: list, cx_win: float, cy_win: float, angle: float) -> list:
-    #transladar para o centro do mundo (centro da window), rotacionar e transladar de volta
-    r_matrix = generate_rotation_matrix(angle)
-    t1 = generate_translation_matrix(-cx_win, -cy_win)
-    t2 = generate_translation_matrix(cx_win, cy_win)
- 
-    for coord in object_coordinates:
-        coord.coordinates = matrix_multiplication(coord.coordinates, r_matrix)
- 
-    return object_coordinates
- 
-def rotate_over_itself(object_coordinates: list, dx: float, dy: float, angle: float) -> list:
-    r_matrix = generate_rotation_matrix(angle)
-    t1 = generate_translation_matrix(-dx, -dy)
-    t2 = generate_translation_matrix(dx, dy)
- 
-    r = matrix_multiplication(t1, r_matrix)
-    final_operation = matrix_multiplication(r, t2)
- 
-    for coord in object_coordinates:
-        coord.coordinates = matrix_multiplication(coord.coordinates, final_operation)
- 
-    return object_coordinates
- 
-def rotate_over_arbitrary_point(object_coordinates: list, angle: float, arbitrary_point: Point2D) -> list:
-    r_matrix = generate_rotation_matrix(angle)
-    t1 = generate_translation_matrix(-arbitrary_point[0], -arbitrary_point[1])
-    t2 = generate_translation_matrix(arbitrary_point[0], arbitrary_point[1])
- 
-    r = matrix_multiplication(t1, r_matrix)
-    final_operation = matrix_multiplication(r, t2)
- 
-    for coord in object_coordinates:
-        coord.coordinates = matrix_multiplication(coord.coordinates, final_operation)
+    r = matrix_multiplication(t1, rot)
+    return matrix_multiplication(r, t2)

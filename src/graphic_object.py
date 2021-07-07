@@ -43,12 +43,13 @@ class GraphicObject(ABC):
 
     def drawLines(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
         points = iterative_viewport_transform(self.coordinates, window_min, window_max, viewport_min, viewport_max)
+        
         pen = QPen()
         pen.setColor(self.color)
         painter.setPen(pen)
-        for i in range(0, len(points) - 1):
 
-            painter.drawLine(points[i].get_x(), points[i].get_y(), points[i+1].get_x(), points[i+1].get_y())
+        for i in range(0, len(points) - 1):
+            painter.drawLine(points[i].to_QPointF(), points[i+1].to_QPointF())
     
 class Point(GraphicObject):
 
@@ -59,7 +60,12 @@ class Point(GraphicObject):
     
     def draw(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
         p_v = viewport_transform(self.coordinates[0], window_min, window_max, viewport_min, viewport_max)
-        painter.drawPoint(p_v.get_x(), p_v.get_y())
+        
+        pen = QPen()
+        pen.setColor(self.color)
+        painter.setPen(pen)
+
+        painter.drawPoint(p_v.to_QPointF())
         
 class Line(GraphicObject):
 
@@ -86,5 +92,5 @@ class WireFrame(GraphicObject):
         # Liga a primeira tupla na ultima tupla
         p_v1 = viewport_transform(self.coordinates[0], window_min, window_max, viewport_min, viewport_max)
         p_v2 = viewport_transform(self.coordinates[-1], window_min, window_max, viewport_min, viewport_max)
-        painter.drawLine(p_v1.get_x(), p_v1.get_y(), p_v2.get_x(), p_v2.get_y())
+        painter.drawLine(p_v1.to_QPointF(), p_v2.to_QPointF())
 

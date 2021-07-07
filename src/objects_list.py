@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QAction, QColorDialog, QHBoxLayout, QPushButton, QSc
 from graphic_object import GraphicObject
 
 class ObjectsList(QWidget):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
 
         self.layout = QVBoxLayout()
@@ -31,16 +31,16 @@ class ObjectsList(QWidget):
 
         self.setLayout(self.layout)
 
-    def add_object(self, object: GraphicObject) -> None:
+    def add_object(self, object: GraphicObject):
         self.scroll_area_layout.addWidget(ObjectView(object, self.handle_edit))
 
-    def handle_edit(self, object: GraphicObject) -> None:
+    def handle_edit(self, object: GraphicObject):
         self.edit_object_state = object
         self.action_edit_object.trigger()
 
 class ObjectView(QWidget):
 
-    def __init__(self, object: GraphicObject, handle_edit: Callable) -> None:
+    def __init__(self, object: GraphicObject, handle_edit: Callable):
         super().__init__()
 
         self.object : GraphicObject = object
@@ -60,7 +60,7 @@ class ObjectView(QWidget):
         
         self.setLayout(self.layout)
 
-    def on_edit(self) -> None:
+    def on_edit(self):
         self.handle_edit(self.object)
 
     def eventFilter(self, source, event):

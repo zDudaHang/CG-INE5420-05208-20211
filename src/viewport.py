@@ -60,7 +60,6 @@ class Viewport(QLabel):
         painter.drawLine(10, 10, 10, 390)
         painter.drawLine(10, 390, 390, 390)
         painter.drawLine(390, 10, 390, 390)
-        #self.paint_border(painter)
 
         # Coordenadas viewport
         
@@ -70,10 +69,4 @@ class Viewport(QLabel):
  
         painter.drawLine(50, 200, 350, 200)
         painter.drawLine(200, 50, 200, 350)
-    
-    #def paint_border(self, painter: QPainter):
-    #    painter.drawLine(self.bottom_left.get_x() + 10, self.bottom_left.get_y() + 10, self.bottom_right.get_x() - 10, self.bottom_right.get_y() + 10)
-    #    painter.drawLine(self.bottom_left.get_x() + 10, self.bottom_left.get_y() + 10, self.top_left.get_x() + 10, self.top_left.get_y() - 10)
-    #    painter.drawLine(self.top_left.get_x() + 10, self.top_left.get_y() - 10, self.top_right.get_x() - 10, self.top_right.get_y() - 10)
-    #    painter.drawLine(self.bottom_right.get_x() - 10, self.bottom_right.get_y() + 10, self.top_right.get_x() - 10, self.top_right.get_y() - 10)
     

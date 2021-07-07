@@ -1,5 +1,4 @@
-from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtWidgets import QColorDialog, QDialog, QFormLayout, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
 
 from graphic_object import GraphicObjectEnum
@@ -44,7 +43,9 @@ class NewObjectDialog(QDialog):
 class GraphicObjectForm(QFormLayout):
     def __init__(self, placeholder: str):
         super().__init__()
+
         self.color = QColor(0,0,0)
+
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText('Digite um nome')
         self.addRow('Nome', self.name_input)
@@ -52,11 +53,14 @@ class GraphicObjectForm(QFormLayout):
         self.coordinates = QLineEdit()
         self.coordinates.setPlaceholderText(placeholder)
 
-
         self.addRow('Coordenadas', self.coordinates)
-        self.color_button = QPushButton('Cor')
+
+        self.color_button = QPushButton()
+
+        self.set_color()
+
         self.color_button.clicked.connect(self.open_dialog_color)
-        self.addRow('Escolher cor', self.color_button)
+        self.addRow('Escolha uma cor', self.color_button)
 
         self.buttons_box = QDialogButtonBox()
         self.buttons_box.setStandardButtons(
@@ -74,7 +78,15 @@ class GraphicObjectForm(QFormLayout):
     def open_dialog_color(self):
         selected_color = QColorDialog.getColor()
         r, g, b, a = selected_color.red(), selected_color.green(), selected_color.blue(), selected_color.alpha()
-        self.color = QColor(r, g, b, a)         
+        self.color = QColor(r, g, b, a)       
+        self.set_color()
+
+    def set_color(self):
+        palette = self.color_button.palette()
+        role = self.color_button.backgroundRole()
+        palette.setColor(role, self.color)
+        self.color_button.setPalette(palette)
+        self.color_button.setAutoFillBackground(True)
 
 class PointTabWidget(QWidget):
     def __init__(self):

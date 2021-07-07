@@ -4,7 +4,7 @@ from typing import Generic, TypeVar
 T = TypeVar('T')
 
 class Log(QWidget, Generic[T]):
-    def __init__(self, title: str) -> None:
+    def __init__(self, title: str):
         super().__init__()
         
         self.layout = QHBoxLayout()
@@ -22,5 +22,9 @@ class Log(QWidget, Generic[T]):
 
         self.setLayout(self.layout)
     
-    def add_item(self, item: T) -> None:
+    def add_item(self, item: T):
         self.scroll_area_layout.addWidget(QLabel(item.__str__()))
+
+    def clear(self):
+        for i in range(1, self.scroll_area_layout.count()):
+            self.scroll_area_layout.itemAt(i).widget().deleteLater()

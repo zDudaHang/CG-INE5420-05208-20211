@@ -1,7 +1,7 @@
 from util import parse
 from typing import Callable, Union
 from point import Point2D
-from PyQt5.QtWidgets import QColorDialog, QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
+from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
 from log import Log
 from enum import Enum
 
@@ -20,7 +20,7 @@ class RotateOptionsEnum(Enum):
         return None
 
 class RotateTransformation():
-    def __init__(self, option: RotateOptionsEnum, angle: float, point: Point2D = None) -> None:
+    def __init__(self, option: RotateOptionsEnum, angle: float, point: Point2D = None):
         self.option = option
         self.angle = angle
         if self.option == RotateOptionsEnum.POINT:
@@ -32,7 +32,7 @@ class RotateTransformation():
         return f'Rotacionar em torno do ponto {self.point.__str__()} em {self.angle} graus'
 
 class ScaleTransformation():
-    def __init__(self, sx: float, sy: float) -> None:
+    def __init__(self, sx: float, sy: float):
         self.sx = sx
         self.sy = sy
     
@@ -40,7 +40,7 @@ class ScaleTransformation():
         return f'Escalonar(sx={self.sx}, sy={self.sy})'
 
 class TranslateTransformation():
-    def __init__(self, dx: float, dy: float) -> None:
+    def __init__(self, dx: float, dy: float):
         self.dx = dx
         self.dy = dy
 
@@ -48,7 +48,7 @@ class TranslateTransformation():
         return f'Transladar(dx={self.dx}, dy={self.dy})'
 
 class TransformDialog(QDialog):
-    def __init__(self, parent) -> None:
+    def __init__(self, parent):
         super().__init__(parent)
 
         self.transformations = []
@@ -72,7 +72,7 @@ class TransformDialog(QDialog):
 
         self.layout.addLayout(self.vertical_layout, 0, 0)
 
-        self.log = Log[Union[TranslateTransformation, ScaleTransformation, RotateTransformation]]('=== Transformações ===')
+        self.log = Log[Union[TranslateTransformation, ScaleTransformation, RotateTransformation, str]]('=== Transformações ===')
         self.layout.addWidget(self.log, 0, 1, -1, -1)
 
         self.button_layout = QHBoxLayout()
@@ -87,19 +87,23 @@ class TransformDialog(QDialog):
 
         self.setLayout(self.layout)
 
-    def add_transformation(self, transformation: Union[TranslateTransformation, ScaleTransformation, RotateTransformation]) -> None:
+    def add_transformation(self, transformation: Union[TranslateTransformation, ScaleTransformation, RotateTransformation], msg: Union[str, None] = None):
         self.transformations.append(transformation)
-        self.log.add_item(transformation)
+        if transformation != None:
+            self.log.add_item(transformation)
+        elif msg != None:
+            self.log.add_item(f'[ERRO] {msg}')
 
-    def clear(self) -> None:
+    def clear(self):
         self.transformations = []
         self.scaling_tab.clear_inputs()
         self.rotating_tab.clear_inputs()
         self.translating_tab.clear_inputs()
+        self.log.clear()
 
 
 class ScalingTabWidget(QWidget):
-    def __init__(self, add_transformation: Callable) -> None:
+    def __init__(self, add_transformation: Callable):
         super().__init__()
 
         self.add_transformation = add_transformation
@@ -133,18 +137,18 @@ class ScalingTabWidget(QWidget):
 
         self.setLayout(self.layout)
 
-    def handle_submit(self) -> None:
+    def handle_submit(self):
         sx = self.scale_x_input.text()
         sy = self.scale_y_input.text()
         self.add_transformation(ScaleTransformation(float(sx), float(sy)))
         self.clear_inputs()
 
-    def clear_inputs(self) -> None:
+    def clear_inputs(self):
         self.scale_x_input.clear()
         self.scale_y_input.clear()
 
 class TranslatingTabWidget(QWidget):
-    def __init__(self, add_transformation: Callable) -> None:
+    def __init__(self, add_transformation: Callable):
         super().__init__()
 
         self.add_transformation = add_transformation
@@ -177,18 +181,18 @@ class TranslatingTabWidget(QWidget):
         self.setLayout(self.layout)
     
     
-    def handle_submit(self) -> None:
+    def handle_submit(self):
         dx = self.move_x_input.text()
         dy = self.move_y_input.text()
         self.add_transformation(TranslateTransformation(float(dx), float(dy)))
         self.clear_inputs()
 
-    def clear_inputs(self) -> None:
+    def clear_inputs(self):
         self.move_x_input.clear()
         self.move_y_input.clear()
     
 class RotatingTabWidget(QWidget):
-    def __init__(self, add_transformation: Callable) -> None:
+    def __init__(self, add_transformation: Callable):
         super().__init__()
 
         self.add_transformation = add_transformation
@@ -230,20 +234,29 @@ class RotatingTabWidget(QWidget):
 
         self.setLayout(self.layout)
 
-    #TODO: verificar se o parser não considera entrada inválida
-    def handle_submit(self) -> None:
+    def handle_submit(self):
         angle = self.angle_input.text()
-        coordinates = parse(self.point_input.text())
-        point = Point2D(float(coordinates[0]), float(coordinates[1]))
-        self.add_transformation(RotateTransformation(RotateOptionsEnum.valueOf(self.combo_box.currentText()), float(angle), point))
+        points = parse(self.point_input.text())
+        option = RotateOptionsEnum.valueOf(self.combo_box.currentText())
+        if option == RotateOptionsEnum.POINT:
+            if points == None:
+                self.add_transformation(None, "As coordenadas do ponto não respeitam o formato, por favor respeite.")
+                return None
+            elif len(points) != 1:
+                self.add_transformation(None, "Um ponto deve ter apenas um par de coordenadas.")
+                return None
+            else:
+                self.add_transformation(RotateTransformation(option, float(angle), points[0]))
+                return
+        self.add_transformation(RotateTransformation(option, float(angle)))
         self.clear_inputs()
 
-    def clear_inputs(self) -> None:
+    def clear_inputs(self):
         self.angle_input.clear()
         self.point_input.clear()
         self.combo_box.setCurrentIndex(0)
     
-    def on_change(self, index: int) -> None:
+    def on_change(self, index: int):
         if self.combo_box.currentText() == RotateOptionsEnum.POINT.value:
             self.point_input.setEnabled(True)
         else:

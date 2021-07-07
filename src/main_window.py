@@ -26,8 +26,23 @@ class MainWindow(QMainWindow):
 
         self.functions_menu = FunctionsMenu(step)
         self.generalLayout.addWidget(self.functions_menu, 0, 0, 2, 1)
+        
+        self.init_menu()   
 
-        # TODO: Colocar toda a geracao de menu em uma funcao separada
+        self.viewport = Viewport()
+        self.generalLayout.addWidget(self.viewport, 0, 1)
+
+        self.log = Log[str]('=== LOG ===')
+        self.generalLayout.addWidget(self.log, 2, 0, 1, 2)
+
+        self.width = 600
+        self.height = int(0.618 * self.width)
+        self.resize(self.width, self.height)
+        
+        self.setMaximumHeight(self.height)
+        self.setMaximumWidth(self.width)
+    
+    def init_menu(self):
         self.menuBar = self.menuBar()
 
         # Menu de opções
@@ -49,20 +64,7 @@ class MainWindow(QMainWindow):
         helpMenu.addSeparator()
         about = QAction('About', self)
         about.triggered.connect(self.abt)
-        helpMenu.addAction(about)        
-
-        self.viewport = Viewport()
-        self.generalLayout.addWidget(self.viewport, 0, 1)
-
-        self.log = Log[str]('=== LOG ===')
-        self.generalLayout.addWidget(self.log, 2, 0, 1, 2)
-
-        self.width = 600
-        self.height = int(0.618 * self.width)
-        self.resize(self.width, self.height)
-        
-        self.setMaximumHeight(self.height)
-        self.setMaximumWidth(self.width)
+        helpMenu.addAction(about)          
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_A and QApplication.keyboardModifiers() == Qt.ShiftModifier:

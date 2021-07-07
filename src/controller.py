@@ -1,3 +1,4 @@
+from typing import List, Union
 from main_window import *
 from new_object_dialog import *
 from graphic_object import GraphicObject, Line, Point, WireFrame
@@ -34,13 +35,11 @@ class Controller():
         # x_window_max and y_window_max
         self.top_right = Point2D(600, 600)
 
-        # TODO: Usar um sum para somar isso por iteracao
         cx = self.top_left.get_x() + self.top_right.get_x() + self.bottom_left.get_x() + self.bottom_right.get_x()
         cy = self.top_left.get_y() + self.top_right.get_y() + self.bottom_left.get_y() + self.bottom_right.get_y()
 
         self.center = Point2D(cx / 4, cy / 4)
         
-    
     def set_handlers(self):
 
         # TRANSFORM DIALOG:
@@ -115,7 +114,6 @@ class Controller():
         self.tranform_dialog.exec()
 
     def on_transform_dialog_submit(self):
-        print(f'Transformações no objeto: {self.main_window.functions_menu.object_list.edit_object_state.__str__()}')
         obj = self.main_window.functions_menu.object_list.edit_object_state
 
         matrix_t = [
@@ -141,6 +139,7 @@ class Controller():
 
         for i in range(0, len(obj.coordinates)):
             obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
+        
         index = self.display_file.index(obj)
         self.display_file[index] = obj
         self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
@@ -152,10 +151,12 @@ class Controller():
 
     def zoom_handler(self, direction: str):
         scale = 1.0
+        
         if direction == 'in':
             scale = 1 - self.step
         else:
             scale = 1 + self.step
+        
         matrix = scale_object([self.top_left, self.top_right, self.bottom_left, self.bottom_right], self.center.get_x(), self.center.get_y(), scale, scale)
         
         self.top_left = matrix[0]
@@ -168,14 +169,16 @@ class Controller():
     def window_move_handler(self, direction : str):
         dx = 0
         dy = 0
+
         if direction == 'left':
-            dx = 5 + self.step
-        elif direction == 'right':
             dx = -(5 + self.step)
+        elif direction == 'right':
+            dx = 5 + self.step
         elif direction == 'up':
-            dy = - (5 + self.step)
-        else:
             dy = 5 + self.step
+        else:
+            dy = -(5 + self.step)
+        
         matrix = translate_object([self.top_left, self.top_right, self.bottom_left, self.bottom_right], dx, dy)
         
         self.top_left = matrix[0]
@@ -192,22 +195,8 @@ class Controller():
 
 # ====================== UTILITIES:
 
-    def parse_coordinates(self, coordinates_expr: str) -> list:
-        values = []
-        try:
-            values = parse(coordinates_expr)
-        except IndexError:
-            return None
-        
-        if values == None:
-            return None
-        
-        coordinates : list[Point2D] = []
-
-        for i in range(0, len(values)-1, 2):
-            coordinates.append(Point2D(float(values[i]), float(values[i+1])))
-
-        return coordinates
+    def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
+        return parse(coordinates_expr)
 
     def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor):
         
