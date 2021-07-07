@@ -1,10 +1,11 @@
-import re
 from main_window import *
 from new_object_dialog import *
 from graphic_object import GraphicObject, Line, Point, WireFrame
 from PyQt5.QtCore import *
 from point import Point2D
-from transform import scale_object, translate_object
+from transform import generate_rotate_operation_matrix, generate_rotation_matrix, generate_scale_operation_matrix, generate_scaling_matrix, generate_translation_matrix, matrix_multiplication, scale_object, translate_object
+from util import parse
+from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 
 class Controller():
 
@@ -14,7 +15,10 @@ class Controller():
         self.main_window = MainWindow(self.step)
         self.main_window.show()
 
+        self.tranform_dialog = TransformDialog(self.main_window)
+
         self.new_object_dialog = NewObjectDialog(self.main_window)
+
         self.display_file : list[GraphicObject] = []
 
         self.set_window_values()
@@ -22,14 +26,15 @@ class Controller():
 
     def set_window_values(self):
         # x_window_min and y_window_min
-        self.top_left = Point2D(0, 0)
+        self.bottom_left = Point2D(0, 0)
 
-        self.top_right = Point2D(600,0)
-        self.bottom_left = Point2D(0,600)
+        self.bottom_right = Point2D(600,0)
+        self.top_left = Point2D(0,600)
 
         # x_window_max and y_window_max
-        self.bottom_right = Point2D(600, 600)
+        self.top_right = Point2D(600, 600)
 
+        # TODO: Usar um sum para somar isso por iteracao
         cx = self.top_left.get_x() + self.top_right.get_x() + self.bottom_left.get_x() + self.bottom_right.get_x()
         cy = self.top_left.get_y() + self.top_right.get_y() + self.bottom_left.get_y() + self.bottom_right.get_y()
 
@@ -37,6 +42,11 @@ class Controller():
         
     
     def set_handlers(self):
+
+        # TRANSFORM DIALOG:
+        self.main_window.functions_menu.object_list.action_edit_object.triggered.connect(self.on_edit_object)
+        self.tranform_dialog.apply_transformations_button.clicked.connect(self.on_transform_dialog_submit)
+        self.tranform_dialog.cancel_button.clicked.connect(self.on_transform_dialog_cancel)
 
         # NEW OBJECT DIALOG:
         self.main_window.action_open_dialog.triggered.connect(self.open_dialog_handler)
@@ -74,19 +84,22 @@ class Controller():
         name = values[0]
         coordinates_str = values[1]
 
+        self.new_object_dialog.clear_inputs(type)
+        self.new_object_dialog.close()
+
         if len(name) == 0:
-            self.main_window.log.add_log("[ERRO] O nome não pode ser vazio!")
+            self.main_window.log.add_item("[ERRO] O nome não pode ser vazio!")
             return
         
         coordinates = self.parse_coordinates(coordinates_str)
 
         if (coordinates == None):
-            self.main_window.log.add_log("[ERRO] O nome não pode ser vazio!")
+            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
             return
 
         self.add_new_object(name, coordinates, type)
 
-        self.main_window.viewport.draw_objects(self.display_file, self.top_left, self.bottom_right)
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
     def new_object_dialog_cancelled_handler(self, type: GraphicObjectEnum):
         self.new_object_dialog.clear_inputs(type)
@@ -94,6 +107,47 @@ class Controller():
 
     def open_dialog_handler(self):
         self.new_object_dialog.exec()
+
+    def on_edit_object(self):
+        obj : GraphicObject = self.main_window.functions_menu.object_list.edit_object_state
+        self.tranform_dialog.setWindowTitle(f'Aplicando transformações no objeto {obj.name}')
+        self.tranform_dialog.exec()
+
+    def on_transform_dialog_submit(self):
+        print(f'Transformações no objeto: {self.main_window.functions_menu.object_list.edit_object_state.__str__()}')
+        obj = self.main_window.functions_menu.object_list.edit_object_state
+
+        matrix_t = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ]
+        
+        for t in self.tranform_dialog.transformations:
+            m = []
+            if isinstance(t, ScaleTransformation):
+                m = generate_scale_operation_matrix(obj.center.get_x(), obj.center.get_y(), t.sx, t.sy)
+            elif isinstance(t, TranslateTransformation):
+                m = generate_translation_matrix(t.dx, t.dy)
+            elif isinstance(t, RotateTransformation):
+                if (t.option == RotateOptionsEnum.WORLD):
+                    m = generate_rotate_operation_matrix(self.center.get_x(), self.center.get_y(), t.angle)
+                elif (t.option == RotateOptionsEnum.OBJECT):
+                    m = generate_rotate_operation_matrix(obj.center.get_x(), obj.center.get_y(), t.angle)
+                else: 
+                    m = generate_rotate_operation_matrix(t.point.get_x(), t.point.get_y(), t.angle)
+            matrix_t = matrix_multiplication(matrix_t, m)
+
+        for i in range(0, len(obj.coordinates)):
+            obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
+        index = self.display_file.index(obj)
+        self.display_file[index] = obj
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+        self.tranform_dialog.clear()
+
+    def on_transform_dialog_cancel(self):
+        self.tranform_dialog.clear()
+        self.tranform_dialog.close()
 
     def zoom_handler(self, direction: str):
         scale = 1.0
@@ -108,7 +162,7 @@ class Controller():
         self.bottom_left = matrix[2]
         self.bottom_right = matrix[3]
 
-        self.main_window.viewport.draw_objects(self.display_file, self.top_left, self.bottom_right)
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
     def window_move_handler(self, direction : str):
         dx = 0
@@ -128,62 +182,25 @@ class Controller():
         self.bottom_left = matrix[2]
         self.bottom_right = matrix[3]
 
-        self.main_window.viewport.draw_objects(self.display_file, self.top_left, self.bottom_right)
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
     def on_step_update(self, value: int):
         self.step += value
         self.main_window.functions_menu.window_menu.update_step_value(self.step)
 
 
-# ====================== UTILITIES:        
+# ====================== UTILITIES:
 
     def parse_coordinates(self, coordinates_expr: str) -> list:
         values = []
-        number = ''
-        i = 0
-        while i < len(coordinates_expr) - 1:
-            if coordinates_expr[i] == '(':
-                i += 1
-                if (coordinates_expr[i] == '-'):
-                    number += coordinates_expr[i]
-                    i += 1
-                while (coordinates_expr[i] != ','):
-                    if (coordinates_expr[i].isnumeric() or coordinates_expr[i] == '.'):
-                        number += coordinates_expr[i]
-                        i += 1
-                        if (coordinates_expr[i] == ','): 
-                            continue
-                    else: 
-                        return None
-
-                i += 1
-                values.append(number)
-                number = ''
-
-                if (coordinates_expr[i] == '-'):
-                    number += coordinates_expr[i]
-                    i += 1
-                while (coordinates_expr[i] != ')'):
-                    if (coordinates_expr[i].isnumeric() or coordinates_expr[i] == '.'):
-                        number += coordinates_expr[i]
-                        i += 1
-                        if (coordinates_expr[i] == ')'): 
-                            continue
-                    else: 
-                        return None
-                
-                values.append(number)
-                number = ''
-
-                if (i == len(coordinates_expr) - 1):
-                    break
-                i += 1
-                if (coordinates_expr[i] == ','):
-                    i += 1
-                    continue
-            else: 
-                return None
-
+        try:
+            values = parse(coordinates_expr)
+        except IndexError:
+            return None
+        
+        if values == None:
+            return None
+        
         coordinates : list[Point2D] = []
 
         for i in range(0, len(values)-1, 2):
@@ -203,12 +220,12 @@ class Controller():
             if (type == GraphicObjectEnum.WIREFRAME):
                 graphic_obj = WireFrame(name, coordinates)
         except ValueError as e:
-            self.main_window.log.add_log(e.__str__())
+            self.main_window.log.add_item(e.__str__())
 
         if graphic_obj != None:
-            self.display_file.append(graphic_obj)
+            self.display_file.append(graphic_obj)        
             self.main_window.functions_menu.object_list.add_object(graphic_obj)
-        self.main_window.log.add_log(f'[INFO] Objeto {name} do tipo {type.value}, cujas coordenadas são {[str(c) for c in coordinates]}, foi criado com sucesso!')
+            self.main_window.log.add_item(f'[INFO] Objeto {graphic_obj.name} do tipo {graphic_obj.type.value}, cujas coordenadas são {[str(c) for c in graphic_obj.coordinates]}, foi criado com sucesso!')
 
     def start(self):
         self.app.exec()

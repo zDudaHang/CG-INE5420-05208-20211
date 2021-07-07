@@ -1,11 +1,8 @@
-from PyQt5.QtWidgets import QDialog, QFormLayout, QTabWidget, QVBoxLayout, QLineEdit, QComboBox, QDialogButtonBox, QWidget
-from PyQt5.QtCore import QRegExp
-from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtWidgets import QDialog, QFormLayout, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
 
 from graphic_object import GraphicObjectEnum
 
 class NewObjectDialog(QDialog):
-    combo_box_default = GraphicObjectEnum.POINT.value
 
     def __init__(self, parent):
         super().__init__(parent)
