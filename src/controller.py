@@ -3,9 +3,9 @@ from new_object_dialog import *
 from graphic_object import GraphicObject, Line, Point, WireFrame
 from PyQt5.QtCore import *
 from point import Point2D
-from transform import scale_object, translate_object
+from transform import generate_rotate_operation_matrix, generate_rotation_matrix, generate_scale_operation_matrix, generate_scaling_matrix, generate_translation_matrix, matrix_multiplication, scale_object, translate_object
 from util import parse
-from transform_dialog import TransformDialog
+from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 
 class Controller():
 
@@ -26,14 +26,15 @@ class Controller():
 
     def set_window_values(self):
         # x_window_min and y_window_min
-        self.top_left = Point2D(0, 0)
+        self.bottom_left = Point2D(0, 0)
 
-        self.top_right = Point2D(600,0)
-        self.bottom_left = Point2D(0,600)
+        self.bottom_right = Point2D(600,0)
+        self.top_left = Point2D(0,600)
 
         # x_window_max and y_window_max
-        self.bottom_right = Point2D(600, 600)
+        self.top_right = Point2D(600, 600)
 
+        # TODO: Usar um sum para somar isso por iteracao
         cx = self.top_left.get_x() + self.top_right.get_x() + self.bottom_left.get_x() + self.bottom_right.get_x()
         cy = self.top_left.get_y() + self.top_right.get_y() + self.bottom_left.get_y() + self.bottom_right.get_y()
 
@@ -98,7 +99,7 @@ class Controller():
 
         self.add_new_object(name, coordinates, type)
 
-        self.main_window.viewport.draw_objects(self.display_file, self.top_left, self.bottom_right)
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
     def new_object_dialog_cancelled_handler(self, type: GraphicObjectEnum):
         self.new_object_dialog.clear_inputs(type)
@@ -114,11 +115,38 @@ class Controller():
 
     def on_transform_dialog_submit(self):
         print(f'Transformações no objeto: {self.main_window.functions_menu.object_list.edit_object_state.__str__()}')
+        obj = self.main_window.functions_menu.object_list.edit_object_state
+
+        matrix_t = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ]
+        
         for t in self.tranform_dialog.transformations:
-            print(t.__str__())
-    
+            m = []
+            if isinstance(t, ScaleTransformation):
+                m = generate_scale_operation_matrix(obj.center.get_x(), obj.center.get_y(), t.sx, t.sy)
+            elif isinstance(t, TranslateTransformation):
+                m = generate_translation_matrix(t.dx, t.dy)
+            elif isinstance(t, RotateTransformation):
+                if (t.option == RotateOptionsEnum.WORLD):
+                    m = generate_rotate_operation_matrix(self.center.get_x(), self.center.get_y(), t.angle)
+                elif (t.option == RotateOptionsEnum.OBJECT):
+                    m = generate_rotate_operation_matrix(obj.center.get_x(), obj.center.get_y(), t.angle)
+                else: 
+                    m = generate_rotate_operation_matrix(t.point.get_x(), t.point.get_y(), t.angle)
+            matrix_t = matrix_multiplication(matrix_t, m)
+
+        for i in range(0, len(obj.coordinates)):
+            obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
+        index = self.display_file.index(obj)
+        self.display_file[index] = obj
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+        self.tranform_dialog.clear()
+
     def on_transform_dialog_cancel(self):
-        self.tranform_dialog.clear_inputs()
+        self.tranform_dialog.clear()
         self.tranform_dialog.close()
 
     def zoom_handler(self, direction: str):
@@ -134,7 +162,7 @@ class Controller():
         self.bottom_left = matrix[2]
         self.bottom_right = matrix[3]
 
-        self.main_window.viewport.draw_objects(self.display_file, self.top_left, self.bottom_right)
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
     def window_move_handler(self, direction : str):
         dx = 0
@@ -154,7 +182,7 @@ class Controller():
         self.bottom_left = matrix[2]
         self.bottom_right = matrix[3]
 
-        self.main_window.viewport.draw_objects(self.display_file, self.top_left, self.bottom_right)
+        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
     def on_step_update(self, value: int):
         self.step += value

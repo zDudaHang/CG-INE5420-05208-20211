@@ -1,8 +1,9 @@
-from PyQt5.QtWidgets import  QAction, QLabel
-from PyQt5.QtGui import QPainter, QPen, QWheelEvent
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import  QAction, QColorDialog, QLabel
+from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
+
 from point import Point2D
 
+# TODO (RICARDO): Fazer a viewport usar a cor de cada objeto
 class Viewport(QLabel):
     def __init__(self):
         super().__init__()
@@ -13,12 +14,16 @@ class Viewport(QLabel):
         self.bottom_right = Point2D(400,400)
 
         self.objects = []
+
         stylesheet = '''
             QLabel {
                 background-color: white;
                 border: 1px solid black
             }
         '''
+
+        self.pen_color = QColor(0, 0, 0, 127)
+
         self.setStyleSheet(stylesheet)
         
         self.setMinimumWidth(self.bottom_right.get_x())
@@ -29,6 +34,11 @@ class Viewport(QLabel):
         
         self.addAction(self.action_scroll_zoom_in)
         self.addAction(self.action_scroll_zoom_out)
+
+    def change_color(self):
+        selected_color = QColorDialog.getColor()
+        r, g, b, a = selected_color.red(), selected_color.green(), selected_color.blue(), selected_color.alpha()
+        self.pen_color = QColor(r, g, b, a)
 
     def wheelEvent(self, event: QWheelEvent):
         if (event.angleDelta().y() > 0):
@@ -44,8 +54,20 @@ class Viewport(QLabel):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setPen(QPen(Qt.black,  2))
+        painter.setPen(QPen(self.pen_color, 2))
+
         for obj in self.objects:
             obj.draw(painter, self.window_min, self.window_max,self.top_left, self.bottom_right)
+
+        # Pintando a borda vermelha da viewport
+        pen = QPen()
+        pen.setWidth(2)
+        pen.setColor(QColor(255, 0, 0))
+        painter.setPen(pen)
+ 
+        painter.drawLine(10, 10, 390, 10)
+        painter.drawLine(10, 10, 10, 390)
+        painter.drawLine(10, 390, 390, 390)
+        painter.drawLine(390, 10, 390, 390)
     
 
