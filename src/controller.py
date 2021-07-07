@@ -83,6 +83,7 @@ class Controller():
         values = self.new_object_dialog.get_values(type)
         name = values[0]
         coordinates_str = values[1]
+        color = values[2]
 
         self.new_object_dialog.clear_inputs(type)
         self.new_object_dialog.close()
@@ -97,7 +98,7 @@ class Controller():
             self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
             return
 
-        self.add_new_object(name, coordinates, type)
+        self.add_new_object(name, coordinates, type, color)
 
         self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
@@ -208,17 +209,17 @@ class Controller():
 
         return coordinates
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum):
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor):
         
         graphic_obj : GraphicObject = None
 
         try:
             if (type == GraphicObjectEnum.POINT):
-                graphic_obj = Point(name, coordinates)
+                graphic_obj = Point(name, coordinates, color)
             if (type == GraphicObjectEnum.LINE):
-                graphic_obj = Line(name, coordinates)
+                graphic_obj = Line(name, coordinates, color)
             if (type == GraphicObjectEnum.WIREFRAME):
-                graphic_obj = WireFrame(name, coordinates)
+                graphic_obj = WireFrame(name, coordinates, color)
         except ValueError as e:
             self.main_window.log.add_item(e.__str__())
 
