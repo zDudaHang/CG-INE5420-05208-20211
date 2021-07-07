@@ -27,6 +27,7 @@ class MainWindow(QMainWindow):
         self.functions_menu = FunctionsMenu(step)
         self.generalLayout.addWidget(self.functions_menu, 0, 0, 2, 1)
 
+        # TODO: Colocar toda a geracao de menu em uma funcao separada
         self.menuBar = self.menuBar()
 
         # Menu de opções
@@ -52,6 +53,12 @@ class MainWindow(QMainWindow):
 
         self.viewport = Viewport()
         self.generalLayout.addWidget(self.viewport, 0, 1)
+
+        editMenu = self.menuBar.addMenu('Edit')
+        line_color = QAction('Alterar Cor', self)
+        line_color.setShortcut('Ctrl+C')
+        line_color.triggered.connect(self.viewport.change_color)
+        editMenu.addAction(line_color)
 
         self.log = Log[str]('=== LOG ===')
         self.generalLayout.addWidget(self.log, 2, 0, 1, 2)

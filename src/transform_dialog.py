@@ -1,3 +1,4 @@
+from util import parse
 from typing import Callable, Union
 from point import Point2D
 from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
@@ -19,7 +20,6 @@ class RotateOptionsEnum(Enum):
         return None
 
 class RotateTransformation():
-    # TODO: Fazer o construtor receber um Point2D de verdade, no momento estah recebendo uma string
     def __init__(self, option: RotateOptionsEnum, angle: float, point: Point2D = None) -> None:
         self.option = option
         self.angle = angle
@@ -91,7 +91,8 @@ class TransformDialog(QDialog):
         self.transformations.append(transformation)
         self.log.add_item(transformation)
 
-    def clear_inputs(self) -> None:
+    def clear(self) -> None:
+        self.transformations = []
         self.scaling_tab.clear_inputs()
         self.rotating_tab.clear_inputs()
         self.translating_tab.clear_inputs()
@@ -229,7 +230,8 @@ class RotatingTabWidget(QWidget):
 
     def handle_submit(self) -> None:
         angle = self.angle_input.text()
-        point = self.point_input.text()
+        coordinates = parse(self.point_input.text())
+        point = Point2D(float(coordinates[0]), float(coordinates[1]))
         self.add_transformation(RotateTransformation(RotateOptionsEnum.valueOf(self.combo_box.currentText()), float(angle), point))
         self.clear_inputs()
 
