@@ -1,7 +1,7 @@
 from util import parse
 from typing import Callable, Union
 from point import Point2D
-from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
+from PyQt5.QtWidgets import QColorDialog, QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
 from log import Log
 from enum import Enum
 
@@ -97,6 +97,7 @@ class TransformDialog(QDialog):
         self.rotating_tab.clear_inputs()
         self.translating_tab.clear_inputs()
 
+
 class ScalingTabWidget(QWidget):
     def __init__(self, add_transformation: Callable) -> None:
         super().__init__()
@@ -175,6 +176,7 @@ class TranslatingTabWidget(QWidget):
         
         self.setLayout(self.layout)
     
+    
     def handle_submit(self) -> None:
         dx = self.move_x_input.text()
         dy = self.move_y_input.text()
@@ -228,6 +230,7 @@ class RotatingTabWidget(QWidget):
 
         self.setLayout(self.layout)
 
+    #TODO: verificar se o parser não considera entrada inválida
     def handle_submit(self) -> None:
         angle = self.angle_input.text()
         coordinates = parse(self.point_input.text())
@@ -245,3 +248,4 @@ class RotatingTabWidget(QWidget):
             self.point_input.setEnabled(True)
         else:
             self.point_input.setDisabled(True)
+    

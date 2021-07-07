@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import QDialog, QFormLayout, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QColorDialog, QDialog, QFormLayout, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
 
 from graphic_object import GraphicObjectEnum
 
@@ -42,6 +44,7 @@ class NewObjectDialog(QDialog):
 class GraphicObjectForm(QFormLayout):
     def __init__(self, placeholder: str):
         super().__init__()
+        self.color = QColor(0,0,0)
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText('Digite um nome')
         self.addRow('Nome', self.name_input)
@@ -49,19 +52,29 @@ class GraphicObjectForm(QFormLayout):
         self.coordinates = QLineEdit()
         self.coordinates.setPlaceholderText(placeholder)
 
+
         self.addRow('Coordenadas', self.coordinates)
+        self.color_button = QPushButton('Cor')
+        self.color_button.clicked.connect(self.open_dialog_color)
+        self.addRow('Escolher cor', self.color_button)
 
         self.buttons_box = QDialogButtonBox()
         self.buttons_box.setStandardButtons(
         QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
         self.addWidget(self.buttons_box)
-    
+
+
     def clear_inputs(self):
         self.name_input.clear()
         self.coordinates.clear()
 
     def get_values(self) -> list:
-        return [self.name_input.text(), self.coordinates.text()]
+        return [self.name_input.text(), self.coordinates.text(), self.color]
+    
+    def open_dialog_color(self):
+        selected_color = QColorDialog.getColor()
+        r, g, b, a = selected_color.red(), selected_color.green(), selected_color.blue(), selected_color.alpha()
+        self.color = QColor(r, g, b, a)         
 
 class PointTabWidget(QWidget):
     def __init__(self):
@@ -98,3 +111,4 @@ class WireframeTabWidget(QWidget):
 
     def clear_inputs(self):
         self.formLayout.clear_inputs()
+

@@ -1,5 +1,7 @@
 from typing import Callable
-from PyQt5.QtWidgets import QAction, QHBoxLayout, QPushButton, QScrollArea, QVBoxLayout, QLabel, QWidget
+from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QAction, QColorDialog, QHBoxLayout, QPushButton, QScrollArea, QVBoxLayout, QLabel, QWidget, QMenu
 from graphic_object import GraphicObject
 
 class ObjectsList(QWidget):
@@ -49,6 +51,8 @@ class ObjectView(QWidget):
 
         self.label = QLabel(self.object.__str__())
         self.layout.addWidget(self.label)
+        self.label.installEventFilter(self)
+
 
         self.edit_button = QPushButton('Editar')
         self.edit_button.clicked.connect(self.on_edit)
@@ -58,3 +62,19 @@ class ObjectView(QWidget):
 
     def on_edit(self) -> None:
         self.handle_edit(self.object)
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.ContextMenu and source is self.label:
+            menu = QMenu()
+            menu.addAction('Alterar Cor')
+
+            if menu.exec_(event.globalPos()):
+                selected_color = QColorDialog.getColor()
+                r, g, b, a = selected_color.red(), selected_color.green(), selected_color.blue(), selected_color.alpha()
+                self.object.color = QColor(r, g, b, a)              
+                
+
+            return True
+        
+        return super().eventFilter(source, event)
+    

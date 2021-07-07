@@ -3,7 +3,6 @@ from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
 
 from point import Point2D
 
-# TODO (RICARDO): Fazer a viewport usar a cor de cada objeto
 class Viewport(QLabel):
     def __init__(self):
         super().__init__()
@@ -21,9 +20,6 @@ class Viewport(QLabel):
                 border: 1px solid black
             }
         '''
-
-        self.pen_color = QColor(0, 0, 0, 127)
-
         self.setStyleSheet(stylesheet)
         
         self.setMinimumWidth(self.bottom_right.get_x())
@@ -34,11 +30,6 @@ class Viewport(QLabel):
         
         self.addAction(self.action_scroll_zoom_in)
         self.addAction(self.action_scroll_zoom_out)
-
-    def change_color(self):
-        selected_color = QColorDialog.getColor()
-        r, g, b, a = selected_color.red(), selected_color.green(), selected_color.blue(), selected_color.alpha()
-        self.pen_color = QColor(r, g, b, a)
 
     def wheelEvent(self, event: QWheelEvent):
         if (event.angleDelta().y() > 0):
@@ -54,13 +45,13 @@ class Viewport(QLabel):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setPen(QPen(self.pen_color, 2))
+        pen = QPen()
 
         for obj in self.objects:
             obj.draw(painter, self.window_min, self.window_max,self.top_left, self.bottom_right)
-
+                    
         # Pintando a borda vermelha da viewport
-        pen = QPen()
+        
         pen.setWidth(2)
         pen.setColor(QColor(255, 0, 0))
         painter.setPen(pen)
@@ -69,5 +60,20 @@ class Viewport(QLabel):
         painter.drawLine(10, 10, 10, 390)
         painter.drawLine(10, 390, 390, 390)
         painter.drawLine(390, 10, 390, 390)
-    
+        #self.paint_border(painter)
 
+        # Coordenadas viewport
+        
+        pen.setWidth(1)
+        pen.setColor(QColor(224,224,224))
+        painter.setPen(pen)
+ 
+        painter.drawLine(50, 200, 350, 200)
+        painter.drawLine(200, 50, 200, 350)
+    
+    #def paint_border(self, painter: QPainter):
+    #    painter.drawLine(self.bottom_left.get_x() + 10, self.bottom_left.get_y() + 10, self.bottom_right.get_x() - 10, self.bottom_right.get_y() + 10)
+    #    painter.drawLine(self.bottom_left.get_x() + 10, self.bottom_left.get_y() + 10, self.top_left.get_x() + 10, self.top_left.get_y() - 10)
+    #    painter.drawLine(self.top_left.get_x() + 10, self.top_left.get_y() - 10, self.top_right.get_x() - 10, self.top_right.get_y() - 10)
+    #    painter.drawLine(self.bottom_right.get_x() - 10, self.bottom_right.get_y() + 10, self.top_right.get_x() - 10, self.top_right.get_y() - 10)
+    
