@@ -1,4 +1,4 @@
-from util import parse
+from parse import parse
 from typing import Callable, Union
 from point import Point2D
 from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget

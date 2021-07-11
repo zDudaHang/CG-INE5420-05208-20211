@@ -35,14 +35,14 @@ class GraphicObject(ABC):
         self.center = Point2D(cx, cy)
 
     @abstractmethod
-    def draw(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
         ...
 
     def __str__(self):
         return f'{self.type.value} ({self.name})'
 
-    def drawLines(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
-        points = iterative_viewport_transform(self.coordinates, window_min, window_max, viewport_min, viewport_max)
+    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
+        points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max)
         
         pen = QPen()
         pen.setColor(self.color)
@@ -50,6 +50,7 @@ class GraphicObject(ABC):
 
         for i in range(0, len(points) - 1):
             painter.drawLine(points[i].to_QPointF(), points[i+1].to_QPointF())
+        
     
 class Point(GraphicObject):
 
@@ -58,8 +59,8 @@ class Point(GraphicObject):
             raise ValueError("[ERRO] Um ponto deve ter apenas um par de coordenadas (x,y)!")
         super().__init__(name, GraphicObjectEnum.POINT, coordinates, color)
     
-    def draw(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
-        p_v = viewport_transform(self.coordinates[0], window_min, window_max, viewport_min, viewport_max)
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
+        p_v = viewport_transform(self.coordinates[0], viewport_min, viewport_max)
         
         pen = QPen()
         pen.setColor(self.color)
@@ -76,8 +77,8 @@ class Line(GraphicObject):
             raise ValueError("[ERRO] Uma linha deve ter pelo menos 2 pares de coordenadas (x1,y1) e (x2, y2)!")
         super().__init__(name, GraphicObjectEnum.LINE, coordinates, color)
     
-    def draw(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
-        self.drawLines(painter, window_min, window_max, viewport_min, viewport_max)
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
+        self.drawLines(painter, viewport_min, viewport_max)
 
 class WireFrame(GraphicObject):
 
@@ -86,11 +87,11 @@ class WireFrame(GraphicObject):
             raise ValueError("[ERRO] Um wireframe deve ter no mínimo três pares de coordenadas!")
         super().__init__(name, GraphicObjectEnum.WIREFRAME, coordinates, color)
     
-    def draw(self, painter: QPainter, window_min: Point2D, window_max: Point2D, viewport_min: Point2D, viewport_max: Point2D):
-        self.drawLines(painter, window_min, window_max, viewport_min, viewport_max)
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
+        self.drawLines(painter, viewport_min, viewport_max)
 
         # Liga a primeira tupla na ultima tupla
-        p_v1 = viewport_transform(self.coordinates[0], window_min, window_max, viewport_min, viewport_max)
-        p_v2 = viewport_transform(self.coordinates[-1], window_min, window_max, viewport_min, viewport_max)
+        p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max)
+        p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max)
         painter.drawLine(p_v1.to_QPointF(), p_v2.to_QPointF())
 

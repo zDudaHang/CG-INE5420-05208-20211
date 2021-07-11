@@ -4,7 +4,7 @@ from window_menu import *
 from h_line import QHLine
 
 class FunctionsMenu(QWidget):
-    def __init__(self, step: int):
+    def __init__(self, step: float, angle: float):
         super().__init__()
 
         self.layout = QVBoxLayout()
@@ -18,13 +18,13 @@ class FunctionsMenu(QWidget):
 
         self.layout.addWidget(QHLine())
 
-        self.window_menu = WindowMenu(step)
+        self.window_menu = WindowMenu(step, angle)
         self.layout.addWidget(self.window_menu)
 
         self.setLayout(self.layout)
 
         self.width = 400
-        self.height = 400
+        self.height = 500
         
         self.setMaximumHeight(self.height)
         self.setMaximumWidth(self.width)

@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import  QAction, QColorDialog, QLabel
+from typing import List
+from graphic_object import GraphicObject
+from PyQt5.QtWidgets import  QAction, QLabel
 from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
 
 from point import Point2D
@@ -37,10 +39,8 @@ class Viewport(QLabel):
         else:
             self.action_scroll_zoom_out.trigger()
 
-    def draw_objects(self, objects: list, window_min: Point2D, window_max: Point2D):
+    def draw_objects(self, objects: List[GraphicObject]):
         self.objects = objects
-        self.window_min = window_min
-        self.window_max = window_max
         self.update()
 
     def paintEvent(self, event):
@@ -48,7 +48,7 @@ class Viewport(QLabel):
         pen = QPen()
 
         for obj in self.objects:
-            obj.draw(painter, self.window_min, self.window_max,self.top_left, self.bottom_right)
+            obj.draw(painter,self.top_left, self.bottom_right)
                     
         # Pintando a borda vermelha da viewport
         

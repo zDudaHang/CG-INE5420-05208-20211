@@ -1,26 +1,40 @@
-from typing import List, Union
+from util import apply_matrix_in_object, create_graphic_object, matrix_multiplication
+from typing import Dict, List, Union
 from main_window import *
 from new_object_dialog import *
-from graphic_object import GraphicObject, Line, Point, WireFrame
+from graphic_object import GraphicObject
 from PyQt5.QtCore import *
 from point import Point2D
-from transform import generate_rotate_operation_matrix, generate_rotation_matrix, generate_scale_operation_matrix, generate_scaling_matrix, generate_translation_matrix, matrix_multiplication, scale_object, translate_object
-from util import parse
+from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_object, translate_object
+from parse import parse
 from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
+from enum import Enum
+
+class DisplayFileEnum(Enum):
+    WORLD_COORD = 'WORLD'
+    SCN_COORD = 'SCN'
 
 class Controller():
 
     def __init__(self):
         self.app = QApplication(sys.argv)
+
         self.step = 0.1 # 10%
-        self.main_window = MainWindow(self.step)
+
+        self.step_angle = 10 # 0 graus
+        self.angle = 0
+
+        self.main_window = MainWindow(self.step, self.step_angle)
         self.main_window.show()
 
         self.tranform_dialog = TransformDialog(self.main_window)
 
         self.new_object_dialog = NewObjectDialog(self.main_window)
 
-        self.display_file : list[GraphicObject] = []
+        self.display_file : Dict[DisplayFileEnum, List[GraphicObject]] = {
+            DisplayFileEnum.WORLD_COORD: [], 
+            DisplayFileEnum.SCN_COORD: []
+        }
 
         self.set_window_values()
         self.set_handlers()
@@ -30,10 +44,13 @@ class Controller():
         self.bottom_left = Point2D(0, 0)
 
         self.bottom_right = Point2D(600,0)
-        self.top_left = Point2D(0,600)
+        self.top_left = Point2D(0,400)
 
         # x_window_max and y_window_max
-        self.top_right = Point2D(600, 600)
+        self.top_right = Point2D(600, 400)
+
+        self.height = 400
+        self.width = 600
 
         cx = self.top_left.get_x() + self.top_right.get_x() + self.bottom_left.get_x() + self.bottom_right.get_x()
         cy = self.top_left.get_y() + self.top_right.get_y() + self.bottom_left.get_y() + self.bottom_right.get_y()
@@ -58,13 +75,21 @@ class Controller():
         self.new_object_dialog.wireframe_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.WIREFRAME))
         self.new_object_dialog.point_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.WIREFRAME))
 
-        # STEP:
+        # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
         self.main_window.functions_menu.window_menu.step_minus_button.clicked.connect(lambda: self.on_step_update(-0.05))
 
         # ZOOM:
         self.main_window.functions_menu.window_menu.zoom_in_button.clicked.connect(lambda : self.zoom_handler('in'))
         self.main_window.functions_menu.window_menu.zoom_out_button.clicked.connect(lambda : self.zoom_handler('out'))
+
+        # STEP ROTATION:
+        self.main_window.functions_menu.window_menu.rotation_step_plus_button.clicked.connect(lambda: self.on_step_rotation_update(5))
+        self.main_window.functions_menu.window_menu.rotation_step_minus_button.clicked.connect(lambda: self.on_step_rotation_update(-5))
+
+        # ROTATION:
+        self.main_window.functions_menu.window_menu.rotate_left_button.clicked.connect(lambda: self.window_rotate_handler('left'))
+        self.main_window.functions_menu.window_menu.rotate_right_button.clicked.connect(lambda: self.window_rotate_handler('right'))
 
         # DIRECTION:
         self.main_window.functions_menu.window_menu.left_button.clicked.connect(lambda: self.window_move_handler('left'))
@@ -99,7 +124,7 @@ class Controller():
 
         self.add_new_object(name, coordinates, type, color)
 
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+        self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
 
     def new_object_dialog_cancelled_handler(self, type: GraphicObjectEnum):
         self.new_object_dialog.clear_inputs(type)
@@ -166,7 +191,27 @@ class Controller():
 
         self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
-    def window_move_handler(self, direction : str):
+    def scn_matrix(self) -> List[List[float]]:
+        return generate_scn_matrix(self.center.get_x(), self.center.get_y(), self.height, self.width, self.angle)
+
+    def calculate_scn_coordinates(self):
+
+        self.display_file[DisplayFileEnum.SCN_COORD].clear()
+
+        scn = self.scn_matrix()
+
+        print(scn)
+
+        for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
+            print(f'=== WORLD object: {[str(c) for c in obj.coordinates]}')
+
+        for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
+            print(f'=== SCN object: {[str(c) for c in obj.coordinates]}')
+
+        self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
+
+    def window_move_handler(self, direction: str):
         dx = 0
         dy = 0
 
@@ -188,10 +233,24 @@ class Controller():
 
         self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
 
-    def on_step_update(self, value: int):
+    def window_rotate_handler(self, direction: str):
+        angle = 0
+        if direction == 'left':
+            angle = -self.step_angle
+        else:
+            angle = self.step_angle
+        self.angle += angle
+        self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.angle}')
+        self.calculate_scn_coordinates()
+
+    def on_step_update(self, value: float):
         self.step += value
         self.main_window.functions_menu.window_menu.update_step_value(self.step)
 
+    # TODO: Se o valor for positivo, usar mod 360 para ficar entre 0 e 360. O mesmo para o negativo
+    def on_step_rotation_update(self, value: float):
+        self.step_angle += value
+        self.main_window.functions_menu.window_menu.update_step_rotation_value(self.step_angle)
 
 # ====================== UTILITIES:
 
@@ -200,22 +259,22 @@ class Controller():
 
     def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor):
         
-        graphic_obj : GraphicObject = None
-
-        try:
-            if (type == GraphicObjectEnum.POINT):
-                graphic_obj = Point(name, coordinates, color)
-            if (type == GraphicObjectEnum.LINE):
-                graphic_obj = Line(name, coordinates, color)
-            if (type == GraphicObjectEnum.WIREFRAME):
-                graphic_obj = WireFrame(name, coordinates, color)
-        except ValueError as e:
-            self.main_window.log.add_item(e.__str__())
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, self.main_window.log.add_item)
 
         if graphic_obj != None:
-            self.display_file.append(graphic_obj)        
+            self.add_object_to_display_file(graphic_obj)
             self.main_window.functions_menu.object_list.add_object(graphic_obj)
             self.main_window.log.add_item(f'[INFO] Objeto {graphic_obj.name} do tipo {graphic_obj.type.value}, cujas coordenadas são {[str(c) for c in graphic_obj.coordinates]}, foi criado com sucesso!')
+    
+    def add_object_to_display_file(self, obj: GraphicObject):
+        self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
+        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
+
+        for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
+            print(f'=== WORLD object: {[str(c) for c in obj.coordinates]}')
+
+        for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
+            print(f'=== SCN object: {[str(c) for c in obj.coordinates]}')
 
     def start(self):
         self.app.exec()

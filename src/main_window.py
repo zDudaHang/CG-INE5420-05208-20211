@@ -9,13 +9,13 @@ from new_object_dialog import *
 from text import *
 
 class MainWindow(QMainWindow):
-    def __init__(self, step: int):
+    def __init__(self, step: float, angle: float):
         super().__init__()
-        self.init_gui(step)
+        self.init_gui(step, angle)
         self.put_actions()
         
     
-    def init_gui(self, step):
+    def init_gui(self, step, angle):
         self.setWindowTitle('Computação gráfica')
 
         self._centralWidget = QWidget(self)
@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.generalLayout = QGridLayout()
         self._centralWidget.setLayout(self.generalLayout)
 
-        self.functions_menu = FunctionsMenu(step)
+        self.functions_menu = FunctionsMenu(step, angle)
         self.generalLayout.addWidget(self.functions_menu, 0, 0, 2, 1)
         
         self.init_menu()   
