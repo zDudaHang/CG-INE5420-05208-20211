@@ -28,7 +28,6 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
 
 def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
     r = matrix_multiplication(point.coordinates, m)
-    print(r)
     return Point2D(r[0][0], r[0][1])
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, onError: Callable = None) -> Union[GraphicObject, None]:

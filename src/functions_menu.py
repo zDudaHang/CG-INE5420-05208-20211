@@ -23,7 +23,7 @@ class FunctionsMenu(QWidget):
 
         self.setLayout(self.layout)
 
-        self.width = 400
+        self.width = 500
         self.height = 500
         
         self.setMaximumHeight(self.height)

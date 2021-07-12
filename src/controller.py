@@ -5,7 +5,7 @@ from new_object_dialog import *
 from graphic_object import GraphicObject
 from PyQt5.QtCore import *
 from point import Point2D
-from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_object, translate_object
+from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_window, translate_window
 from parse import parse
 from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from enum import Enum, IntEnum
@@ -203,7 +203,7 @@ class Controller():
         else:
             scale = 1 + self.step
         
-        matrix = scale_object(self.window_coordinates, self.center.get_x(), self.center.get_y(), scale, scale)
+        matrix = scale_window(self.window_coordinates, self.center.get_x(), self.center.get_y(), scale, scale)
 
         # The center doesn't change when we scale the window, so we don't need to update it. But, the height and width will change, so we need to update them.
         self.height = matrix[WindowCoordsEnum.TOP_RIGHT].get_y() - matrix[WindowCoordsEnum.BOTOOM_RIGHT].get_y()
@@ -225,8 +225,8 @@ class Controller():
             dy = self.step
         else:
             dy = -self.step
-        
-        matrix = translate_object(self.window_coordinates, dx * self.width, dy * self.height)
+
+        matrix = translate_window(self.window_coordinates, dx * self.width, dy * self.height, self.angle, self.center.get_x(), self.center.get_y())
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
@@ -269,15 +269,9 @@ class Controller():
 
         scn = self.scn_matrix()
 
-        print(scn)
-
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
             self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
-            print(f'=== WORLD object: {[str(c) for c in obj.coordinates]}')
-
-        for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
-            print(f'=== SCN object: {[str(c) for c in obj.coordinates]}')
-
+        
         self.draw_objects()
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
@@ -295,12 +289,6 @@ class Controller():
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
         self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
-
-        # for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
-            # print(f'=== WORLD object: {[str(c) for c in obj.coordinates]}')
-
-        # for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
-            # print(f'=== SCN object: {[str(c) for c in obj.coordinates]}')
 
     def start(self):
         self.app.exec()
