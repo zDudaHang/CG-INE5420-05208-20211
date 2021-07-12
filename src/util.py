@@ -2,6 +2,7 @@ from PyQt5.QtGui import QColor
 from point import Point2D
 from graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFrame
 from typing import Callable, List, Union
+from functools import reduce
 
 def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
     result = []
@@ -45,3 +46,13 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
             onError(e.__str__())
     
     return graphic_obj
+
+def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
+    size = len(coordinates)
+    
+    if size > 0:
+        cx = reduce(lambda acc, p: acc + p.get_x(), coordinates, 0) / size
+        cy = reduce(lambda acc, p: acc + p.get_y(), coordinates, 0) / size
+        return Point2D(cx, cy )
+    else: 
+        return None

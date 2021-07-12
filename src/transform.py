@@ -49,16 +49,16 @@ def generate_rotation_matrix(angleGraus: float) -> List[List[float]]:
     ]
 
 # TODO: Atualizar para utilizar o apply matrix dos objetos
-def translate_object(object_coordinates: list, dx: float, dy: float) -> List[List[float]]:
+def translate_object(object_coordinates: List[Point2D], dx: float, dy: float) -> List[Point2D]:
     t = generate_translation_matrix(dx, dy)
 
     for coord in object_coordinates:
         coord.coordinates = util.matrix_multiplication(coord.coordinates, t)
     return object_coordinates
 
-def scale_object(object_coordinates: list, cx: float, cy: float, sx: float, sy: float) -> List[List[float]]:
+def scale_object(object_coordinates: List[Point2D], cx: float, cy: float, sx: float, sy: float) -> List[Point2D]:
     final_operation = generate_scale_operation_matrix(cx, cy, sx, sy)
-    
+
     for coord in object_coordinates:
         coord.coordinates = util.matrix_multiplication(coord.coordinates, final_operation)
     return object_coordinates
@@ -81,11 +81,8 @@ def generate_rotate_operation_matrix(dx: float, dy: float, angle: float) -> List
 
 def generate_scn_matrix(cx_w: float, cy_w: float, height_w: float, width_w: float, angle: float) -> List[List[float]]:
     t = generate_translation_matrix(-cx_w, -cy_w)
-    print(t)
     r = generate_rotation_matrix(-angle)
-    print(r)
     s = generate_scaling_matrix(1/(width_w/2), 1/(height_w/2))
-    print(s)
 
     temp = util.matrix_multiplication(t, r)
     return util.matrix_multiplication(temp, s)

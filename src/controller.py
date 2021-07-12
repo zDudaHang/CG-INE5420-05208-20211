@@ -1,4 +1,4 @@
-from util import apply_matrix_in_object, create_graphic_object, matrix_multiplication
+from util import apply_matrix_in_object, calculate_center, create_graphic_object, matrix_multiplication
 from typing import Dict, List, Union
 from main_window import *
 from new_object_dialog import *
@@ -8,21 +8,24 @@ from point import Point2D
 from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_object, translate_object
 from parse import parse
 from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
-from enum import Enum
+from enum import Enum, IntEnum
 
 class DisplayFileEnum(Enum):
     WORLD_COORD = 'WORLD'
     SCN_COORD = 'SCN'
+
+class WindowCoordsEnum(IntEnum):
+    TOP_LEFT = 0
+    TOP_RIGHT = 1
+    BOTTOM_LEFT = 2
+    BOTOOM_RIGHT = 3
 
 class Controller():
 
     def __init__(self):
         self.app = QApplication(sys.argv)
 
-        self.step = 0.1 # 10%
-
-        self.step_angle = 10 # 0 graus
-        self.angle = 0
+        self.set_initial_values()
 
         self.main_window = MainWindow(self.step, self.step_angle)
         self.main_window.show()
@@ -39,23 +42,32 @@ class Controller():
         self.set_window_values()
         self.set_handlers()
 
+    def set_initial_values(self):
+        # Zoom and move step:
+        self.step = 0.1 # 10%
+
+        # Rotation step:
+        self.step_angle = 10 # (graus)
+        
+        # Angle between Y_world and window v_up
+        self.angle = 0
+
     def set_window_values(self):
-        # x_window_min and y_window_min
-        self.bottom_left = Point2D(0, 0)
 
-        self.bottom_right = Point2D(600,0)
-        self.top_left = Point2D(0,400)
+        self.window_coordinates : List[Point2D] = [None, None, None, None]
 
-        # x_window_max and y_window_max
-        self.top_right = Point2D(600, 400)
+        self.origin = Point2D(0,0)
 
         self.height = 400
         self.width = 600
 
-        cx = self.top_left.get_x() + self.top_right.get_x() + self.bottom_left.get_x() + self.bottom_right.get_x()
-        cy = self.top_left.get_y() + self.top_right.get_y() + self.bottom_left.get_y() + self.bottom_right.get_y()
+        self.window_coordinates[WindowCoordsEnum.TOP_LEFT] = self.origin + tuple([0, self.height])
+        self.window_coordinates[WindowCoordsEnum.TOP_RIGHT] = self.origin + tuple([self.width, self.height])
 
-        self.center = Point2D(cx / 4, cy / 4)
+        self.window_coordinates[WindowCoordsEnum.BOTTOM_LEFT] = self.origin
+        self.window_coordinates[WindowCoordsEnum.BOTOOM_RIGHT] = self.origin + tuple([self.width, 0])
+
+        self.center = calculate_center(self.window_coordinates)
         
     def set_handlers(self):
 
@@ -102,7 +114,9 @@ class Controller():
         self.main_window.viewport.action_scroll_zoom_out.triggered.connect(lambda: self.zoom_handler('out'))
 
 # ====================== HANDLERS:
-    
+
+# ========== NEW OBJECT DIALOG:
+
     def new_object_dialog_submitted_handler(self, type: GraphicObjectEnum):
         values = self.new_object_dialog.get_values(type)
         name = values[0]
@@ -124,7 +138,7 @@ class Controller():
 
         self.add_new_object(name, coordinates, type, color)
 
-        self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
+        self.draw_objects()
 
     def new_object_dialog_cancelled_handler(self, type: GraphicObjectEnum):
         self.new_object_dialog.clear_inputs(type)
@@ -132,6 +146,8 @@ class Controller():
 
     def open_dialog_handler(self):
         self.new_object_dialog.exec()
+
+# ========== TRANSFORM OBJECT DIALOG:
 
     def on_edit_object(self):
         obj : GraphicObject = self.main_window.functions_menu.object_list.edit_object_state
@@ -165,14 +181,19 @@ class Controller():
         for i in range(0, len(obj.coordinates)):
             obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
         
-        index = self.display_file.index(obj)
-        self.display_file[index] = obj
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+
+        index = self.display_file[DisplayFileEnum.WORLD_COORD].index(obj)
+        self.display_file[DisplayFileEnum.WORLD_COORD][index] = obj
+
+        self.calculate_scn_coordinates()
+
         self.tranform_dialog.clear()
 
     def on_transform_dialog_cancel(self):
         self.tranform_dialog.clear()
         self.tranform_dialog.close()
+
+# ========== WINDOW MENU HANDLERS:
 
     def zoom_handler(self, direction: str):
         scale = 1.0
@@ -182,14 +203,62 @@ class Controller():
         else:
             scale = 1 + self.step
         
-        matrix = scale_object([self.top_left, self.top_right, self.bottom_left, self.bottom_right], self.center.get_x(), self.center.get_y(), scale, scale)
-        
-        self.top_left = matrix[0]
-        self.top_right = matrix[1]
-        self.bottom_left = matrix[2]
-        self.bottom_right = matrix[3]
+        matrix = scale_object(self.window_coordinates, self.center.get_x(), self.center.get_y(), scale, scale)
 
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+        # The center doesn't change when we scale the window, so we don't need to update it. But, the height and width will change, so we need to update them.
+        self.height = matrix[WindowCoordsEnum.TOP_RIGHT].get_y() - matrix[WindowCoordsEnum.BOTOOM_RIGHT].get_y()
+        self.width = matrix[WindowCoordsEnum.TOP_RIGHT].get_x() - matrix[WindowCoordsEnum.TOP_LEFT].get_x()
+
+        self.main_window.log.add_item(f'[DEBUG] Dando zoom a window em {scale * 100}%. Novas medidas da window: (largura={self.width}, altura={self.height}')
+
+        self.calculate_scn_coordinates()
+
+    def window_move_handler(self, direction: str):
+        dx = 0
+        dy = 0
+
+        if direction == 'left':
+            dx = -self.step
+        elif direction == 'right':
+            dx = self.step
+        elif direction == 'up':
+            dy = self.step
+        else:
+            dy = -self.step
+        
+        matrix = translate_object(self.window_coordinates, dx * self.width, dy * self.height)
+
+        # The center changes when we move the window, so we need to update this to reflect in scn transformation
+        self.center = calculate_center(matrix)
+
+        self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {dx * self.width} unidades em x e {dy * self.height} em y. Novo centro da window: {self.center}')
+
+        self.calculate_scn_coordinates()
+
+    def window_rotate_handler(self, direction: str):
+        angle = 0
+        if direction == 'left':
+            angle = -self.step_angle
+        else:
+            angle = self.step_angle
+        self.angle += angle
+        self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.angle}')
+
+        self.calculate_scn_coordinates()
+
+    def on_step_update(self, value: float):
+        self.step += value
+        self.main_window.functions_menu.window_menu.update_step_value(self.step)
+
+    # TODO: Se o valor for positivo, usar mod 360 para ficar entre 0 e 360. O mesmo para o negativo
+    def on_step_rotation_update(self, value: float):
+        self.step_angle += value
+        self.main_window.functions_menu.window_menu.update_step_rotation_value(self.step_angle)
+
+# ====================== UTILITIES:
+
+    def draw_objects(self):
+        self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
 
     def scn_matrix(self) -> List[List[float]]:
         return generate_scn_matrix(self.center.get_x(), self.center.get_y(), self.height, self.width, self.angle)
@@ -209,51 +278,8 @@ class Controller():
         for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
             print(f'=== SCN object: {[str(c) for c in obj.coordinates]}')
 
-        self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
-
-    def window_move_handler(self, direction: str):
-        dx = 0
-        dy = 0
-
-        if direction == 'left':
-            dx = -(5 + self.step)
-        elif direction == 'right':
-            dx = 5 + self.step
-        elif direction == 'up':
-            dy = 5 + self.step
-        else:
-            dy = -(5 + self.step)
-        
-        matrix = translate_object([self.top_left, self.top_right, self.bottom_left, self.bottom_right], dx, dy)
-        
-        self.top_left = matrix[0]
-        self.top_right = matrix[1]
-        self.bottom_left = matrix[2]
-        self.bottom_right = matrix[3]
-
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
-
-    def window_rotate_handler(self, direction: str):
-        angle = 0
-        if direction == 'left':
-            angle = -self.step_angle
-        else:
-            angle = self.step_angle
-        self.angle += angle
-        self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.angle}')
-        self.calculate_scn_coordinates()
-
-    def on_step_update(self, value: float):
-        self.step += value
-        self.main_window.functions_menu.window_menu.update_step_value(self.step)
-
-    # TODO: Se o valor for positivo, usar mod 360 para ficar entre 0 e 360. O mesmo para o negativo
-    def on_step_rotation_update(self, value: float):
-        self.step_angle += value
-        self.main_window.functions_menu.window_menu.update_step_rotation_value(self.step_angle)
-
-# ====================== UTILITIES:
-
+        self.draw_objects()
+    
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)
 
@@ -270,11 +296,11 @@ class Controller():
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
         self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
 
-        for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
-            print(f'=== WORLD object: {[str(c) for c in obj.coordinates]}')
+        # for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
+            # print(f'=== WORLD object: {[str(c) for c in obj.coordinates]}')
 
-        for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
-            print(f'=== SCN object: {[str(c) for c in obj.coordinates]}')
+        # for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
+            # print(f'=== SCN object: {[str(c) for c in obj.coordinates]}')
 
     def start(self):
         self.app.exec()

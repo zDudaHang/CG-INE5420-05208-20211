@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+import util
 
 from PyQt5.QtGui import QPainter, QColor, QPen
 from transform import iterative_viewport_transform, viewport_transform
@@ -27,12 +28,8 @@ class GraphicObject(ABC):
         self.name = name
         self.type = type
         self.coordinates = coordinates
-        self.color = color
-
-        cx = sum(c.get_x() for c in self.coordinates) / len(self.coordinates)
-        cy = sum(c.get_y() for c in self.coordinates) / len(self.coordinates)
-        
-        self.center = Point2D(cx, cy)
+        self.color = color     
+        self.center = util.calculate_center(self.coordinates)
 
     @abstractmethod
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
