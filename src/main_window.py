@@ -1,4 +1,5 @@
 import sys
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
@@ -7,14 +8,19 @@ from viewport import *
 from log import *
 from new_object_dialog import *
 from text import *
+import wavefront
+import point
+
+from graphic_object import Point
 
 class MainWindow(QMainWindow):
     def __init__(self, step: int):
         super().__init__()
         self.init_gui(step)
         self.put_actions()
-        
     
+        self.new_objs = wavefront.WavefrontOBJ()
+
     def init_gui(self, step):
         self.setWindowTitle('Computação gráfica')
 
@@ -27,7 +33,9 @@ class MainWindow(QMainWindow):
         self.functions_menu = FunctionsMenu(step)
         self.generalLayout.addWidget(self.functions_menu, 0, 0, 2, 1)
         
-        self.init_menu()   
+        self.init_menu()
+        
+        self.wavefront = wavefront.WavefrontOBJ()
 
         self.viewport = Viewport()
         self.generalLayout.addWidget(self.viewport, 0, 1)
@@ -47,11 +55,27 @@ class MainWindow(QMainWindow):
 
         # Menu de opções
         fileMenu = self.menuBar.addMenu('File')
+
         add_obj = QAction('Adicionar Objeto', self)
         add_obj.setShortcut('Ctrl+A')
         add_obj.triggered.connect(self.input_data)
         fileMenu.addAction(add_obj)
         fileMenu.addSeparator()
+
+        open_file = QAction('Abrir Arquivo', self)
+        open_file.setShortcut('Ctrl+O')
+        open_file.triggered.connect(self.open_file_dialog)
+        fileMenu.addAction(open_file)
+
+        self.add_new_obj_action = QAction('Adicionar novos objetos', self)
+        self.export_new_obj = QAction('Exportar objetos', self)
+
+        save_file = QAction('Salvar Arquivo', self)
+        save_file.setShortcut('Ctrl+S')
+        #save_file.triggered.connect()
+        fileMenu.addAction(save_file)
+        fileMenu.addSeparator()        
+
         exit_action = QAction('Sair', self)
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(sys.exit)
@@ -90,14 +114,35 @@ class MainWindow(QMainWindow):
         gt_started.setMinimumHeight(200)
         gt_started.setMinimumWidth(800)
         gt_started.setMaximumWidth(800)
-        gt_started.setMaximumHeight(200)
+        gt_started.setMaximumHeight(600)
         gt_started.setWindowTitle('Getting Started') 
         text = QLabel(GETTING_STARTED, gt_started) 
         text2 = QLabel(GETTING_STARTED_2, gt_started) 
         text3 = QLabel(INSTRUCTIONS, gt_started)       
-        text4 = QLabel(ATALHOS, gt_started)         
+        text4 = QLabel(ATALHOS, gt_started)
+        text5 = QLabel(CHANGE_COLOR, gt_started)         
         text.move(20,20) 
         text2.move(20, 40) 
         text3.move(20, 80) 
         text4.move(20, 110) 
+        text5.move(20, 170)
         gt_started.exec_()
+
+    def open_file_dialog(self):
+        filename = QFileDialog().getOpenFileName()
+        path = filename[0]
+        
+        try:
+            self.new_objs = wavefront.load_obj(path)
+            self.add_new_obj_action.trigger()
+            
+        except FileNotFoundError:
+            pass
+
+    def save_file_dialog(self):
+        name = QFileDialog.getSaveFileName(self, 'Save File')
+        file = open(name,'w')
+        text = self.textEdit.toPlainText()
+        file.write(text)
+        file.close()
+    
