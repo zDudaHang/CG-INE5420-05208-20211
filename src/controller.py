@@ -1,44 +1,77 @@
+from util import apply_matrix_in_object, calculate_center, create_graphic_object, matrix_multiplication
+from typing import Dict, List, Union
 from typing import List, Union
+from PyQt5.QtGui import QColor
+
+from PyQt5.QtWidgets import QFileDialog
 from main_window import *
 from new_object_dialog import *
-from graphic_object import GraphicObject, Line, Point, WireFrame
+from graphic_object import GraphicObject
 from PyQt5.QtCore import *
 from point import Point2D
-from transform import generate_rotate_operation_matrix, generate_rotation_matrix, generate_scale_operation_matrix, generate_scaling_matrix, generate_translation_matrix, matrix_multiplication, scale_object, translate_object
-from util import parse
+from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_window, translate_window
+from parse import parse
 from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
+from enum import Enum, IntEnum
+
+class DisplayFileEnum(Enum):
+    WORLD_COORD = 'WORLD'
+    SCN_COORD = 'SCN'
+
+class WindowCoordsEnum(IntEnum):
+    TOP_LEFT = 0
+    TOP_RIGHT = 1
+    BOTTOM_LEFT = 2
+    BOTOOM_RIGHT = 3
 
 class Controller():
 
     def __init__(self):
         self.app = QApplication(sys.argv)
-        self.step = 0.1 # 10%
-        self.main_window = MainWindow(self.step)
+
+        self.set_initial_values()
+
+        self.main_window = MainWindow(self.step, self.step_angle)
         self.main_window.show()
 
         self.tranform_dialog = TransformDialog(self.main_window)
 
         self.new_object_dialog = NewObjectDialog(self.main_window)
 
-        self.display_file : list[GraphicObject] = []
+        self.display_file : Dict[DisplayFileEnum, List[GraphicObject]] = {
+            DisplayFileEnum.WORLD_COORD: [], 
+            DisplayFileEnum.SCN_COORD: []
+        }
 
         self.set_window_values()
         self.set_handlers()
 
+    def set_initial_values(self):
+        # Zoom and move step:
+        self.step = 0.1 # 10%
+
+        # Rotation step:
+        self.step_angle = 10 # (graus)
+        
+        # Angle between Y_world and window v_up
+        self.angle = 0
+
     def set_window_values(self):
-        # x_window_min and y_window_min
-        self.bottom_left = Point2D(0, 0)
 
-        self.bottom_right = Point2D(600,0)
-        self.top_left = Point2D(0,600)
+        self.window_coordinates : List[Point2D] = [None, None, None, None]
 
-        # x_window_max and y_window_max
-        self.top_right = Point2D(600, 600)
+        self.origin = Point2D(0,0)
 
-        cx = self.top_left.get_x() + self.top_right.get_x() + self.bottom_left.get_x() + self.bottom_right.get_x()
-        cy = self.top_left.get_y() + self.top_right.get_y() + self.bottom_left.get_y() + self.bottom_right.get_y()
+        self.height = 400
+        self.width = 600
 
-        self.center = Point2D(cx / 4, cy / 4)
+        self.window_coordinates[WindowCoordsEnum.TOP_LEFT] = self.origin + tuple([0, self.height])
+        self.window_coordinates[WindowCoordsEnum.TOP_RIGHT] = self.origin + tuple([self.width, self.height])
+
+        self.window_coordinates[WindowCoordsEnum.BOTTOM_LEFT] = self.origin
+        self.window_coordinates[WindowCoordsEnum.BOTOOM_RIGHT] = self.origin + tuple([self.width, 0])
+
+        self.center = calculate_center(self.window_coordinates)
         
     def set_handlers(self):
 
@@ -58,13 +91,21 @@ class Controller():
         self.new_object_dialog.wireframe_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.WIREFRAME))
         self.new_object_dialog.point_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.WIREFRAME))
 
-        # STEP:
+        # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
         self.main_window.functions_menu.window_menu.step_minus_button.clicked.connect(lambda: self.on_step_update(-0.05))
 
         # ZOOM:
         self.main_window.functions_menu.window_menu.zoom_in_button.clicked.connect(lambda : self.zoom_handler('in'))
         self.main_window.functions_menu.window_menu.zoom_out_button.clicked.connect(lambda : self.zoom_handler('out'))
+
+        # STEP ROTATION:
+        self.main_window.functions_menu.window_menu.rotation_step_plus_button.clicked.connect(lambda: self.on_step_rotation_update(5))
+        self.main_window.functions_menu.window_menu.rotation_step_minus_button.clicked.connect(lambda: self.on_step_rotation_update(-5))
+
+        # ROTATION:
+        self.main_window.functions_menu.window_menu.rotate_left_button.clicked.connect(lambda: self.window_rotate_handler('left'))
+        self.main_window.functions_menu.window_menu.rotate_right_button.clicked.connect(lambda: self.window_rotate_handler('right'))
 
         # DIRECTION:
         self.main_window.functions_menu.window_menu.left_button.clicked.connect(lambda: self.window_move_handler('left'))
@@ -76,8 +117,30 @@ class Controller():
         self.main_window.viewport.action_scroll_zoom_in.triggered.connect(lambda: self.zoom_handler('in'))
         self.main_window.viewport.action_scroll_zoom_out.triggered.connect(lambda: self.zoom_handler('out'))
 
+        # IMPORT/EXPORT OBJ FILE
+        self.main_window.add_new_obj_action.triggered.connect(lambda: self.import_handler())
+        self.main_window.export_new_obj_action.triggered.connect(lambda: self.export_handler())
 # ====================== HANDLERS:
-    
+
+    def import_handler(self):
+        objs : Dict[str, List[Point2D]]= self.main_window.new_objs
+        i = 0
+
+        for key, value in objs.objects.items():
+            list_points = [Point2D(c[0],c[1]) for c in value]
+            if len(list_points) == 1:
+                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(objs.usemtl[i]))
+            elif len(list_points) == 2:
+                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(objs.usemtl[i]))
+            else:
+                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(objs.usemtl[i]))
+            i += 1
+
+        self.draw_objects()
+
+    def export_handler(self):
+        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD])
+
     def new_object_dialog_submitted_handler(self, type: GraphicObjectEnum):
         values = self.new_object_dialog.get_values(type)
         name = values[0]
@@ -99,7 +162,7 @@ class Controller():
 
         self.add_new_object(name, coordinates, type, color)
 
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+        self.draw_objects()
 
     def new_object_dialog_cancelled_handler(self, type: GraphicObjectEnum):
         self.new_object_dialog.clear_inputs(type)
@@ -107,6 +170,8 @@ class Controller():
 
     def open_dialog_handler(self):
         self.new_object_dialog.exec()
+
+# ========== TRANSFORM OBJECT DIALOG:
 
     def on_edit_object(self):
         obj : GraphicObject = self.main_window.functions_menu.object_list.edit_object_state
@@ -140,14 +205,19 @@ class Controller():
         for i in range(0, len(obj.coordinates)):
             obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
         
-        index = self.display_file.index(obj)
-        self.display_file[index] = obj
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+
+        index = self.display_file[DisplayFileEnum.WORLD_COORD].index(obj)
+        self.display_file[DisplayFileEnum.WORLD_COORD][index] = obj
+
+        self.calculate_scn_coordinates()
+
         self.tranform_dialog.clear()
 
     def on_transform_dialog_cancel(self):
         self.tranform_dialog.clear()
         self.tranform_dialog.close()
+
+# ========== WINDOW MENU HANDLERS:
 
     def zoom_handler(self, direction: str):
         scale = 1.0
@@ -157,65 +227,92 @@ class Controller():
         else:
             scale = 1 + self.step
         
-        matrix = scale_object([self.top_left, self.top_right, self.bottom_left, self.bottom_right], self.center.get_x(), self.center.get_y(), scale, scale)
-        
-        self.top_left = matrix[0]
-        self.top_right = matrix[1]
-        self.bottom_left = matrix[2]
-        self.bottom_right = matrix[3]
+        matrix = scale_window(self.window_coordinates, self.center.get_x(), self.center.get_y(), scale, scale)
 
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+        # The center doesn't change when we scale the window, so we don't need to update it. But, the height and width will change, so we need to update them.
+        self.height = matrix[WindowCoordsEnum.TOP_RIGHT].get_y() - matrix[WindowCoordsEnum.BOTOOM_RIGHT].get_y()
+        self.width = matrix[WindowCoordsEnum.TOP_RIGHT].get_x() - matrix[WindowCoordsEnum.TOP_LEFT].get_x()
 
-    def window_move_handler(self, direction : str):
+        self.main_window.log.add_item(f'[DEBUG] Dando zoom a window em {scale * 100}%. Novas medidas da window: (largura={self.width}, altura={self.height}')
+
+        self.calculate_scn_coordinates()
+
+    def window_move_handler(self, direction: str):
         dx = 0
         dy = 0
 
         if direction == 'left':
-            dx = -(5 + self.step)
+            dx = -self.step
         elif direction == 'right':
-            dx = 5 + self.step
+            dx = self.step
         elif direction == 'up':
-            dy = 5 + self.step
+            dy = self.step
         else:
-            dy = -(5 + self.step)
-        
-        matrix = translate_object([self.top_left, self.top_right, self.bottom_left, self.bottom_right], dx, dy)
-        
-        self.top_left = matrix[0]
-        self.top_right = matrix[1]
-        self.bottom_left = matrix[2]
-        self.bottom_right = matrix[3]
+            dy = -self.step
 
-        self.main_window.viewport.draw_objects(self.display_file, self.bottom_left, self.top_right)
+        matrix = translate_window(self.window_coordinates, dx * self.width, dy * self.height, self.angle, self.center.get_x(), self.center.get_y())
 
-    def on_step_update(self, value: int):
+        # The center changes when we move the window, so we need to update this to reflect in scn transformation
+        self.center = calculate_center(matrix)
+
+        self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {dx * self.width} unidades em x e {dy * self.height} em y. Novo centro da window: {self.center}')
+
+        self.calculate_scn_coordinates()
+
+    def window_rotate_handler(self, direction: str):
+        angle = 0
+        if direction == 'left':
+            angle = -self.step_angle
+        else:
+            angle = self.step_angle
+        self.angle += angle
+        self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.angle}')
+
+        self.calculate_scn_coordinates()
+
+    def on_step_update(self, value: float):
         self.step += value
         self.main_window.functions_menu.window_menu.update_step_value(self.step)
 
+    # TODO: Se o valor for positivo, usar mod 360 para ficar entre 0 e 360. O mesmo para o negativo
+    def on_step_rotation_update(self, value: float):
+        self.step_angle += value
+        self.main_window.functions_menu.window_menu.update_step_rotation_value(self.step_angle)
 
 # ====================== UTILITIES:
 
+    def draw_objects(self):
+        self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
+
+    def scn_matrix(self) -> List[List[float]]:
+        return generate_scn_matrix(self.center.get_x(), self.center.get_y(), self.height, self.width, self.angle)
+
+    def calculate_scn_coordinates(self):
+
+        self.display_file[DisplayFileEnum.SCN_COORD].clear()
+
+        scn = self.scn_matrix()
+
+        for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
+        
+        self.draw_objects()
+    
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)
 
     def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor):
         
-        graphic_obj : GraphicObject = None
-
-        try:
-            if (type == GraphicObjectEnum.POINT):
-                graphic_obj = Point(name, coordinates, color)
-            if (type == GraphicObjectEnum.LINE):
-                graphic_obj = Line(name, coordinates, color)
-            if (type == GraphicObjectEnum.WIREFRAME):
-                graphic_obj = WireFrame(name, coordinates, color)
-        except ValueError as e:
-            self.main_window.log.add_item(e.__str__())
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, self.main_window.log.add_item)
 
         if graphic_obj != None:
-            self.display_file.append(graphic_obj)        
+            self.add_object_to_display_file(graphic_obj)
             self.main_window.functions_menu.object_list.add_object(graphic_obj)
             self.main_window.log.add_item(f'[INFO] Objeto {graphic_obj.name} do tipo {graphic_obj.type.value}, cujas coordenadas são {[str(c) for c in graphic_obj.coordinates]}, foi criado com sucesso!')
+    
+    def add_object_to_display_file(self, obj: GraphicObject):
+        self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
+        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
 
     def start(self):
         self.app.exec()
