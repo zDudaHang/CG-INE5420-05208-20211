@@ -42,6 +42,7 @@ class GraphicObject(ABC):
         points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max)
         
         pen = QPen()
+        pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
 

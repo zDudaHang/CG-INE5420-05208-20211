@@ -1,8 +1,0 @@
-v 100.0 100.0
-v 200.0 200.0
-o p1
-usemtl black
-p 1 
-o r2
-usemtl black
-l 1 2 

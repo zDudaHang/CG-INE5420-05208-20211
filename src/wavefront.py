@@ -17,7 +17,7 @@ class WavefrontOBJ:
         self.usemtl = []
         self.objects = {}
             
-    def load_obj(filename: str, default_mtl='default_mtl'):
+    def load_obj(self, filename: str, default_mtl='default_mtl'):
         with open( filename, 'r' ) as objf:
             obj = WavefrontOBJ(default_mtl=default_mtl)
             obj.path = filename
