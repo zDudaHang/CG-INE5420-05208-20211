@@ -55,3 +55,9 @@ def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
         return Point2D(cx, cy )
     else: 
         return None
+
+def get_color_name(color: QColor) -> str:
+    for c in QColor.colorNames():
+        col = QColor(c)
+        if color == col:
+            return c

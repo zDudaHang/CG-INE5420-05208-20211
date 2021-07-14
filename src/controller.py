@@ -1,5 +1,9 @@
 from util import apply_matrix_in_object, calculate_center, create_graphic_object, matrix_multiplication
 from typing import Dict, List, Union
+from typing import List, Union
+from PyQt5.QtGui import QColor
+
+from PyQt5.QtWidgets import QFileDialog
 from main_window import *
 from new_object_dialog import *
 from graphic_object import GraphicObject
@@ -113,9 +117,29 @@ class Controller():
         self.main_window.viewport.action_scroll_zoom_in.triggered.connect(lambda: self.zoom_handler('in'))
         self.main_window.viewport.action_scroll_zoom_out.triggered.connect(lambda: self.zoom_handler('out'))
 
+        # IMPORT/EXPORT OBJ FILE
+        self.main_window.add_new_obj_action.triggered.connect(lambda: self.import_handler())
+        self.main_window.export_new_obj_action.triggered.connect(lambda: self.export_handler())
 # ====================== HANDLERS:
 
-# ========== NEW OBJECT DIALOG:
+    def import_handler(self):
+        objs : Dict[str, List[Point2D]]= self.main_window.new_objs
+        i = 0
+
+        for key, value in objs.objects.items():
+            list_points = [Point2D(c[0],c[1]) for c in value]
+            if len(list_points) == 1:
+                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(objs.usemtl[i]))
+            elif len(list_points) == 2:
+                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(objs.usemtl[i]))
+            else:
+                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(objs.usemtl[i]))
+            i += 1
+
+        self.draw_objects()
+
+    def export_handler(self):
+        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], 'teste')
 
     def new_object_dialog_submitted_handler(self, type: GraphicObjectEnum):
         values = self.new_object_dialog.get_values(type)
@@ -292,3 +316,4 @@ class Controller():
 
     def start(self):
         self.app.exec()
+

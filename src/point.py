@@ -19,3 +19,9 @@ class Point2D:
 
     def __add__(self, other: Tuple):
         return Point2D(self.get_x() + other[0], self.get_y() + other[1])
+    
+    def __eq__(self, o: object) -> bool:
+        print('__eq__')
+        print(self)
+        print(o)
+        return self.coordinates == o.coordinates
