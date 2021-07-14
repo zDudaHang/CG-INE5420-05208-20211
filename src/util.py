@@ -4,6 +4,7 @@ from graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFr
 from typing import Callable, List, Union
 from functools import reduce
 
+
 def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
     result = []
 
@@ -57,7 +58,8 @@ def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
         return None
 
 def get_color_name(color: QColor) -> str:
+    color_cmp = QColor()
     for c in QColor.colorNames():
-        col = QColor(c)
-        if color == col:
+        color_cmp.setNamedColor(c)
+        if color == color_cmp:
             return c

@@ -26,26 +26,35 @@ class ObjectsList(QWidget):
         self.edit_object_state = None
 
         self.action_edit_object = QAction("Edit")
+        
+        self.action_edit_color = QAction('Alterar cor')
 
         self.addAction(self.action_edit_object)
 
         self.setLayout(self.layout)
 
     def add_object(self, object: GraphicObject):
-        self.scroll_area_layout.addWidget(ObjectView(object, self.handle_edit))
+        self.scroll_area_layout.addWidget(ObjectView(object, self.handle_edit, self.handle_edit_color, self.action_edit_color))
 
     def handle_edit(self, object: GraphicObject):
         self.edit_object_state = object
         self.action_edit_object.trigger()
+    
+    def handle_edit_color(self):
+        self.action_edit_color.trigger()
 
 class ObjectView(QWidget):
 
-    def __init__(self, object: GraphicObject, handle_edit: Callable):
+    def __init__(self, object: GraphicObject, handle_edit: Callable, handle_edit_color: Callable, action_edit_color: QAction):
         super().__init__()
 
         self.object : GraphicObject = object
 
         self.handle_edit = handle_edit
+
+        self.handle_edit_color = handle_edit_color
+
+        self.action_edit_color = action_edit_color
 
         self.layout = QHBoxLayout()
 
@@ -66,14 +75,14 @@ class ObjectView(QWidget):
     def eventFilter(self, source, event):
         if event.type() == QEvent.ContextMenu and source is self.label:
             menu = QMenu()
-            menu.addAction('Alterar Cor')
+            menu.addAction(self.action_edit_color)
 
             if menu.exec_(event.globalPos()):
                 selected_color = QColorDialog.getColor()
                 r, g, b, a = selected_color.red(), selected_color.green(), selected_color.blue(), selected_color.alpha()
                 self.object.color = QColor(r, g, b, a)              
                 
-
             return True
         
+        self.handle_edit_color()
         return super().eventFilter(source, event)

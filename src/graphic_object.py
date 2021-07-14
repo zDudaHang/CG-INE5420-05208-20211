@@ -28,7 +28,10 @@ class GraphicObject(ABC):
         self.name = name
         self.type = type
         self.coordinates = coordinates
-        self.color = color     
+        if color == None:
+            self.color = QColor(0,0,0)
+        else:
+            self.color = color     
         self.center = util.calculate_center(self.coordinates)
 
     @abstractmethod

@@ -65,11 +65,7 @@ class Controller():
         self.height = 400
         self.width = 600
 
-        self.window_coordinates[WindowCoordsEnum.TOP_LEFT] = self.origin + tuple([0, self.height])
-        self.window_coordinates[WindowCoordsEnum.TOP_RIGHT] = self.origin + tuple([self.width, self.height])
-
-        self.window_coordinates[WindowCoordsEnum.BOTTOM_LEFT] = self.origin
-        self.window_coordinates[WindowCoordsEnum.BOTOOM_RIGHT] = self.origin + tuple([self.width, 0])
+        self.update_window_coordinates()
 
         self.center = calculate_center(self.window_coordinates)
         
@@ -117,10 +113,17 @@ class Controller():
         self.main_window.viewport.action_scroll_zoom_in.triggered.connect(lambda: self.zoom_handler('in'))
         self.main_window.viewport.action_scroll_zoom_out.triggered.connect(lambda: self.zoom_handler('out'))
 
+        # EDIT COLOR:
+
+        self.main_window.functions_menu.object_list.action_edit_color.triggered.connect(self.draw_objects)
+
         # IMPORT/EXPORT OBJ FILE
         self.main_window.add_new_obj_action.triggered.connect(lambda: self.import_handler())
         self.main_window.export_new_obj_action.triggered.connect(lambda: self.export_handler())
+
 # ====================== HANDLERS:
+
+# ========== IMPORT & EXPORT .OBJ FILES
 
     def import_handler(self):
         objs : Dict[str, List[Point2D]]= self.main_window.new_objs
@@ -135,11 +138,37 @@ class Controller():
             else:
                 self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(objs.usemtl[i]))
             i += 1
+        
+        self.update_window_values(objs.window)
+
+        self.calculate_scn_coordinates()
 
         self.draw_objects()
-
+           
     def export_handler(self):
-        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD])
+        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], self.center, Point2D(self.width, self.height))
+
+# ========== UPDATE WINDOW VALUES
+
+    def update_window_coordinates(self):
+        self.window_coordinates[WindowCoordsEnum.TOP_LEFT] = self.origin + tuple([0, self.height])
+        self.window_coordinates[WindowCoordsEnum.TOP_RIGHT] = self.origin + tuple([self.width, self.height])
+
+        self.window_coordinates[WindowCoordsEnum.BOTTOM_LEFT] = self.origin
+        self.window_coordinates[WindowCoordsEnum.BOTOOM_RIGHT] = self.origin + tuple([self.width, 0])
+
+    def update_window_values(self, window_obj_file: List[List[float]]):
+        window_center = window_obj_file[0]
+        window_dimensions = window_obj_file[1]
+
+        self.center = Point2D(window_center[0], window_center[1])
+
+        self.width = window_dimensions[0]
+        self.height = window_dimensions[1]
+
+        self.update_window_coordinates()
+
+# ========== NEW OBJECT DIALOG
 
     def new_object_dialog_submitted_handler(self, type: GraphicObjectEnum):
         values = self.new_object_dialog.get_values(type)
@@ -312,6 +341,7 @@ class Controller():
     
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
+        # Nossa window eh egocentrica, quer que todos os objetos girem do jeito que ela estah
         self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
 
     def start(self):

@@ -21,5 +21,4 @@ class Point2D:
         return Point2D(self.get_x() + other[0], self.get_y() + other[1])
     
     def __eq__(self, o: object) -> bool:
-
         return self.coordinates == o.coordinates

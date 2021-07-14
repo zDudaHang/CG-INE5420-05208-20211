@@ -54,11 +54,11 @@ class WavefrontOBJ:
                 
             return obj
 
-    def save_obj(objects_list: List[GraphicObject]):
+    def save_obj(objects_list: List[GraphicObject], w_center: Point2D, w_dimensions: Point2D):
         try:
             temp : List[Point2D] = []
             filename = QFileDialog.getSaveFileName(filter="OBJ (*.obj)")
-            with open(filename[0], 'w' ) as file:
+            with open(filename[0] + '.obj', 'w' ) as file:
                 for obj in objects_list:
                     for coord in obj.coordinates:
                         if coord in temp:
@@ -66,7 +66,19 @@ class WavefrontOBJ:
                         else:
                             file.write(f'v {coord.get_x()} {coord.get_y()}\n')
                             temp.append(coord)
+
+                # WINDOW PHASE:
+
+                if not w_center in temp:
+                    file.write(f'v {w_center.get_x()} {w_center.get_y()}\n')
+                    temp.append(w_center)
+
+                if not w_dimensions in temp:
+                    file.write(f'v {w_dimensions.get_x()} {w_dimensions.get_y()}\n')
+                    temp.append(w_dimensions)
                 
+                file.write(f'w {temp.index(w_center) + 1} {temp.index(w_dimensions) + 1}\n')
+
                 for obj in objects_list:                
                     # Nome
                     file.write(f'o {obj.name}\n')
