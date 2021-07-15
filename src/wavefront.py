@@ -18,11 +18,23 @@ class WavefrontOBJ:
         self.new_mtl = []
         self.kd_params = []
         self.objects = {}
-            
-    def load_obj(self, filename: str, default_mtl='default_mtl'):
-        with open( filename, 'r' ) as objf:
-            obj = WavefrontOBJ(default_mtl=default_mtl)
-            obj.path = filename
+
+    def parse_mtl(self, filename_mtl ):
+        with open( filename_mtl, 'r' ) as objm:
+            for line in objm:
+                toks = line.split()
+                if toks[0] == 'newmtl':
+                    self.new_mtl.append(toks[1])
+                elif toks[0] == 'Kd':
+                    self.kd_params.append(toks[1:])    
+   
+
+    def load_obj(self, filename_obj: str, filename_mtl: str, default_mtl='default_mtl'):
+
+        self.parse_mtl(filename_mtl) 
+        with open( filename_obj, 'r' ) as objf:
+            self.path = filename_obj
+
             for line in objf:
                 toks = line.split()
                 if not toks:
@@ -34,37 +46,34 @@ class WavefrontOBJ:
                             t.append(float(v.replace('\U00002013', '-')))
                         else:
                             t.append(float(v))
-                    obj.vertices.append(t)
+                    self.vertices.append(t)
                 elif toks[0] == 'w':
                     indices = [ float(v)-1 for v in toks[1:]]
                     for i in indices:
-                        obj.window.append( obj.vertices[int(i)] )
+                        self.window.append( self.vertices[int(i)] )
                 elif toks[0] == 'o':
-                    obj.objects_name.append( toks[1] )
+                    self.objects_name.append( toks[1] )
                 elif toks[0] == 'p':
-                    obj.objects[obj.objects_name[-1]] = [obj.vertices[int(toks[1])]]
+                    self.objects[self.objects_name[-1]] = [self.vertices[int(toks[1])]]
                 elif toks[0] == 'l':
                     indices = [ float(v)-1 for v in toks[1:]]
                     temp = []
                     for i in indices:
-                        temp.append( obj.vertices[int(i)])                             
-                    obj.objects[obj.objects_name[-1]] = temp             
+                        temp.append( self.vertices[int(i)])                             
+                    self.objects[self.objects_name[-1]] = temp             
                 elif toks[0] == 'mtllib':
-                    obj.mtllibs.append( toks[1] )
+                    self.mtllibs.append( toks[1] )
                 elif toks[0] == 'usemtl':
-                    obj.usemtl.append(toks[1])
-                elif toks[0] == 'newmtl':
-                    obj.new_mtl.append(toks[1])
-                elif toks[0] == 'Kd':
-                    obj.kd_params.append(toks[1:])
-                
-            return obj
+                    self.usemtl.append(toks[1])
+  
 
     def save_obj(objects_list: List[GraphicObject], w_center: Point2D, w_dimensions: Point2D):
         try:
             temp : List[Point2D] = []
             color_list = []
-            filename = QFileDialog.getSaveFileName(filter="OBJ (*.obj)")
+            filename = QFileDialog.getSaveFileName()
+            if filename[0] == '':
+                return
             url = QUrl.fromLocalFile(filename[0])
             with open(filename[0] + '.obj', 'w' ) as file:
                 for obj in objects_list:

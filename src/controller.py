@@ -348,4 +348,3 @@ class Controller():
 
     def start(self):
         self.app.exec()
-
