@@ -62,3 +62,11 @@ def get_color_name(color: QColor) -> str:
         color_cmp.setNamedColor(c)
         if color == color_cmp:
             return c
+
+def get_rgb(color: QColor) -> list:
+    rgb = []
+    rgb.append(color.red() / 255)
+    rgb.append(color.green() / 255)
+    rgb.append(color.blue() / 255)
+
+    return rgb

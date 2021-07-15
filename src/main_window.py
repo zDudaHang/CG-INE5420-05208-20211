@@ -128,11 +128,19 @@ class MainWindow(QMainWindow):
         gt_started.exec_()
     
     def open_file_dialog(self):
-        filename = QFileDialog().getOpenFileName()
-        path = filename[0]
-        
+        filename = QFileDialog().getOpenFileNames()
+
+        if filename[0] == []:
+            return
+
+        if filename[0][0].find('.obj') != -1:
+            path_obj = filename[0][0]
+            path_mtl = filename[0][1]
+        else:
+            path_obj = filename[0][1]
+            path_mtl = filename[0][0]
         try:
-            self.new_objs = self.new_objs.load_obj(path)
+            self.new_objs.load_obj(path_obj,path_mtl)
             self.add_new_obj_action.trigger()
             
         except FileNotFoundError:

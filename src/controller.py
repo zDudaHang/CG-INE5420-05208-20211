@@ -127,12 +127,18 @@ class Controller():
 
         for key, value in objs.objects.items():
             list_points = [Point2D(c[0],c[1]) for c in value]
+
+            usemtl = objs.usemtl[i]
+            newmtl = objs.new_mtl.index(usemtl)
+
+            rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]]  
+
             if len(list_points) == 1:
-                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(objs.usemtl[i]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]))
             elif len(list_points) == 2:
-                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(objs.usemtl[i]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]))
             else:
-                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(objs.usemtl[i]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]))
             i += 1
         
         self.update_window_values(objs.window)
@@ -342,4 +348,3 @@ class Controller():
 
     def start(self):
         self.app.exec()
-
