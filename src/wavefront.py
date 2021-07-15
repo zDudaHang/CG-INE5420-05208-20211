@@ -65,6 +65,8 @@ class WavefrontOBJ:
             temp : List[Point2D] = []
             color_list = []
             filename = QFileDialog.getSaveFileName(filter="OBJ (*.obj)")
+            if filename[0] == '':
+                return
             url = QUrl.fromLocalFile(filename[0])
             with open(filename[0] + '.obj', 'w' ) as file:
                 for obj in objects_list:
