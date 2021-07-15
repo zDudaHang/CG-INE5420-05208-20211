@@ -106,8 +106,4 @@ class WindowMenu(QWidget):
         self.step_label.setText('%.2f%%' % (value * 100))
 
     def update_step_rotation_value(self, value: str):
-<<<<<<< HEAD
         self.step_rotation_label.setText('%.2fº graus' % value)
-=======
-        self.step_rotation_label.setText('%.2fº graus' % value)
->>>>>>> SCN
