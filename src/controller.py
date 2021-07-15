@@ -9,7 +9,7 @@ from new_object_dialog import *
 from graphic_object import GraphicObject
 from PyQt5.QtCore import *
 from point import Point2D
-from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_window, translate_window
+from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
 from parse import parse
 from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from enum import Enum, IntEnum
@@ -112,10 +112,6 @@ class Controller():
         # SCROLL
         self.main_window.viewport.action_scroll_zoom_in.triggered.connect(lambda: self.zoom_handler('in'))
         self.main_window.viewport.action_scroll_zoom_out.triggered.connect(lambda: self.zoom_handler('out'))
-
-        # EDIT COLOR:
-
-        self.main_window.functions_menu.object_list.action_edit_color.triggered.connect(self.draw_objects)
 
         # IMPORT/EXPORT OBJ FILE
         self.main_window.add_new_obj_action.triggered.connect(lambda: self.import_handler())
@@ -221,7 +217,7 @@ class Controller():
             if isinstance(t, ScaleTransformation):
                 m = generate_scale_operation_matrix(obj.center.get_x(), obj.center.get_y(), t.sx, t.sy)
             elif isinstance(t, TranslateTransformation):
-                m = generate_translation_matrix(t.dx, t.dy)
+                m = translate_matrix_for_rotated_window(t.dx, t.dy, self.angle, self.center.get_x(), self.center.get_y())
             elif isinstance(t, RotateTransformation):
                 if (t.option == RotateOptionsEnum.WORLD):
                     m = generate_rotate_operation_matrix(self.center.get_x(), self.center.get_y(), t.angle)
