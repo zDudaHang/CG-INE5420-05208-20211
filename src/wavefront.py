@@ -1,4 +1,3 @@
-from PyQt5 import QtGui
 from PyQt5.QtWidgets import QFileDialog
 from util import get_color_name
 from point import Point2D

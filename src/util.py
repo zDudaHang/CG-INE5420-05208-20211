@@ -4,7 +4,6 @@ from graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFr
 from typing import Callable, List, Union
 from functools import reduce
 
-
 def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
     result = []
 
