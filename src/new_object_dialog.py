@@ -123,3 +123,4 @@ class WireframeTabWidget(QWidget):
 
     def clear_inputs(self):
         self.formLayout.clear_inputs()
+

@@ -1,9 +1,9 @@
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QGridLayout, QHBoxLayout,  QVBoxLayout, QLabel, QWidget, QPushButton
+from PyQt5.QtWidgets import QDialogButtonBox, QGridLayout, QHBoxLayout, QLineEdit, QVBoxLayout, QLabel, QWidget, QPushButton
 from h_line import QHLine
 
 class WindowMenu(QWidget):
-    def __init__(self, step: float, angle: float):
+    def __init__(self, step: int):
         super().__init__()
 
         self.layout = QVBoxLayout()
@@ -12,7 +12,7 @@ class WindowMenu(QWidget):
 
         self.layout.addWidget(QLabel("Window"))
 
-        # STEP ZOOM:
+        # PASSO:
         self.step_box = QHBoxLayout()
         self.step_box.addWidget(QLabel("Passo:"))
         self.step_label = QLabel('%.2f%%' % (step * 100))
@@ -44,41 +44,10 @@ class WindowMenu(QWidget):
 
         self.layout.addWidget(QHLine())
 
-        # Step Rotation:
-        self.step_rotation_box = QHBoxLayout()
-        self.step_rotation_box.addWidget(QLabel('Ângulo a rotacionar:'))
-        self.step_rotation_label = QLabel('%.2fº graus' % angle)
-        self.step_rotation_box.addWidget(self.step_rotation_label)
-
-        self.rotation_step_plus_button = QPushButton('+')
-        self.rotation_step_plus_button.setFixedSize(QSize(50,20))
-        self.step_rotation_box.addWidget(self.rotation_step_plus_button)
-
-        self.rotation_step_minus_button = QPushButton('-')
-        self.rotation_step_minus_button.setFixedSize(QSize(50,20))
-        self.step_rotation_box.addWidget(self.rotation_step_minus_button)
-
-        self.layout.addLayout(self.step_rotation_box)
-
-        # Rotation:
-        self.rotation_menu_box = QHBoxLayout()
-        self.rotation_menu_box.addWidget(QLabel('Rotacionar'))
-        self.rotate_left_button = QPushButton('Esq')
-        self.rotate_left_button.setFixedSize(QSize(50,20))
-        self.rotation_menu_box.addWidget(self.rotate_left_button)
-
-        self.rotate_right_button = QPushButton('Dir')
-        self.rotate_right_button.setFixedSize(QSize(50,20))
-        self.rotation_menu_box.addWidget(self.rotate_right_button)
-
-        self.layout.addLayout(self.rotation_menu_box)
-
-        self.layout.addWidget(QHLine())
-
         # Direction:
         self.direction_box = QGridLayout()
 
-        self.layout.addWidget(QLabel('Direção'))
+        self.direction_box.addWidget(QLabel("Direção"), 0, 0)
         
         self.left_button = QPushButton('◄')
         self.left_button.setFixedSize(QSize(50,20))
@@ -104,6 +73,3 @@ class WindowMenu(QWidget):
 
     def update_step_value(self, value: str):
         self.step_label.setText('%.2f%%' % (value * 100))
-
-    def update_step_rotation_value(self, value: str):
-        self.step_rotation_label.setText('%.2fº graus' % value)
