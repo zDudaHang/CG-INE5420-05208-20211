@@ -1,4 +1,4 @@
-
+from typing import Tuple
 from PyQt5.QtCore import QPointF
 
 class Point2D:
@@ -16,3 +16,9 @@ class Point2D:
 
     def to_QPointF(self) -> QPointF:
         return QPointF(self.get_x(), self.get_y())
+
+    def __add__(self, other: Tuple):
+        return Point2D(self.get_x() + other[0], self.get_y() + other[1])
+    
+    def __eq__(self, o: object) -> bool:
+        return self.coordinates == o.coordinates

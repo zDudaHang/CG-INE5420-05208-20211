@@ -1,111 +1,9 @@
+from PyQt5.QtGui import QColor
 from point import Point2D
-from typing import Union, List
+from graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFrame
+from typing import Callable, List, Union
+from functools import reduce
 
-def parse(text: str) -> Union[None, List[Point2D]]:
-    if (len(text) == 0):
-        return None
-    try:
-        values = _parse(text)
-    except IndexError:
-        return None
-        
-    if values == None:
-        return None
-
-    coordinates : list[Point2D] = []
-    
-    for i in range(0, len(values)-1, 2):
-        coordinates.append(Point2D(float(values[i]), float(values[i+1])))
-
-    return coordinates
-    
-def _parse(text: str) -> Union[None, List[str]]:
-    values = []
-    number = ''
-    i = 0
-
-    while i < len(text):
-        if text[i] == '(':
-            # Avanca um
-            i += 1
-
-            # Se ver um sinal de menos, adicione e nunca mais deixe outro passar
-            if text[i] == '-':
-                # Guarde no numero
-                number += text[i]
-                # Avance
-                i += 1
-
-            # Eh necessario encontrar um numero antes de encontrar a virgula
-            if text[i].isnumeric():
-                number += text[i]
-                i += 1
-            else: 
-                return None
-            
-            # Enquanto nao encontrar uma virgula, adicione os caracteres ao numero
-            foundFirstFracionaryPart = False
-            while text[i] != ',':
-                # Se for um numero, adicione e avance
-                if text[i].isnumeric():
-                    number += text[i]
-                    i += 1
-                # Se for o ponto da parte fracionaria, adicione e nunca mais deixe passar outro '.'
-                elif text[i] == '.' and not foundFirstFracionaryPart:
-                    number += text[i]
-                    foundFirstFracionaryPart = True
-                    i += 1
-                else:
-                    return None
-            
-            # Avance depois de achar ','
-            i += 1
-            values.append(number)
-            number = ''
-
-            if text[i] == '-':
-                number += text[i]
-                i += 1
-            
-            # Eh necessario encontrar um numero antes de encontrar o ')'
-            if text[i].isnumeric():
-                number += text[i]
-                i += 1
-            else: 
-                return None
-            
-            foundSecondFracionaryPart = False
-            while text[i] != ')':
-                if text[i].isnumeric():
-                    number += text[i]
-                    i += 1
-                elif text[i] == '.' and not foundSecondFracionaryPart:
-                    number += text[i]
-                    foundSecondFracionaryPart = True
-                    i += 1
-                else:
-                    return None
-            
-            values.append(number)
-            number = ''
-
-            # Se chegou no final da sentenca, pare
-            if i == len(text) - 1:
-                break
-            # Caso contrario, avance e verifique se existe uma ',' para continuar
-            else:
-                i += 1
-                if text[i] == ',':
-                    i += 1
-                    # Se chegou no final da sentenca, estah errado
-                    if i >= len(text) - 1:
-                        return None
-                # Se nao houver uma virgula, a sentenca estah errada
-                else:
-                    return None
-        else:
-            return None  
-    return values  
 
 def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
     result = []
@@ -122,3 +20,46 @@ def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[Li
                 result[i][j] += a[i][k] * b[k][j]
 
     return result
+
+def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> GraphicObject:
+    coords = []
+    for point2D in object.coordinates:
+        coords.append(apply_matrix_in_point(point2D, m))
+    return create_graphic_object(object.type, object.name, coords, object.color)
+
+def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
+    r = matrix_multiplication(point.coordinates, m)
+    return Point2D(r[0][0], r[0][1])
+
+def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, onError: Callable = None) -> Union[GraphicObject, None]:
+
+    graphic_obj: GraphicObject = None
+
+    try:
+        if (type == GraphicObjectEnum.POINT):
+            graphic_obj = Point(name, coordinates, color)
+        if (type == GraphicObjectEnum.LINE):
+            graphic_obj = Line(name, coordinates, color)
+        if (type == GraphicObjectEnum.WIREFRAME):
+            graphic_obj = WireFrame(name, coordinates, color)
+    except ValueError as e:
+            onError(e.__str__())
+    
+    return graphic_obj
+
+def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
+    size = len(coordinates)
+    
+    if size > 0:
+        cx = reduce(lambda acc, p: acc + p.get_x(), coordinates, 0) / size
+        cy = reduce(lambda acc, p: acc + p.get_y(), coordinates, 0) / size
+        return Point2D(cx, cy )
+    else: 
+        return None
+
+def get_color_name(color: QColor) -> str:
+    color_cmp = QColor()
+    for c in QColor.colorNames():
+        color_cmp.setNamedColor(c)
+        if color == color_cmp:
+            return c

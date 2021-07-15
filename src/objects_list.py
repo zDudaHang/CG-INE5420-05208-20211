@@ -77,4 +77,3 @@ class ObjectView(QWidget):
             return True
         
         return super().eventFilter(source, event)
-    
