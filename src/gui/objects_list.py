@@ -1,8 +1,9 @@
 from typing import Callable
-from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtCore import QEvent
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QAction, QColorDialog, QHBoxLayout, QPushButton, QScrollArea, QVBoxLayout, QLabel, QWidget, QMenu
-from graphic_object import GraphicObject
+
+from src.model.graphic_object import GraphicObject
 
 class ObjectsList(QWidget):
     def __init__(self):

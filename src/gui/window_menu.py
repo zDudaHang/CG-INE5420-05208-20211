@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout,  QVBoxLayout, QLabel, QWidget, QPushButton
-from h_line import QHLine
+
+from src.gui.h_line import QHLine
 
 class WindowMenu(QWidget):
     def __init__(self, step: float, angle: float):

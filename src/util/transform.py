@@ -1,7 +1,8 @@
-import util
-from point import Point2D
 from typing import List
 from math import sin, cos, radians
+
+import src.util.util as util
+from src.model.point import Point2D
 
 def iterative_viewport_transform(object_coordinates: List[Point2D], viewport_min: Point2D, viewport_max: Point2D) -> List[Point2D]:
     viewport_coordinates: List[Point2D] = []

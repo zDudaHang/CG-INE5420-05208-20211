@@ -1,7 +1,7 @@
-from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QColorDialog, QDialog, QFormLayout, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
 
-from graphic_object import GraphicObjectEnum
+from src.model.graphic_object import GraphicObjectEnum
 
 class NewObjectDialog(QDialog):
 

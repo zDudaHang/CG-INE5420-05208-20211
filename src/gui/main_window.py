@@ -1,13 +1,13 @@
-from wavefront import WavefrontOBJ
 import sys
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt5.QtCore import Qt
 
-from functions_menu import FunctionsMenu
-from viewport import *
-from log import *
-from new_object_dialog import *
-from text import *
+from PyQt5.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QWidget
+
+from src.util.wavefront import WavefrontOBJ
+from src.gui.functions_menu import FunctionsMenu
+from src.gui.viewport import Viewport
+from src.gui.log import Log
+from src.text import *
 
 class MainWindow(QMainWindow):
     def __init__(self, step: float, angle: float):
@@ -128,16 +128,23 @@ class MainWindow(QMainWindow):
         gt_started.exec_()
     
     def open_file_dialog(self):
-        filename = QFileDialog().getOpenFileName()
-        path = filename[0]
-        
+        filename = QFileDialog().getOpenFileNames()
+
+        if filename[0] == []:
+            return
+
+        if filename[0][0].find('.obj') != -1:
+            path_obj = filename[0][0]
+            path_mtl = filename[0][1]
+        else:
+            path_obj = filename[0][1]
+            path_mtl = filename[0][0]
         try:
-            self.new_objs = self.new_objs.load_obj(path)
+            self.new_objs.load_obj(path_obj,path_mtl)
             self.add_new_obj_action.trigger()
             
         except FileNotFoundError:
             pass
     
-    def save_file_dialog(self):
-        
+    def save_file_dialog(self):    
         self.export_new_obj_action.trigger()

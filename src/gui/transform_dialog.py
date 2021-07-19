@@ -1,9 +1,10 @@
-from parse import parse
+from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
 from typing import Callable, Union
-from point import Point2D
-from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
-from log import Log
 from enum import Enum
+
+from src.util.parse import parse
+from src.model.point import Point2D
+from src.gui.log import Log
 
 class RotateOptionsEnum(Enum):
     WORLD = 'Rotacionar em torno do centro do mundo'

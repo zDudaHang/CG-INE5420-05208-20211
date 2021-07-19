@@ -1,9 +1,9 @@
 from typing import List
-from graphic_object import GraphicObject
 from PyQt5.QtWidgets import  QAction, QLabel
 from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
 
-from point import Point2D
+from src.model.graphic_object import GraphicObject
+from src.model.point import Point2D
 
 class Viewport(QLabel):
     def __init__(self):

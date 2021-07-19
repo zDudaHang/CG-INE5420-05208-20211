@@ -1,11 +1,11 @@
+from typing import List
 from abc import ABC, abstractmethod
 from enum import Enum
-import util
-
 from PyQt5.QtGui import QPainter, QColor, QPen
-from transform import iterative_viewport_transform, viewport_transform
-from point import Point2D
-from typing import List
+
+from src.util.transform import iterative_viewport_transform, viewport_transform
+import src.util.util as util
+from src.model.point import Point2D
 
 class GraphicObjectEnum(Enum):
     POINT = "Ponto"

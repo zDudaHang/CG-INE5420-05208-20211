@@ -1,18 +1,17 @@
-from util import apply_matrix_in_object, calculate_center, create_graphic_object, matrix_multiplication
 from typing import Dict, List, Union
 from typing import List, Union
 from PyQt5.QtGui import QColor
-
-from PyQt5.QtWidgets import QFileDialog
-from main_window import *
-from new_object_dialog import *
-from graphic_object import GraphicObject
-from PyQt5.QtCore import *
-from point import Point2D
-from transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
-from parse import parse
-from transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from enum import Enum, IntEnum
+
+from src.util.util import apply_matrix_in_object, calculate_center, create_graphic_object, matrix_multiplication
+from src.gui.main_window import *
+from src.util.wavefront import WavefrontOBJ
+from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
+from src.model.graphic_object import GraphicObject
+from src.model.point import Point2D
+from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
+from src.util.parse import parse
+from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 
 class DisplayFileEnum(Enum):
     WORLD_COORD = 'WORLD'
@@ -127,12 +126,18 @@ class Controller():
 
         for key, value in objs.objects.items():
             list_points = [Point2D(c[0],c[1]) for c in value]
+
+            usemtl = objs.usemtl[i]
+            newmtl = objs.new_mtl.index(usemtl)
+
+            rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]]  
+
             if len(list_points) == 1:
-                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(objs.usemtl[i]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]))
             elif len(list_points) == 2:
-                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(objs.usemtl[i]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]))
             else:
-                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(objs.usemtl[i]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]))
             i += 1
         
         self.update_window_values(objs.window)

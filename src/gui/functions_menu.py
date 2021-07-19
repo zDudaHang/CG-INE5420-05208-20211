@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QWidget
-from objects_list import *
-from window_menu import *
-from h_line import QHLine
+
+from src.gui.objects_list import ObjectsList
+from src.gui.window_menu import WindowMenu
+from src.gui.h_line import QHLine
 
 class FunctionsMenu(QWidget):
     def __init__(self, step: float, angle: float):

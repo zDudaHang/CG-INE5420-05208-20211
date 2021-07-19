@@ -1,8 +1,9 @@
-from PyQt5.QtGui import QColor
-from point import Point2D
-from graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFrame
 from typing import Callable, List, Union
 from functools import reduce
+from PyQt5.QtGui import QColor
+
+from src.model.point import Point2D
+from src.model.graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFrame
 
 def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
     result = []
@@ -56,9 +57,10 @@ def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
     else: 
         return None
 
-def get_color_name(color: QColor) -> str:
-    color_cmp = QColor()
-    for c in QColor.colorNames():
-        color_cmp.setNamedColor(c)
-        if color == color_cmp:
-            return c
+def get_rgb(color: QColor) -> list:
+    rgb = []
+    rgb.append(color.red() / 255)
+    rgb.append(color.green() / 255)
+    rgb.append(color.blue() / 255)
+
+    return rgb
