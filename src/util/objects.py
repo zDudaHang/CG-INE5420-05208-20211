@@ -16,6 +16,7 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
         if (type == GraphicObjectEnum.LINE):
             graphic_obj = Line(name, coordinates, color)
         if (type == GraphicObjectEnum.WIREFRAME):
+            #coordinates = wireframe_points_list(coordinates)
             graphic_obj = WireFrame(name, coordinates, color)
     except ValueError as e:
             onError(e.__str__())

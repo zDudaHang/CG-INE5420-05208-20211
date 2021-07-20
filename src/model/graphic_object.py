@@ -24,10 +24,11 @@ class GraphicObjectEnum(Enum):
 
 class GraphicObject(ABC):
 
-    def __init__(self, name: str, type : GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
+    def __init__(self, name: str, type : GraphicObjectEnum, coordinates: List[Point2D], color: QColor, clipped: bool = False):
         self.name = name
         self.type = type
         self.coordinates = coordinates
+        self.clipped = clipped
         if color == None:
             self.color = QColor(0,0,0)
         else:
@@ -92,6 +93,7 @@ class WireFrame(GraphicObject):
         self.drawLines(painter, viewport_min, viewport_max)
 
         # Liga a primeira tupla na ultima tupla
-        p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max)
-        p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max)
-        painter.drawLine(p_v1.to_QPointF(), p_v2.to_QPointF())
+        if not self.clipped:
+            p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max)
+            p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max)
+            painter.drawLine(p_v1.to_QPointF(), p_v2.to_QPointF())

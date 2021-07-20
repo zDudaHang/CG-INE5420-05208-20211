@@ -122,7 +122,7 @@ def cohenSutherlandClipPolygon(ponto: Point2D, window_coordinates: list[Point2D]
     
     new_coordinates = []
     coordinates_list = ponto
-    # coordinates_list = wireframe_points_list(ponto)        
+   
     for i in range(len(coordinates_list)-1):
         coordinates = [coordinates_list[i], coordinates_list[i+1]]
         clip = cohenSutherlandClip(coordinates, window_coordinates)
@@ -130,6 +130,7 @@ def cohenSutherlandClipPolygon(ponto: Point2D, window_coordinates: list[Point2D]
         if clip is not None:
             new_coordinates.append(clip)
     new_coordinates = flatten(new_coordinates)
+
 
     return new_coordinates
 

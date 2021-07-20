@@ -2,6 +2,7 @@ from typing import Dict, List, Union
 from typing import List, Union
 from PyQt5.QtGui import QColor
 from enum import Enum, IntEnum
+import copy
 
 from src.util.math import matrix_multiplication
 from src.util.objects import calculate_center, create_graphic_object, apply_matrix_in_object
@@ -314,8 +315,6 @@ class Controller():
 # ====================== UTILITIES:
 
     def draw_objects(self):
-        for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
-            print(obj.coordinates)
         self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
 
     def scn_matrix(self) -> List[List[float]]:
@@ -328,8 +327,24 @@ class Controller():
         scn = self.scn_matrix()
 
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
-            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
-        
+
+            obj_copy = copy.copy(obj)
+                    
+            if obj_copy.type == GraphicObjectEnum.POINT:
+                clip = cohenSutherlandClipPoint(obj_copy.coordinates, self.window_coordinates)
+            elif obj.type == GraphicObjectEnum.LINE:
+                clip = cohenSutherlandClip(obj_copy.coordinates, self.window_coordinates)
+                obj_copy.coordinates = clip
+            else:
+                clip = cohenSutherlandClipPolygon(obj_copy.coordinates, self.window_coordinates)
+                if obj_copy.coordinates != clip:
+                    obj_copy.clipped = True
+                obj_copy.coordinates = clip   
+
+
+        if clip is not None:
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj_copy, self.scn_matrix()))
+  
         self.draw_objects()
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
@@ -346,19 +361,24 @@ class Controller():
     
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
-        # Nossa window eh egocentrica, quer que todos os objetos girem do jeito que ela estah
 
-        if obj.type == GraphicObjectEnum.POINT:
-            clip = cohenSutherlandClipPoint(obj.coordinates, self.window_coordinates)
+        obj_copy = copy.copy(obj)
+        
+        if obj_copy.type == GraphicObjectEnum.POINT:
+            clip = cohenSutherlandClipPoint(obj_copy.coordinates, self.window_coordinates)
         elif obj.type == GraphicObjectEnum.LINE:
-            clip = cohenSutherlandClip(obj.coordinates, self.window_coordinates)
-            obj.coordinates = clip
+            clip = cohenSutherlandClip(obj_copy.coordinates, self.window_coordinates)
+            obj_copy.coordinates = clip
         else:
-            clip = cohenSutherlandClipPolygon(obj.coordinates, self.window_coordinates)
-            obj.coordinates = clip
+            clip = cohenSutherlandClipPolygon(obj_copy.coordinates, self.window_coordinates)
+            if obj_copy.coordinates != clip:
+                obj_copy.clipped = True
+            obj_copy.coordinates = clip   
+
 
         if clip is not None:
-            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj_copy, self.scn_matrix()))
 
+    
     def start(self):
         self.app.exec()
