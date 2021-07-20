@@ -49,3 +49,10 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
 def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
     r = matrix_multiplication(point.coordinates, m)
     return Point2D(r[0][0], r[0][1])
+
+def wireframe_points_list(coordinates: List[Point2D]):
+    coordinates.insert(len(coordinates), coordinates[0])
+    return coordinates
+
+def flatten(t):
+    return [item for sublist in t for item in sublist]

@@ -13,6 +13,7 @@ from src.model.point import Point2D
 from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
+from src.util.clipping import cohenSutherlandClip, cohenSutherlandClipPoint, cohenSutherlandClipPolygon
 
 class DisplayFileEnum(Enum):
     WORLD_COORD = 'WORLD'
@@ -313,6 +314,8 @@ class Controller():
 # ====================== UTILITIES:
 
     def draw_objects(self):
+        for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
+            print(obj.coordinates)
         self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
 
     def scn_matrix(self) -> List[List[float]]:
@@ -344,7 +347,18 @@ class Controller():
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
         # Nossa window eh egocentrica, quer que todos os objetos girem do jeito que ela estah
-        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
+
+        if obj.type == GraphicObjectEnum.POINT:
+            clip = cohenSutherlandClipPoint(obj.coordinates, self.window_coordinates)
+        elif obj.type == GraphicObjectEnum.LINE:
+            clip = cohenSutherlandClip(obj.coordinates, self.window_coordinates)
+            obj.coordinates = clip
+        else:
+            clip = cohenSutherlandClipPolygon(obj.coordinates, self.window_coordinates)
+            obj.coordinates = clip
+
+        if clip is not None:
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
 
     def start(self):
         self.app.exec()
