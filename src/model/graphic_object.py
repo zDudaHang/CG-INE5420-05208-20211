@@ -1,26 +1,11 @@
+from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import List
 from abc import ABC, abstractmethod
-from enum import Enum
 from PyQt5.QtGui import QPainter, QColor, QPen
 
 from src.util.transform import iterative_viewport_transform, viewport_transform
 import src.util.objects as objects
 from src.model.point import Point2D
-
-class GraphicObjectEnum(Enum):
-    POINT = "Ponto"
-    LINE = "Reta"
-    WIREFRAME = "Wireframe"
-
-    def valueOf(value: str) :
-        if (value == GraphicObjectEnum.POINT.value):
-            return GraphicObjectEnum.POINT
-        if (value == GraphicObjectEnum.LINE.value):
-            return GraphicObjectEnum.LINE
-        if (value == GraphicObjectEnum.WIREFRAME.value):
-            return GraphicObjectEnum.WIREFRAME
-        return None
-
 
 class GraphicObject(ABC):
 
