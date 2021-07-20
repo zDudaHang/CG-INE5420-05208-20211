@@ -4,7 +4,7 @@ from enum import Enum
 from PyQt5.QtGui import QPainter, QColor, QPen
 
 from src.util.transform import iterative_viewport_transform, viewport_transform
-import src.util.util as util
+import src.util.objects as objects
 from src.model.point import Point2D
 
 class GraphicObjectEnum(Enum):
@@ -32,7 +32,7 @@ class GraphicObject(ABC):
             self.color = QColor(0,0,0)
         else:
             self.color = color     
-        self.center = util.calculate_center(self.coordinates)
+        self.center = objects.calculate_center(self.coordinates)
 
     @abstractmethod
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):

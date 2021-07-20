@@ -10,11 +10,9 @@ Dimensões utilizadas:
 - Python3 3.6.5
 - PyQt 5.0
 
-## Como utilizar
-A adição de um novo objeto (Ponto, Reta, Wireframe) é feita através dos atalhos *Shift + A* ou *Ctrl + A*. Para adicionar um objeto deve-se atribuir um nome, selecionar seu tipo e descrever suas coordenadas, conforme padrão a seguir (sem espaços entre as coordenadas):
-- Ponto: (X<sub>0</sub>,Y<sub>0</sub>)
-- Reta: (X<sub>0</sub>,Y<sub>0</sub>),(X<sub>1</sub>,Y<sub>1</sub>)
-- Wireframe: (X<sub>0</sub>,Y<sub>0</sub>),(X<sub>1</sub>,Y<sub>1</sub>), ..., (X<sub>n</sub>,Y<sub>n</sub>)
+## Algumas dicas
+
+Para importar um arquivo do tipo `.obj` e o `.mtl` correspondente, procure pela função `Abrir arquivo` na aba `File` do menu superior. 
 
 ## Atalhos
 

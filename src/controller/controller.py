@@ -3,7 +3,8 @@ from typing import List, Union
 from PyQt5.QtGui import QColor
 from enum import Enum, IntEnum
 
-from src.util.util import apply_matrix_in_object, calculate_center, create_graphic_object, matrix_multiplication
+from src.util.math import matrix_multiplication
+from src.util.objects import calculate_center, create_graphic_object, apply_matrix_in_object
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum

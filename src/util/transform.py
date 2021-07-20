@@ -1,8 +1,8 @@
 from typing import List
 from math import sin, cos, radians
 
-import src.util.util as util
 from src.model.point import Point2D
+from src.util.math import matrix_multiplication
 
 def iterative_viewport_transform(object_coordinates: List[Point2D], viewport_min: Point2D, viewport_max: Point2D) -> List[Point2D]:
     viewport_coordinates: List[Point2D] = []
@@ -59,21 +59,21 @@ def translate_matrix_for_rotated_window(dx: float, dy: float, angle: float, cx: 
     # Then rotate the window back (angle)
     r_rotate_back = generate_rotate_operation_matrix(cx, cy, angle)
 
-    r = util.matrix_multiplication(r_align_with_world, t)
-    return util.matrix_multiplication(r, r_rotate_back)
+    r = matrix_multiplication(r_align_with_world, t)
+    return matrix_multiplication(r, r_rotate_back)
 
 def translate_window(object_coordinates: List[Point2D], dx: float, dy: float, angle: float, cx: float, cy: float) -> List[Point2D]:
     final = translate_matrix_for_rotated_window(dx, dy, angle, cx, cy)
     
     for coord in object_coordinates:
-        coord.coordinates = util.matrix_multiplication(coord.coordinates, final)
+        coord.coordinates = matrix_multiplication(coord.coordinates, final)
     return object_coordinates
 
 def scale_window(object_coordinates: List[Point2D], cx: float, cy: float, sx: float, sy: float) -> List[Point2D]:
     final_operation = generate_scale_operation_matrix(cx, cy, sx, sy)
 
     for coord in object_coordinates:
-        coord.coordinates = util.matrix_multiplication(coord.coordinates, final_operation)
+        coord.coordinates = matrix_multiplication(coord.coordinates, final_operation)
     return object_coordinates
 
 def generate_scale_operation_matrix(cx: float, cy: float, sx: float, sy: float) -> List[List[float]]:
@@ -81,21 +81,21 @@ def generate_scale_operation_matrix(cx: float, cy: float, sx: float, sy: float) 
     scale = generate_scaling_matrix(sx, sy)
     t2 = generate_translation_matrix(cx, cy)
 
-    r = util.matrix_multiplication(t1, scale)
-    return util.matrix_multiplication(r, t2)
+    r = matrix_multiplication(t1, scale)
+    return matrix_multiplication(r, t2)
 
 def generate_rotate_operation_matrix(dx: float, dy: float, angle: float) -> List[List[float]]:
     t1 = generate_translation_matrix(-dx, -dy)
     rot = generate_rotation_matrix(angle)
     t2 = generate_translation_matrix(dx, dy)
 
-    r = util.matrix_multiplication(t1, rot)
-    return util.matrix_multiplication(r, t2)
+    r = matrix_multiplication(t1, rot)
+    return matrix_multiplication(r, t2)
 
 def generate_scn_matrix(cx_w: float, cy_w: float, height_w: float, width_w: float, angle: float) -> List[List[float]]:
     t = generate_translation_matrix(-cx_w, -cy_w)
     r = generate_rotation_matrix(-angle)
     s = generate_scaling_matrix(1/(width_w/2), 1/(height_w/2))
 
-    temp = util.matrix_multiplication(t, r)
-    return util.matrix_multiplication(temp, s)
+    temp = matrix_multiplication(t, r)
+    return matrix_multiplication(temp, s)

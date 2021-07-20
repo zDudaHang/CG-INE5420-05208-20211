@@ -4,32 +4,7 @@ from PyQt5.QtGui import QColor
 
 from src.model.point import Point2D
 from src.model.graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFrame
-
-def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
-    result = []
-
-    # Populate the result matrix with zeros
-    for i in range(0, len(a)):
-        result.append([])
-        for j in range(0, len(b[0])):
-            result[i].append(0)
-
-    for i in range(len(a)):
-        for j in range(len(b[0])):
-            for k in range(len(b)):
-                result[i][j] += a[i][k] * b[k][j]
-
-    return result
-
-def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> GraphicObject:
-    coords = []
-    for point2D in object.coordinates:
-        coords.append(apply_matrix_in_point(point2D, m))
-    return create_graphic_object(object.type, object.name, coords, object.color)
-
-def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
-    r = matrix_multiplication(point.coordinates, m)
-    return Point2D(r[0][0], r[0][1])
+from src.util.math import matrix_multiplication
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, onError: Callable = None) -> Union[GraphicObject, None]:
 
@@ -64,3 +39,13 @@ def get_rgb(color: QColor) -> list:
     rgb.append(color.blue() / 255)
 
     return rgb
+
+def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> GraphicObject:
+    coords = []
+    for point2D in object.coordinates:
+        coords.append(apply_matrix_in_point(point2D, m))
+    return create_graphic_object(object.type, object.name, coords, object.color)
+
+def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
+    r = matrix_multiplication(point.coordinates, m)
+    return Point2D(r[0][0], r[0][1])
