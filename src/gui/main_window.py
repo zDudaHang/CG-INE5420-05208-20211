@@ -12,14 +12,14 @@ from src.gui.log import Log
 from src.text import *
 
 class MainWindow(QMainWindow):
-    def __init__(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int):
+    def __init__(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
         super().__init__()
-        self.init_gui(step, angle, viewport_coordinates, viewport_width, viewport_height)
+        self.init_gui(step, angle, viewport_coordinates, viewport_width, viewport_height, viewport_origin)
         self.put_actions()
         self.new_objs = WavefrontOBJ()
         
     
-    def init_gui(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int):
+    def init_gui(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
         self.setWindowTitle('Computação gráfica')
 
         self._centralWidget = QWidget(self)
@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         
         self.init_menu()   
 
-        self.viewport = Viewport(viewport_coordinates, viewport_width, viewport_height)
+        self.viewport = Viewport(viewport_coordinates, viewport_width, viewport_height, viewport_origin)
         self.generalLayout.addWidget(self.viewport, 0, 1)
 
         self.log = Log[str]('=== LOG ===')

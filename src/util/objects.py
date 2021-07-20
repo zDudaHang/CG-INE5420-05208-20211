@@ -26,8 +26,8 @@ def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
     size = len(coordinates)
     
     if size > 0:
-        cx = reduce(lambda acc, p: acc + p.get_x(), coordinates, 0) / size
-        cy = reduce(lambda acc, p: acc + p.get_y(), coordinates, 0) / size
+        cx = reduce(lambda acc, p: acc + p.x(), coordinates, 0) / size
+        cy = reduce(lambda acc, p: acc + p.y(), coordinates, 0) / size
         return Point2D(cx, cy )
     else: 
         return None

@@ -82,17 +82,17 @@ class WavefrontOBJ:
                         if coord in temp:
                             continue
                         else:
-                            file.write(f'v {coord.get_x()} {coord.get_y()}\n')
+                            file.write(f'v {coord.x()} {coord.y()}\n')
                             temp.append(coord)
 
                 # WINDOW PHASE:
 
                 if not w_center in temp:
-                    file.write(f'v {w_center.get_x()} {w_center.get_y()}\n')
+                    file.write(f'v {w_center.x()} {w_center.y()}\n')
                     temp.append(w_center)
 
                 if not w_dimensions in temp:
-                    file.write(f'v {w_dimensions.get_x()} {w_dimensions.get_y()}\n')
+                    file.write(f'v {w_dimensions.x()} {w_dimensions.y()}\n')
                     temp.append(w_dimensions)
                 
                 file.write(f'mtllib {url.fileName()}.mtl\n')

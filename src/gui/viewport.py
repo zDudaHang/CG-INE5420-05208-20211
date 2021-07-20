@@ -7,12 +7,13 @@ from src.model.graphic_object import GraphicObject
 from src.model.point import Point2D
 
 class Viewport(QLabel):
-    def __init__(self, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int):
+    def __init__(self, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
         super().__init__()
         
         self.coordinates = viewport_coordinates
         self.width = viewport_width
         self.height = viewport_height
+        self.origin = viewport_origin
 
         self.objects = []
 
@@ -63,9 +64,19 @@ class Viewport(QLabel):
         pen.setWidth(1)
         pen.setColor(QColor(224,224,224))
         painter.setPen(pen)
- 
-        painter.drawLine(50, 200, 350, 200)
-        painter.drawLine(200, 50, 200, 350)
+
+        gap = 50
+        bottom_right = self.coordinates[CoordsEnum.BOTTOM_RIGHT]
+
+        # Foi utilizado o bottom right porque as coordenadas jah estao ajustadas com a origem
+        middle_x = bottom_right.x() / 2
+        middle_y = bottom_right.y() / 2
+
+        # x axis
+        painter.drawLine(self.origin.x() + gap, middle_y, bottom_right.x() - gap, middle_y)
+
+        # y axis
+        painter.drawLine(middle_x, self.origin.y() + gap, middle_x, bottom_right.y() - gap)
     
     def draw_viewport_border(self, pen: QPen, painter: QPainter):
         pen.setWidth(2)

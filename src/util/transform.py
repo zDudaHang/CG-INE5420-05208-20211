@@ -16,16 +16,16 @@ def viewport_transform(object_coordinates: Point2D, viewport_min: Point2D, viewp
     window_max = Point2D(1, 1)
 
     # x_div = (x_w - x_w_min) / (x_w_max - x_w_min)
-    x_div = (object_coordinates.get_x() - window_min.get_x()) / (window_max.get_x() - window_min.get_x())
+    x_div = (object_coordinates.x() - window_min.x()) / (window_max.x() - window_min.x())
 
     # x_v = x_div * (x_v_max - x_v_min)
-    x_v = x_div * (viewport_max.get_x() - viewport_min.get_x())
+    x_v = x_div * (viewport_max.x() - viewport_min.x())
 
     # y_div = (y_w - y_w_min) / (y_w_max - y_w_min)
-    y_div = (object_coordinates.get_y() - window_min.get_y()) / (window_max.get_y() - window_min.get_y())
+    y_div = (object_coordinates.y() - window_min.y()) / (window_max.y() - window_min.y())
 
     # y_v = (1 - y_div) * (y_v_max - y_v_min)
-    y_v = (1 - y_div) * (viewport_max.get_y() - viewport_min.get_y())
+    y_v = (1 - y_div) * (viewport_max.y() - viewport_min.y())
 
     return Point2D(x_v, y_v)
 

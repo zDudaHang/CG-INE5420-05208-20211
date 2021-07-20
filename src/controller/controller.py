@@ -26,7 +26,7 @@ class Controller():
         self.set_window_values()
         self.set_viewport_values()
 
-        self.main_window = MainWindow(self.step, self.step_angle, self.viewport_coordinates, self.viewport_width, self.viewport_height)
+        self.main_window = MainWindow(self.step, self.step_angle, self.viewport_coordinates, self.viewport_width, self.viewport_height, self.viewport_origin)
         self.main_window.show()
 
         self.tranform_dialog = TransformDialog(self.main_window)
@@ -229,16 +229,16 @@ class Controller():
         for t in self.tranform_dialog.transformations:
             m = []
             if isinstance(t, ScaleTransformation):
-                m = generate_scale_operation_matrix(obj.center.get_x(), obj.center.get_y(), t.sx, t.sy)
+                m = generate_scale_operation_matrix(obj.center.x(), obj.center.y(), t.sx, t.sy)
             elif isinstance(t, TranslateTransformation):
-                m = translate_matrix_for_rotated_window(t.dx, t.dy, self.angle, self.center.get_x(), self.center.get_y())
+                m = translate_matrix_for_rotated_window(t.dx, t.dy, self.angle, self.center.x(), self.center.y())
             elif isinstance(t, RotateTransformation):
                 if (t.option == RotateOptionsEnum.WORLD):
-                    m = generate_rotate_operation_matrix(self.center.get_x(), self.center.get_y(), t.angle)
+                    m = generate_rotate_operation_matrix(self.center.x(), self.center.y(), t.angle)
                 elif (t.option == RotateOptionsEnum.OBJECT):
-                    m = generate_rotate_operation_matrix(obj.center.get_x(), obj.center.get_y(), t.angle)
+                    m = generate_rotate_operation_matrix(obj.center.x(), obj.center.y(), t.angle)
                 else: 
-                    m = generate_rotate_operation_matrix(t.point.get_x(), t.point.get_y(), t.angle)
+                    m = generate_rotate_operation_matrix(t.point.x(), t.point.y(), t.angle)
             matrix_t = matrix_multiplication(matrix_t, m)
 
         for i in range(0, len(obj.coordinates)):
@@ -266,11 +266,11 @@ class Controller():
         else:
             scale = 1 + self.step
         
-        matrix = scale_window(self.window_coordinates, self.center.get_x(), self.center.get_y(), scale, scale)
+        matrix = scale_window(self.window_coordinates, self.center.x(), self.center.y(), scale, scale)
 
         # The center doesn't change when we scale the window, so we don't need to update it. But, the height and width will change, so we need to update them.
-        self.window_height = matrix[CoordsEnum.TOP_RIGHT].get_y() - matrix[CoordsEnum.BOTTOM_RIGHT].get_y()
-        self.window_width = matrix[CoordsEnum.TOP_RIGHT].get_x() - matrix[CoordsEnum.TOP_LEFT].get_x()
+        self.window_height = matrix[CoordsEnum.TOP_RIGHT].y() - matrix[CoordsEnum.BOTTOM_RIGHT].y()
+        self.window_width = matrix[CoordsEnum.TOP_RIGHT].x() - matrix[CoordsEnum.TOP_LEFT].x()
 
         self.main_window.log.add_item(f'[DEBUG] Dando zoom a window em {scale * 100}%. Novas medidas da window: (largura={self.window_width}, altura={self.window_height}')
 
@@ -289,7 +289,7 @@ class Controller():
         else:
             dy = -self.step
 
-        matrix = translate_window(self.window_coordinates, dx * self.window_width, dy * self.window_height, self.angle, self.center.get_x(), self.center.get_y())
+        matrix = translate_window(self.window_coordinates, dx * self.window_width, dy * self.window_height, self.angle, self.center.x(), self.center.y())
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
@@ -324,7 +324,7 @@ class Controller():
         self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
 
     def scn_matrix(self) -> List[List[float]]:
-        return generate_scn_matrix(self.center.get_x(), self.center.get_y(), self.window_height, self.window_width, self.angle)
+        return generate_scn_matrix(self.center.x(), self.center.y(), self.window_height, self.window_width, self.angle)
 
     def calculate_scn_coordinates(self):
 
