@@ -4,13 +4,13 @@ from math import sin, cos, radians
 from src.model.point import Point2D
 from src.util.math import matrix_multiplication
 
-def iterative_viewport_transform(object_coordinates: List[Point2D], viewport_min: Point2D, viewport_max: Point2D) -> List[Point2D]:
+def iterative_viewport_transform(object_coordinates: List[Point2D], viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D) -> List[Point2D]:
     viewport_coordinates: List[Point2D] = []
     for p in object_coordinates:
-        viewport_coordinates.append(viewport_transform(p, viewport_min, viewport_max))
+        viewport_coordinates.append(viewport_transform(p, viewport_min, viewport_max, viewport_origin))
     return viewport_coordinates
 
-def viewport_transform(object_coordinates: Point2D, viewport_min: Point2D, viewport_max: Point2D) -> Point2D:
+def viewport_transform(object_coordinates: Point2D, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D) -> Point2D:
     
     window_min = Point2D(-1, -1)
     window_max = Point2D(1, 1)
@@ -27,7 +27,7 @@ def viewport_transform(object_coordinates: Point2D, viewport_min: Point2D, viewp
     # y_v = (1 - y_div) * (y_v_max - y_v_min)
     y_v = (1 - y_div) * (viewport_max.y() - viewport_min.y())
 
-    return Point2D(x_v, y_v)
+    return Point2D(x_v + viewport_origin.x(), y_v + viewport_origin.y())
 
 def generate_translation_matrix(dx: float, dy: float) -> List[List[float]]:
     return [

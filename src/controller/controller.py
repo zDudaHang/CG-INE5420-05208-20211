@@ -1,21 +1,22 @@
+from src.util.clipping.point_clipper import PointClipper
 from src.model.enum.graphic_object_form_enum import GraphicObjectFormEnum
 from src.model.enum.coords_enum import CoordsEnum
 from src.model.enum.display_file_enum import DisplayFileEnum
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 from typing import List, Union
 from PyQt5.QtGui import QColor
-from enum import Enum, IntEnum
 
 from src.util.math import matrix_multiplication
 from src.util.objects import calculate_center, create_graphic_object, apply_matrix_in_object
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject
+from src.model.graphic_object import GraphicObject, Point
 from src.model.point import Point2D
 from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
+from src.util.clipping.point_clipper import PointClipper
 
 class Controller():
 
@@ -72,11 +73,11 @@ class Controller():
         self.viewport_width = 400
         self.viewport_height = 400
 
-        self.viewport_coordinates[CoordsEnum.TOP_LEFT] = self.viewport_origin
-        self.viewport_coordinates[CoordsEnum.TOP_RIGHT] = self.viewport_origin + tuple([self.viewport_width, 0])
+        self.viewport_coordinates[CoordsEnum.TOP_LEFT] = Point2D(10, 410)
+        self.viewport_coordinates[CoordsEnum.TOP_RIGHT] = Point2D(410, 410)
 
-        self.viewport_coordinates[CoordsEnum.BOTTOM_LEFT] = self.viewport_origin + tuple([0, self.viewport_height])
-        self.viewport_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.viewport_origin + tuple([self.viewport_width, self.viewport_height])
+        self.viewport_coordinates[CoordsEnum.BOTTOM_LEFT] = Point2D(10, 10)
+        self.viewport_coordinates[CoordsEnum.BOTTOM_RIGHT] = Point2D(410, 10)
         
     def set_handlers(self):
 
@@ -300,11 +301,15 @@ class Controller():
             dy = self.step
         else:
             dy = -self.step
+        
+        dx = dx * self.window_width
+        dy = dy * self.window_height
 
-        matrix = translate_window(self.window_coordinates, dx * self.window_width, dy * self.window_height, self.angle, self.center.x(), self.center.y())
+        matrix = translate_window(self.window_coordinates, dx, dy, self.angle, self.center.x(), self.center.y())
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
+        self.window_origin = Point2D(self.window_origin.x() + dx, self.window_origin.y() + dy)
 
         self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {dx * self.window_width} unidades em x e {dy * self.window_height} em y. Novo centro da window: {self.center}')
 
@@ -312,11 +317,15 @@ class Controller():
 
     def window_rotate_handler(self, direction: str):
         angle = 0
+
         if direction == 'left':
             angle = -self.step_angle
+
         else:
             angle = self.step_angle
+
         self.angle += angle
+        
         self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.angle}')
 
         self.calculate_scn_coordinates()
@@ -333,7 +342,8 @@ class Controller():
 # ====================== UTILITIES:
 
     def draw_objects(self):
-        self.main_window.viewport.draw_objects(self.display_file[DisplayFileEnum.SCN_COORD])
+        self.clip()
+        self.main_window.viewport.draw_objects(self.clip())
 
     def scn_matrix(self) -> List[List[float]]:
         return generate_scn_matrix(self.center.x(), self.center.y(), self.window_height, self.window_width, self.angle)
@@ -348,6 +358,17 @@ class Controller():
             self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
         
         self.draw_objects()
+
+    def clip(self) -> List[GraphicObject]:
+        inside_window_objs : List[GraphicObject] = []
+
+        for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
+            if isinstance(obj, Point):
+                if PointClipper.clip(obj.coordinates[0]): 
+                    inside_window_objs.append(obj)
+            else: inside_window_objs.append(obj)
+
+        return inside_window_objs
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)

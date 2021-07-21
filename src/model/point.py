@@ -21,4 +21,11 @@ class Point2D:
         return Point2D(self.x() + other[0], self.y() + other[1])
     
     def __eq__(self, o: object) -> bool:
-        return self.coordinates == o.coordinates
+        if (isinstance(o, Point2D)):
+            return self.coordinates == o.coordinates
+        return False
+
+    def between(self, min: object, max: object) -> bool:
+        if (isinstance(min, Point2D) and isinstance(max, Point2D)):
+            return min.x() <= self.x() <= max.x() and min.y() <= self.y() <= max.y()
+        return False

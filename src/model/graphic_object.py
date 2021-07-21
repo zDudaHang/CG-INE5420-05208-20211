@@ -25,14 +25,14 @@ class GraphicObject(ABC):
         self.center = objects.calculate_center(self.coordinates)
 
     @abstractmethod
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         ...
 
     def __str__(self):
         return f'{self.type.value} ({self.name})'
 
-    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath):
-        points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max)
+    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D):
+        points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max, viewport_origin)
         
         pen = QPen()
         pen.setWidth(2)
@@ -54,8 +54,13 @@ class Point(GraphicObject):
         
         super().__init__(name, GraphicObjectEnum.POINT, coordinates, color)
     
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
-        p_v = viewport_transform(self.coordinates[0], viewport_min, viewport_max)
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+        p_v = viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
+
+        pen = QPen()
+        pen.setWidth(3)
+        pen.setColor(self.color)
+        painter.setPen(pen)
 
         painter.drawPoint(p_v.to_QPointF())
         
@@ -70,10 +75,10 @@ class Line(GraphicObject):
         
         super().__init__(name, GraphicObjectEnum.LINE, coordinates, color)
     
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         painter_path = QPainterPath()
 
-        self.drawLines(painter, viewport_min, viewport_max, painter_path)
+        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
 
         painter.drawPath(painter_path)
 
@@ -87,14 +92,14 @@ class WireFrame(GraphicObject):
 
         self.is_filled = is_filled
     
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         painter_path = QPainterPath()
 
-        self.drawLines(painter, viewport_min, viewport_max, painter_path)
+        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
 
-        p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max)
+        p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
         
-        p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max)
+        p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max, viewport_origin)
 
         painter_path.lineTo(p_v1.to_QPointF())
 
