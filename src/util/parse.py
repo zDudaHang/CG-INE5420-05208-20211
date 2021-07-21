@@ -3,7 +3,7 @@ from typing import Union, List
 from src.model.point import Point2D
 
 def parse(text: str) -> Union[None, List[Point2D]]:
-    if (len(text) == 0):
+    if len(text) == 0:
         return None
     try:
         values = _parse(text)

@@ -1,7 +1,7 @@
 from src.model.enum.coords_enum import CoordsEnum
 from typing import List
 from PyQt5.QtWidgets import  QAction, QLabel
-from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
+from PyQt5.QtGui import QColor, QPainter, QPainterPath, QPen, QWheelEvent
 
 from src.model.graphic_object import GraphicObject
 from src.model.point import Point2D
@@ -38,7 +38,7 @@ class Viewport(QLabel):
 # ========== EVENT HANDLERS
 
     def wheelEvent(self, event: QWheelEvent):
-        if (event.angleDelta().y() > 0):
+        if event.angleDelta().y() > 0:
             self.action_scroll_zoom_in.trigger()
         else:
             self.action_scroll_zoom_out.trigger()

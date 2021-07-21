@@ -6,17 +6,20 @@ from src.model.point import Point2D
 from src.model.graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFrame
 from src.util.math import matrix_multiplication
 
-def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, onError: Callable = None) -> Union[GraphicObject, None]:
+def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
 
     graphic_obj: GraphicObject = None
 
     try:
-        if (type == GraphicObjectEnum.POINT):
+        if type == GraphicObjectEnum.POINT:
             graphic_obj = Point(name, coordinates, color)
-        if (type == GraphicObjectEnum.LINE):
+        
+        if type == GraphicObjectEnum.LINE:
             graphic_obj = Line(name, coordinates, color)
-        if (type == GraphicObjectEnum.WIREFRAME):
-            graphic_obj = WireFrame(name, coordinates, color)
+        
+        if type == GraphicObjectEnum.WIREFRAME:
+            graphic_obj = WireFrame(name, coordinates, color, is_filled)
+        
     except ValueError as e:
             onError(e.__str__())
     
@@ -44,6 +47,8 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
     coords = []
     for point2D in object.coordinates:
         coords.append(apply_matrix_in_point(point2D, m))
+    if isinstance(object, WireFrame):
+        return create_graphic_object(object.type, object.name, coords, object.color, object.is_filled)
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:

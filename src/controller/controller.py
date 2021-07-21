@@ -1,3 +1,4 @@
+from src.model.enum.graphic_object_form_enum import GraphicObjectFormEnum
 from src.model.enum.coords_enum import CoordsEnum
 from src.model.enum.display_file_enum import DisplayFileEnum
 from typing import Dict, List, Union
@@ -182,9 +183,13 @@ class Controller():
 
     def new_object_dialog_submitted_handler(self, type: GraphicObjectEnum):
         values = self.new_object_dialog.get_values(type)
-        name = values[0]
-        coordinates_str = values[1]
-        color = values[2]
+        name = values[GraphicObjectFormEnum.NAME]
+        coordinates_str = values[GraphicObjectFormEnum.COORDINATES]
+        color = values[GraphicObjectFormEnum.COLOR]
+
+        is_filled = False
+        if GraphicObjectFormEnum.FILLED in values:
+            is_filled = values[GraphicObjectFormEnum.FILLED]
 
         self.new_object_dialog.clear_inputs(type)
         self.new_object_dialog.close()
@@ -195,11 +200,11 @@ class Controller():
         
         coordinates = self.parse_coordinates(coordinates_str)
 
-        if (coordinates == None):
+        if coordinates == None:
             self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
             return
 
-        self.add_new_object(name, coordinates, type, color)
+        self.add_new_object(name, coordinates, type, color, is_filled)
 
         self.draw_objects()
 
@@ -228,17 +233,24 @@ class Controller():
         
         for t in self.tranform_dialog.transformations:
             m = []
+            
             if isinstance(t, ScaleTransformation):
                 m = generate_scale_operation_matrix(obj.center.x(), obj.center.y(), t.sx, t.sy)
+            
             elif isinstance(t, TranslateTransformation):
                 m = translate_matrix_for_rotated_window(t.dx, t.dy, self.angle, self.center.x(), self.center.y())
+            
             elif isinstance(t, RotateTransformation):
-                if (t.option == RotateOptionsEnum.WORLD):
+
+                if t.option == RotateOptionsEnum.WORLD:
                     m = generate_rotate_operation_matrix(self.center.x(), self.center.y(), t.angle)
-                elif (t.option == RotateOptionsEnum.OBJECT):
+                
+                elif t.option == RotateOptionsEnum.OBJECT:
                     m = generate_rotate_operation_matrix(obj.center.x(), obj.center.y(), t.angle)
+                
                 else: 
                     m = generate_rotate_operation_matrix(t.point.x(), t.point.y(), t.angle)
+                
             matrix_t = matrix_multiplication(matrix_t, m)
 
         for i in range(0, len(obj.coordinates)):
@@ -340,9 +352,9 @@ class Controller():
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor):
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool):
         
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, self.main_window.log.add_item)
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)

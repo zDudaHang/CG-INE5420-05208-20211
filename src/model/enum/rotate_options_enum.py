@@ -6,10 +6,13 @@ class RotateOptionsEnum(Enum):
     POINT = 'Rotacionar em torno de um ponto'
 
     def valueOf(value: str):
-        if (value == RotateOptionsEnum.WORLD.value):
+        if value == RotateOptionsEnum.WORLD.value:
             return RotateOptionsEnum.WORLD
-        if (value == RotateOptionsEnum.OBJECT.value):
+        
+        if value == RotateOptionsEnum.OBJECT.value:
             return RotateOptionsEnum.OBJECT
-        if (value == RotateOptionsEnum.POINT.value):
+        
+        if value == RotateOptionsEnum.POINT.value:
             return RotateOptionsEnum.POINT
+        
         return None
