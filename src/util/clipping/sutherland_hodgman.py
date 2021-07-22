@@ -4,10 +4,11 @@ from src.model.graphic_object import Point, WireFrame
 from src.util.clipping.cohen_sutherland_clipper import CohenSutherlandLineClipper
 
 class SutherlandHodgman:
-    def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1)):
+    def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1), \
+        bottom_left: Point2D = Point2D(-1,-1), top_left: Point2D = Point2D(-1,1), top_right: Point2D = Point2D(1,1), bottom_right: Point2D = Point2D(1,-1) ):
         
         self.subject_vertices = polygon.coordinates 
-        self.subject_vertices.append(polygon.coordinates[0])
+        self.clip_polygon = [bottom_left, top_left, top_right, bottom_right]
 
         self.output = []
 
