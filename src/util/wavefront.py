@@ -2,9 +2,8 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QFileDialog
 from typing import List
 
-from src.util.objects import get_rgb
 from src.model.point import Point2D
-from src.model.graphic_object import GraphicObject
+from src.model.graphic_object import GraphicObject, get_rgb
 
 
 class WavefrontOBJ:

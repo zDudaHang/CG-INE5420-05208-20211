@@ -1,7 +1,7 @@
 from src.model.enum.coords_enum import CoordsEnum
 from typing import List
 from PyQt5.QtWidgets import  QAction, QLabel
-from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
+from PyQt5.QtGui import QColor, QPainter, QPainterPath, QPen, QWheelEvent
 
 from src.model.graphic_object import GraphicObject
 from src.model.point import Point2D
@@ -38,7 +38,7 @@ class Viewport(QLabel):
 # ========== EVENT HANDLERS
 
     def wheelEvent(self, event: QWheelEvent):
-        if (event.angleDelta().y() > 0):
+        if event.angleDelta().y() > 0:
             self.action_scroll_zoom_in.trigger()
         else:
             self.action_scroll_zoom_out.trigger()
@@ -50,10 +50,11 @@ class Viewport(QLabel):
         self.draw_axes(pen, painter)
 
         self.draw_viewport_border(pen, painter)
-
+        
         for obj in self.objects:
-            obj.draw(painter, self.coordinates[CoordsEnum.TOP_LEFT], self.coordinates[CoordsEnum.BOTTOM_RIGHT])
+            obj.draw(painter, self.coordinates[CoordsEnum.BOTTOM_LEFT], self.coordinates[CoordsEnum.TOP_RIGHT], self.origin)
 
+        
 # ========== DRAW FUNCTIONS
 
     def draw_objects(self, objects: List[GraphicObject]):
@@ -65,18 +66,11 @@ class Viewport(QLabel):
         pen.setColor(QColor(224,224,224))
         painter.setPen(pen)
 
-        gap = 50
-        bottom_right = self.coordinates[CoordsEnum.BOTTOM_RIGHT]
-
-        # Foi utilizado o bottom right porque as coordenadas jah estao ajustadas com a origem
-        middle_x = bottom_right.x() / 2
-        middle_y = bottom_right.y() / 2
-
         # x axis
-        painter.drawLine(self.origin.x() + gap, middle_y, bottom_right.x() - gap, middle_y)
+        painter.drawLine(10, 210, 410, 210)
 
         # y axis
-        painter.drawLine(middle_x, self.origin.y() + gap, middle_x, bottom_right.y() - gap)
+        painter.drawLine(210, 10, 210, 410)
     
     def draw_viewport_border(self, pen: QPen, painter: QPainter):
         pen.setWidth(2)
