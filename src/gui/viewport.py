@@ -49,10 +49,11 @@ class Viewport(QLabel):
 
         self.draw_axes(pen, painter)
 
+        self.draw_viewport_border(pen, painter)
+        
         for obj in self.objects:
             obj.draw(painter, self.coordinates[CoordsEnum.BOTTOM_LEFT], self.coordinates[CoordsEnum.TOP_RIGHT], self.origin)
 
-        self.draw_viewport_border(pen, painter)
         
 # ========== DRAW FUNCTIONS
 

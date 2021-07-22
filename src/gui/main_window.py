@@ -37,9 +37,9 @@ class MainWindow(QMainWindow):
         self.generalLayout.addWidget(self.viewport, 0, 1)
 
         self.log = Log[str]('=== LOG ===')
-        self.generalLayout.addWidget(self.log, 2, 0, 1, 2)
+        self.generalLayout.addWidget(self.log, 1, 1, 2, 1)
 
-        self.width = 600
+        self.width = 700
         self.height = int(0.618 * self.width)
         self.resize(self.width, self.height)
         

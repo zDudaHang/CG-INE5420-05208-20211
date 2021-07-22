@@ -12,7 +12,7 @@ class Point2D:
         return self.coordinates[0][1]
 
     def __str__(self) -> str:
-        return f'({self.x()},{self.y()})'
+        return f'({round(self.x(), 2)},{round(self.y(),2)})'
 
     def to_QPointF(self) -> QPointF:
         return QPointF(self.x(), self.y())

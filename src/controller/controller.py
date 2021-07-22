@@ -244,7 +244,7 @@ class Controller():
             elif isinstance(t, RotateTransformation):
 
                 if t.option == RotateOptionsEnum.WORLD:
-                    m = generate_rotate_operation_matrix(self.center.x(), self.center.y(), t.angle)
+                    m = generate_rotate_operation_matrix(0, 0, t.angle)
                 
                 elif t.option == RotateOptionsEnum.OBJECT:
                     m = generate_rotate_operation_matrix(obj.center.x(), obj.center.y(), t.angle)
@@ -257,7 +257,8 @@ class Controller():
         for i in range(0, len(obj.coordinates)):
             obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
         
-
+        obj.center = calculate_center(obj.coordinates)
+        
         index = self.display_file[DisplayFileEnum.WORLD_COORD].index(obj)
         self.display_file[DisplayFileEnum.WORLD_COORD][index] = obj
 
@@ -285,7 +286,7 @@ class Controller():
         self.window_height = matrix[CoordsEnum.TOP_RIGHT].y() - matrix[CoordsEnum.BOTTOM_RIGHT].y()
         self.window_width = matrix[CoordsEnum.TOP_RIGHT].x() - matrix[CoordsEnum.TOP_LEFT].x()
 
-        self.main_window.log.add_item(f'[DEBUG] Dando zoom a window em {scale * 100}%. Novas medidas da window: (largura={self.window_width}, altura={self.window_height}')
+        self.main_window.log.add_item(f'[DEBUG] Dando zoom a window em {round(scale * 100, 2)}%. Novas medidas da window: (largura={round(self.window_width, 2)}, altura={round(self.window_height, 2)})')
 
         self.calculate_scn_coordinates()
 
@@ -311,7 +312,7 @@ class Controller():
         self.center = calculate_center(matrix)
         self.window_origin = Point2D(self.window_origin.x() + dx, self.window_origin.y() + dy)
 
-        self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {dx * self.window_width} unidades em x e {dy * self.window_height} em y. Novo centro da window: {self.center}')
+        self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {round(dx, 2)} unidades em x e {round(dy, 2)} em y. Novo centro da window: {self.center}')
 
         self.calculate_scn_coordinates()
 

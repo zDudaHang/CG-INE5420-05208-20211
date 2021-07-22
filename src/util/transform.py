@@ -10,24 +10,24 @@ def iterative_viewport_transform(object_coordinates: List[Point2D], viewport_min
         viewport_coordinates.append(viewport_transform(p, viewport_min, viewport_max, viewport_origin))
     return viewport_coordinates
 
-def viewport_transform(object_coordinates: Point2D, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D) -> Point2D:
+def viewport_transform(point: Point2D, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D) -> Point2D:
     
     window_min = Point2D(-1, -1)
     window_max = Point2D(1, 1)
 
     # x_div = (x_w - x_w_min) / (x_w_max - x_w_min)
-    x_div = (object_coordinates.x() - window_min.x()) / (window_max.x() - window_min.x())
+    x_div = (point.x() - window_min.x()) / (window_max.x() - window_min.x())
 
     # x_v = x_div * (x_v_max - x_v_min)
-    x_v = x_div * (viewport_max.x() - viewport_min.x())
+    x_vp = x_div * (viewport_max.x() - viewport_min.x())
 
     # y_div = (y_w - y_w_min) / (y_w_max - y_w_min)
-    y_div = (object_coordinates.y() - window_min.y()) / (window_max.y() - window_min.y())
+    y_div = (point.y() - window_min.y()) / (window_max.y() - window_min.y())
 
     # y_v = (1 - y_div) * (y_v_max - y_v_min)
-    y_v = (1 - y_div) * (viewport_max.y() - viewport_min.y())
+    y_vp = (1 - y_div) * (viewport_max.y() - viewport_min.y())
 
-    return Point2D(x_v + viewport_origin.x(), y_v + viewport_origin.y())
+    return Point2D(x_vp + viewport_origin.x(), y_vp + viewport_origin.y())
 
 def generate_translation_matrix(dx: float, dy: float) -> List[List[float]]:
     return [
