@@ -1,8 +1,10 @@
+from typing import List
 import sys
 from PyQt5.QtCore import Qt
 
-from PyQt5.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QWidget
+from PyQt5.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QWidget, QErrorMessage
 
+from src.model.point import Point2D
 from src.util.wavefront import WavefrontOBJ
 from src.gui.functions_menu import FunctionsMenu
 from src.gui.viewport import Viewport
@@ -10,14 +12,15 @@ from src.gui.log import Log
 from src.text import *
 
 class MainWindow(QMainWindow):
-    def __init__(self, step: float, angle: float):
+    def __init__(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
         super().__init__()
-        self.init_gui(step, angle)
+        self.init_gui(step, angle, viewport_coordinates, viewport_width, viewport_height, viewport_origin)
         self.put_actions()
         self.new_objs = WavefrontOBJ()
+        self.error_dialog = QErrorMessage()
         
     
-    def init_gui(self, step, angle):
+    def init_gui(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
         self.setWindowTitle('Computação gráfica')
 
         self._centralWidget = QWidget(self)
@@ -31,7 +34,7 @@ class MainWindow(QMainWindow):
         
         self.init_menu()   
 
-        self.viewport = Viewport()
+        self.viewport = Viewport(viewport_coordinates, viewport_width, viewport_height, viewport_origin)
         self.generalLayout.addWidget(self.viewport, 0, 1)
 
         self.log = Log[str]('=== LOG ===')
@@ -44,6 +47,21 @@ class MainWindow(QMainWindow):
         self.setMaximumHeight(self.height)
         self.setMaximumWidth(self.width)
     
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_A and QApplication.keyboardModifiers() == Qt.ShiftModifier:
+            self.action_open_dialog.trigger() 
+
+    def put_actions(self):
+        self.action_open_dialog = QAction("Open dialog", self)
+        self.add_new_obj_action = QAction('Adicionar novos objetos', self)
+        self.export_new_obj_action = QAction('Exportar objetos', self)
+
+    def open_dialog_handler(self):
+        self.action_open_dialog.trigger()
+
+# ========== MENU & ABOUT
+
     def init_menu(self):
         self.menuBar = self.menuBar()
 
@@ -51,10 +69,9 @@ class MainWindow(QMainWindow):
         fileMenu = self.menuBar.addMenu('File')
         add_obj = QAction('Adicionar Objeto', self)
         add_obj.setShortcut('Ctrl+A')
-        add_obj.triggered.connect(self.input_data)
+        add_obj.triggered.connect(self.open_dialog_handler)
         fileMenu.addAction(add_obj)
         fileMenu.addSeparator()
-
 
         open_file = QAction('Abrir Arquivo', self)
         open_file.setShortcut('Ctrl+O')
@@ -81,18 +98,6 @@ class MainWindow(QMainWindow):
         about = QAction('About', self)
         about.triggered.connect(self.abt)
         helpMenu.addAction(about)  
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_A and QApplication.keyboardModifiers() == Qt.ShiftModifier:
-            self.action_open_dialog.trigger() 
-
-    def put_actions(self):
-        self.action_open_dialog = QAction("Open dialog", self)
-        self.add_new_obj_action = QAction('Adicionar novos objetos', self)
-        self.export_new_obj_action = QAction('Exportar objetos', self)
-
-    def input_data(self):
-        self.action_open_dialog.trigger()
 
     def abt(self):
         QMessageBox.about(
@@ -126,19 +131,26 @@ class MainWindow(QMainWindow):
         text5.move(20, 170)
 
         gt_started.exec_()
-    
+
+# ========== IMPORT & EXPORT .OBJ FILES
+ 
     def open_file_dialog(self):
         filename = QFileDialog().getOpenFileNames()
 
         if filename[0] == []:
             return
 
-        if filename[0][0].find('.obj') != -1:
-            path_obj = filename[0][0]
-            path_mtl = filename[0][1]
-        else:
-            path_obj = filename[0][1]
-            path_mtl = filename[0][0]
+        try:
+            if filename[0][0].find('.obj') != -1:
+                path_obj = filename[0][0]
+                path_mtl = filename[0][1]
+            else:
+                path_obj = filename[0][1]
+                path_mtl = filename[0][0]
+        except IndexError:
+            self.error_dialog.showMessage('Selecione os arquivos .mtl e .obj para realizar a importação.')
+            return
+
         try:
             self.new_objs.load_obj(path_obj,path_mtl)
             self.add_new_obj_action.trigger()

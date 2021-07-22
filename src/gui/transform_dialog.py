@@ -1,24 +1,10 @@
+from src.model.enum.rotate_options_enum import RotateOptionsEnum
 from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
 from typing import Callable, Union
-from enum import Enum
 
 from src.util.parse import parse
 from src.model.point import Point2D
 from src.gui.log import Log
-
-class RotateOptionsEnum(Enum):
-    WORLD = 'Rotacionar em torno do centro do mundo'
-    OBJECT = 'Rotacionar em torno do centro do objeto'
-    POINT = 'Rotacionar em torno de um ponto'
-
-    def valueOf(value: str):
-        if (value == RotateOptionsEnum.WORLD.value):
-            return RotateOptionsEnum.WORLD
-        if (value == RotateOptionsEnum.OBJECT.value):
-            return RotateOptionsEnum.OBJECT
-        if (value == RotateOptionsEnum.POINT.value):
-            return RotateOptionsEnum.POINT
-        return None
 
 class RotateTransformation():
     def __init__(self, option: RotateOptionsEnum, angle: float, point: Point2D = None):

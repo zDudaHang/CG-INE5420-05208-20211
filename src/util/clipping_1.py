@@ -9,14 +9,14 @@ TOP = 8     # 1000
 
 def region_code(ponto: Point2D, window_coordinates: list[Point2D]):
     # Coordenadas do ponto
-    x = ponto.get_x()
-    y = ponto.get_y()
+    x = ponto.x()
+    y = ponto.y()
 
     # Coordenadas da window
-    x_min = window_coordinates[2].get_x() + 10
-    y_min = window_coordinates[2].get_y() + 10
-    x_max = window_coordinates[1].get_x() - 10
-    y_max = window_coordinates[1].get_y() - 10 
+    x_min = window_coordinates[2].x() + 10
+    y_min = window_coordinates[2].y() + 10
+    x_max = window_coordinates[1].x() - 10
+    y_max = window_coordinates[1].y() - 10 
 
     rc = INSIDE
     
@@ -35,6 +35,7 @@ def region_code(ponto: Point2D, window_coordinates: list[Point2D]):
 def cohenSutherlandClip(ponto: Point2D, window_coordinates: list[Point2D]):
 
 
+
     ponto_1 = ponto[0]
     ponto_2 = ponto[1]
 
@@ -45,15 +46,15 @@ def cohenSutherlandClip(ponto: Point2D, window_coordinates: list[Point2D]):
     point_2 = ponto_2
 
     # Coordenadas da window
-    x_min = window_coordinates[2].get_x() + 10
-    y_min = window_coordinates[2].get_y() + 10
-    x_max = window_coordinates[1].get_x() - 10
-    y_max = window_coordinates[1].get_y() - 10 
+    x_min = window_coordinates[2].x() + 10
+    y_min = window_coordinates[2].y() + 10
+    x_max = window_coordinates[1].x() - 10
+    y_max = window_coordinates[1].y() - 10 
 
     while True:
 
         if rc_point_1 == 0 and rc_point_2 == 0:
-            return [Point2D(point_1.get_x(),point_1.get_y()), Point2D(point_2.get_x(), point_2.get_y())]
+            return [Point2D(point_1.x(),point_1.y()), Point2D(point_2.x(), point_2.y())]
         elif (rc_point_1 & rc_point_2) != 0:
             #COMPLETAMENTE FORA da window
             return None
@@ -68,26 +69,26 @@ def cohenSutherlandClip(ponto: Point2D, window_coordinates: list[Point2D]):
 
             if rc_out & TOP:
 
-                new_x = point_1.get_x() + (point_2.get_x() - point_1.get_x()) * \
-                                (y_max - point_1.get_y()) / (point_2.get_y() - point_1.get_y())
+                new_x = point_1.x() + (point_2.x() - point_1.x()) * \
+                                (y_max - point_1.y()) / (point_2.y() - point_1.y())
                 new_y = y_max
  
             elif rc_out & BOTTOM:
                  
-                new_x = point_1.get_x() + (point_2.get_x() - point_1.get_x()) * \
-                                (y_min - point_1.get_y()) / (point_2.get_y() - point_1.get_y())
+                new_x = point_1.x() + (point_2.x() - point_1.x()) * \
+                                (y_min - point_1.y()) / (point_2.y() - point_1.y())
                 new_y = y_min
  
             elif rc_out & RIGHT:
                  
-                new_y = point_1.get_y() + (point_2.get_y() - point_1.get_y()) * \
-                                (x_max - point_1.get_y()) / (point_2.get_x() - point_1.get_x())
+                new_y = point_1.y() + (point_2.y() - point_1.y()) * \
+                                (x_max - point_1.y()) / (point_2.x() - point_1.x())
                 new_x = x_max
  
             elif rc_out & LEFT:
 
-                new_y = point_1.get_y() + (point_2.get_y() - point_1.get_y()) * \
-                                (x_min - point_1.get_y()) / (point_2.get_x() - point_1.get_x())
+                new_y = point_1.y() + (point_2.y() - point_1.y()) * \
+                                (x_min - point_1.y()) / (point_2.x() - point_1.x())
                 new_x = x_min
  
  
@@ -103,13 +104,13 @@ def cohenSutherlandClip(ponto: Point2D, window_coordinates: list[Point2D]):
 def cohenSutherlandClipPoint(point: Point2D, window_coordinates: list[Point2D]):
 
     # Coordenadas da window
-    x_min = window_coordinates[2].get_x() + 10
-    y_min = window_coordinates[2].get_y() + 10
-    x_max = window_coordinates[1].get_x() - 10
-    y_max = window_coordinates[1].get_y() - 10 
+    x_min = window_coordinates[2].x() + 10
+    y_min = window_coordinates[2].y() + 10
+    x_max = window_coordinates[1].x() - 10
+    y_max = window_coordinates[1].y() - 10 
 
-    x = point[0].get_x()
-    y = point[0].get_y()
+    x = point[0].x()
+    y = point[0].y()
 
     if (x < x_min or x > x_max):
         return None
@@ -119,9 +120,10 @@ def cohenSutherlandClipPoint(point: Point2D, window_coordinates: list[Point2D]):
         return point
 
 def cohenSutherlandClipPolygon(ponto: Point2D, window_coordinates: list[Point2D]):
-    
+
     new_coordinates = []
-    coordinates_list = ponto
+    coordinates_list = ponto.copy()
+    coordinates_list.append(Point2D(ponto[0].x(), ponto[0].y()))  
    
     for i in range(len(coordinates_list)-1):
         coordinates = [coordinates_list[i], coordinates_list[i+1]]
@@ -130,7 +132,6 @@ def cohenSutherlandClipPolygon(ponto: Point2D, window_coordinates: list[Point2D]
         if clip is not None:
             new_coordinates.append(clip)
     new_coordinates = flatten(new_coordinates)
-
 
     return new_coordinates
 

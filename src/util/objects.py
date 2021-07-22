@@ -6,18 +6,20 @@ from src.model.point import Point2D
 from src.model.graphic_object import GraphicObject, GraphicObjectEnum, Point, Line, WireFrame
 from src.util.math import matrix_multiplication
 
-def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, onError: Callable = None) -> Union[GraphicObject, None]:
+def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
 
     graphic_obj: GraphicObject = None
 
     try:
-        if (type == GraphicObjectEnum.POINT):
+        if type == GraphicObjectEnum.POINT:
             graphic_obj = Point(name, coordinates, color)
-        if (type == GraphicObjectEnum.LINE):
+        
+        if type == GraphicObjectEnum.LINE:
             graphic_obj = Line(name, coordinates, color)
-        if (type == GraphicObjectEnum.WIREFRAME):
-            #coordinates = wireframe_points_list(coordinates)
-            graphic_obj = WireFrame(name, coordinates, color)
+        
+        if type == GraphicObjectEnum.WIREFRAME:
+            graphic_obj = WireFrame(name, coordinates, color, is_filled, is_clipped)
+        
     except ValueError as e:
             onError(e.__str__())
     
@@ -27,8 +29,8 @@ def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
     size = len(coordinates)
     
     if size > 0:
-        cx = reduce(lambda acc, p: acc + p.get_x(), coordinates, 0) / size
-        cy = reduce(lambda acc, p: acc + p.get_y(), coordinates, 0) / size
+        cx = reduce(lambda acc, p: acc + p.x(), coordinates, 0) / size
+        cy = reduce(lambda acc, p: acc + p.y(), coordinates, 0) / size
         return Point2D(cx, cy )
     else: 
         return None
@@ -45,6 +47,8 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
     coords = []
     for point2D in object.coordinates:
         coords.append(apply_matrix_in_point(point2D, m))
+    if isinstance(object, WireFrame):
+        return create_graphic_object(object.type, object.name, coords, object.color, object.is_filled, object.is_clipped)
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
@@ -57,3 +61,14 @@ def wireframe_points_list(coordinates: List[Point2D]):
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
+
+def check_equality(list_1, list_2):
+
+    for c in list_2:
+        print(c)
+
+
+    if list_1.coordinates == list_2.coordinates:
+        return True
+    else:
+        return False
