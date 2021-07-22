@@ -1,17 +1,17 @@
+from src.util.clipping.liang_barksy_clipper import LiagnBarksyClipper
 from src.util.clipping.point_clipper import PointClipper
 from src.model.enum.graphic_object_form_enum import GraphicObjectFormEnum
 from src.model.enum.coords_enum import CoordsEnum
 from src.model.enum.display_file_enum import DisplayFileEnum
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List,  Union
 from typing import List, Union
 from PyQt5.QtGui import QColor
 
 from src.util.math import matrix_multiplication
-from src.util.objects import calculate_center, create_graphic_object, apply_matrix_in_object
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Point
+from src.model.graphic_object import GraphicObject, Line, Point, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point2D
 from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
 from src.util.parse import parse
@@ -325,7 +325,7 @@ class Controller():
             angle = self.step_angle
 
         self.angle += angle
-        
+
         self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.angle}')
 
         self.calculate_scn_coordinates()
@@ -342,7 +342,6 @@ class Controller():
 # ====================== UTILITIES:
 
     def draw_objects(self):
-        self.clip()
         self.main_window.viewport.draw_objects(self.clip())
 
     def scn_matrix(self) -> List[List[float]]:
@@ -366,6 +365,12 @@ class Controller():
             if isinstance(obj, Point):
                 if PointClipper.clip(obj.coordinates[0]): 
                     inside_window_objs.append(obj)
+            elif isinstance(obj, Line):
+                new_line = LiagnBarksyClipper(obj).clip()
+
+                if new_line != None:
+                    inside_window_objs.append(new_line)
+                
             else: inside_window_objs.append(obj)
 
         return inside_window_objs
