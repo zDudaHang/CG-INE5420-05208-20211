@@ -56,14 +56,12 @@ class Controller():
 
         self.window_coordinates : List[Point2D] = [None, None, None, None]
 
-        self.window_origin = Point2D(0,0)
+        self.center = Point2D(0,0)
 
         self.window_height = 400
         self.window_width = 600
 
         self.update_window_coordinates()
-
-        self.center = calculate_center(self.window_coordinates)
     
     def set_viewport_values(self):
         self.viewport_coordinates : List[Point2D] = [None, None, None, None]
@@ -163,11 +161,11 @@ class Controller():
 # ========== UPDATE WINDOW VALUES
 
     def update_window_coordinates(self):
-        self.window_coordinates[CoordsEnum.TOP_LEFT] = self.window_origin + tuple([0, self.window_height])
-        self.window_coordinates[CoordsEnum.TOP_RIGHT] = self.window_origin + tuple([self.window_width, self.window_height])
+        self.window_coordinates[CoordsEnum.TOP_LEFT] = self.center + tuple([-self.window_width, self.window_height])
+        self.window_coordinates[CoordsEnum.TOP_RIGHT] = self.center + tuple([self.window_width, self.window_height])
 
-        self.window_coordinates[CoordsEnum.BOTTOM_LEFT] = self.window_origin
-        self.window_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.window_origin + tuple([self.window_width, 0])
+        self.window_coordinates[CoordsEnum.BOTTOM_LEFT] = self.center + tuple([-self.window_width, -self.window_height])
+        self.window_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.center + tuple([self.window_width, -self.window_height])
 
     def update_window_values(self, window_obj_file: List[List[float]]):
         window_center = window_obj_file[0]
@@ -310,7 +308,6 @@ class Controller():
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
-        self.window_origin = Point2D(self.window_origin.x() + dx, self.window_origin.y() + dy)
 
         self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {round(dx, 2)} unidades em x e {round(dy, 2)} em y. Novo centro da window: {self.center}')
 
@@ -379,7 +376,7 @@ class Controller():
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool):
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False):
         
         graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, self.main_window.log.add_item)
 
