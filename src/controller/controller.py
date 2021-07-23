@@ -310,15 +310,7 @@ class Controller():
         dx = dx * self.window_width
         dy = dy * self.window_height
 
-        # print(self.window_coordinates)
-        # for coord in self.window_coordinates:
-        #     print(coord)
-
         matrix = translate_window(self.window_coordinates, dx, dy, self.angle, self.center.x(), self.center.y())
-
-        # print(self.window_coordinates)
-        # for coord in self.window_coordinates:
-        #     print(coord)
         
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)

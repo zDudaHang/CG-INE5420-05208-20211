@@ -132,13 +132,10 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
 
 def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
     size = len(coordinates)
-    print(size)
     
     if size > 0:
         cx = reduce(lambda acc, p: acc + p.x(), coordinates, 0) / size
-        print(cx)
         cy = reduce(lambda acc, p: acc + p.y(), coordinates, 0) / size
-        print(cy)
         return Point2D(cx, cy)
     else: 
         return None
