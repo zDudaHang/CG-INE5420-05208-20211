@@ -19,10 +19,13 @@ class WavefrontOBJ:
         self.kd_params = []
         self.objects = {}
 
+
     def parse_mtl(self, filename_mtl ):
         with open( filename_mtl, 'r' ) as objm:
             for line in objm:
                 toks = line.split()
+                if not toks:
+                    continue
                 if toks[0] == 'newmtl':
                     self.new_mtl.append(toks[1])
                 elif toks[0] == 'Kd':

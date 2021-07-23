@@ -2,7 +2,7 @@ from typing import List
 import sys
 from PyQt5.QtCore import Qt
 
-from PyQt5.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QWidget
+from PyQt5.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QWidget, QErrorMessage
 
 from src.model.point import Point2D
 from src.util.wavefront import WavefrontOBJ
@@ -17,6 +17,7 @@ class MainWindow(QMainWindow):
         self.init_gui(step, angle, viewport_coordinates, viewport_width, viewport_height, viewport_origin)
         self.put_actions()
         self.new_objs = WavefrontOBJ()
+        self.error_dialog = QErrorMessage()
         
     
     def init_gui(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
@@ -139,12 +140,17 @@ class MainWindow(QMainWindow):
         if filename[0] == []:
             return
 
-        if filename[0][0].find('.obj') != -1:
-            path_obj = filename[0][0]
-            path_mtl = filename[0][1]
-        else:
-            path_obj = filename[0][1]
-            path_mtl = filename[0][0]
+        try:
+            if filename[0][0].find('.obj') != -1:
+                path_obj = filename[0][0]
+                path_mtl = filename[0][1]
+            else:
+                path_obj = filename[0][1]
+                path_mtl = filename[0][0]
+        except IndexError:
+            self.error_dialog.showMessage('Selecione os arquivos .mtl e .obj para realizar a importação.')
+            return
+
         try:
             self.new_objs.load_obj(path_obj,path_mtl)
             self.add_new_obj_action.trigger()

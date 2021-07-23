@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QButtonGroup, QHBoxLayout, QRadioButton, QVBoxLayout, QLabel, QWidget
+from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
+from PyQt5.QtWidgets import QAction, QButtonGroup, QHBoxLayout, QRadioButton, QVBoxLayout, QLabel, QWidget
 
 from src.gui.objects_list import ObjectsList
 from src.gui.window_menu import WindowMenu
@@ -26,16 +27,24 @@ class FunctionsMenu(QWidget):
         self.radiobuttons_layout = QHBoxLayout()
         self.clipping_layout.addWidget(QLabel('Técnica de clipagem de retas'))
 
+        self.clipping_method : LineClippingOptionsEnum = LineClippingOptionsEnum.LIANG_B
+
         self.clipping_button_group = QButtonGroup(self)
         self.liangb_radiobutton = QRadioButton("Liang Barksy")
-        self.liangb_radiobutton.toggled.connect(self.handle_click)
+
+        # Making default
+        self.liangb_radiobutton.setChecked(True)
+        self.liangb_radiobutton.toggled.connect(lambda: self.handle_click(LineClippingOptionsEnum.LIANG_B))
         self.clipping_button_group.addButton(self.liangb_radiobutton)
 
         self.radiobuttons_layout.addWidget(self.liangb_radiobutton)
 
         self.cohens_radiobutton = QRadioButton("Cohen-Sutherland")
-        self.cohens_radiobutton.toggled.connect(self.handle_click)
+        self.cohens_radiobutton.toggled.connect(lambda: self.handle_click(LineClippingOptionsEnum.COHEN_S))
         self.clipping_button_group.addButton(self.cohens_radiobutton)
+
+        self.clipping_updated_action = QAction('Change clipping method')
+        self.addAction(self.clipping_updated_action)
 
         self.radiobuttons_layout.addWidget(self.cohens_radiobutton)
 
@@ -51,5 +60,6 @@ class FunctionsMenu(QWidget):
         self.setMaximumHeight(self.height)
         self.setMaximumWidth(self.width)
 
-    def handle_click(self, value):
-        print(value)
+    def handle_click(self, option: LineClippingOptionsEnum):
+        self.clipping_method = option
+        self.clipping_updated_action.trigger()

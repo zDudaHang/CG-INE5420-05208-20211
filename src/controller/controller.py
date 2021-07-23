@@ -1,4 +1,7 @@
+from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
 from src.util.clipping.liang_barksy_clipper import LiagnBarksyClipper
+from src.util.clipping.cohen_sutherland_clipper import CohenSutherlandLineClipper
+
 from src.util.clipping.point_clipper import PointClipper
 from src.model.enum.graphic_object_form_enum import GraphicObjectFormEnum
 from src.model.enum.coords_enum import CoordsEnum
@@ -125,6 +128,9 @@ class Controller():
         self.main_window.add_new_obj_action.triggered.connect(lambda: self.import_handler())
         self.main_window.export_new_obj_action.triggered.connect(lambda: self.export_handler())
 
+        # LINE CLIPPING
+        self.main_window.functions_menu.clipping_updated_action.triggered.connect(self.clip)
+
 # ====================== HANDLERS:
 
 # ========== IMPORT & EXPORT .OBJ FILES
@@ -142,11 +148,11 @@ class Controller():
             rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]]  
 
             if len(list_points) == 1:
-                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]), False)
             elif len(list_points) == 2:
-                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]), False)
             else:
-                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]))
+                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), False)
             i += 1
         
         self.update_window_values(objs.window)
@@ -304,8 +310,16 @@ class Controller():
         dx = dx * self.window_width
         dy = dy * self.window_height
 
+        # print(self.window_coordinates)
+        # for coord in self.window_coordinates:
+        #     print(coord)
+
         matrix = translate_window(self.window_coordinates, dx, dy, self.angle, self.center.x(), self.center.y())
 
+        # print(self.window_coordinates)
+        # for coord in self.window_coordinates:
+        #     print(coord)
+        
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
 
@@ -357,6 +371,8 @@ class Controller():
         self.draw_objects()
 
     def clip(self) -> List[GraphicObject]:
+        clipping_line_method = self.main_window.functions_menu.clipping_method
+
         inside_window_objs : List[GraphicObject] = []
 
         for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
@@ -364,11 +380,23 @@ class Controller():
                 if PointClipper.clip(obj.coordinates[0]): 
                     inside_window_objs.append(obj)
             elif isinstance(obj, Line):
-                new_line = LiagnBarksyClipper(obj).clip()
+                new_line = None
 
+                if clipping_line_method == LineClippingOptionsEnum.LIANG_B:
+                    new_line = LiagnBarksyClipper(obj).clip()
+                
+                else:
+                    new_line = CohenSutherlandLineClipper(obj).cohenSutherlandClip()
+                
                 if new_line != None:
                     inside_window_objs.append(new_line)
+
+            # elif isinstance(obj, WireFrame):
+            #     new_wireframe = SutherlandHodgman(obj).output_list()
                 
+            #     if new_wireframe != None:
+            #         inside_window_objs.append(new_wireframe)
+
             else: inside_window_objs.append(obj)
 
         return inside_window_objs
