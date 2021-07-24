@@ -102,26 +102,3 @@ class CohenSutherlandLineClipper():
                 else:
                     point_2 = Point2D(new_x, new_y)
                     rc_point_2 = self.region_code(point_2)
-
-    # def polygon_clipper(self):
-
-    #     new_coordinates = []
-    #     coordinates_list = self.coordinates.copy()
-    #     coordinates_list.append(Point2D(self.coordinates[0].x(), self.coordinates[0].y()))
- 
-    #     for i in range(len(coordinates_list)-1):
-    #         coordinates = [coordinates_list[i], coordinates_list[i+1]]
-    #         clip = self.cohenSutherlandClip(coordinates)
-
-    #         if clip is not None:
-    #             new_coordinates.append(clip)
-        
-    #     # for c in new_coordinates:
-    #     #     print(c)
-    #     # new_coordinates = self.flatten(new_coordinates)
-
-    #     return new_coordinates
-
-
-    # def flatten(t):
-    #     return [item for sublist in t for item in sublist]

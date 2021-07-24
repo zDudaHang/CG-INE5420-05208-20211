@@ -85,33 +85,35 @@ class Line(GraphicObject):
 
 class WireFrame(GraphicObject):
 
-    def __init__(self, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool):
+    def __init__(self, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool, is_clipped: bool):
         if len(coordinates) < 3:
             raise ValueError("[ERRO] Um wireframe deve ter no mínimo três pares de coordenadas!")
 
         super().__init__(name, GraphicObjectEnum.WIREFRAME, coordinates, color)
 
         self.is_filled = is_filled
+        self.is_clipped = is_clipped
     
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         painter_path = QPainterPath()
 
         self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
 
-        p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
-        
-        p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max, viewport_origin)
+        if not self.is_clipped:
+            p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
+            
+            p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max, viewport_origin)
 
-        painter_path.lineTo(p_v1.to_QPointF())
+            painter_path.lineTo(p_v1.to_QPointF())
 
-        painter_path.lineTo(p_v2.to_QPointF())
+            painter_path.lineTo(p_v2.to_QPointF())
 
         if self.is_filled:
             painter.fillPath(painter_path, QBrush(self.color))
         else:
             painter.drawPath(painter_path)
 
-def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
+def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
 
     graphic_obj: GraphicObject = None
 
@@ -123,7 +125,7 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
             graphic_obj = Line(name, coordinates, color)
         
         if type == GraphicObjectEnum.WIREFRAME:
-            graphic_obj = WireFrame(name, coordinates, color, is_filled)
+            graphic_obj = WireFrame(name, coordinates, color, is_filled, is_clipped)
         
     except ValueError as e:
             onError(e.__str__())
@@ -132,13 +134,11 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
 
 def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
     size = len(coordinates)
-    print(size)
+
     
     if size > 0:
         cx = reduce(lambda acc, p: acc + p.x(), coordinates, 0) / size
-        print(cx)
         cy = reduce(lambda acc, p: acc + p.y(), coordinates, 0) / size
-        print(cy)
         return Point2D(cx, cy)
     else: 
         return None
@@ -156,7 +156,7 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
     for point2D in object.coordinates:
         coords.append(apply_matrix_in_point(point2D, m))
     if isinstance(object, WireFrame):
-        return create_graphic_object(object.type, object.name, coords, object.color, object.is_filled)
+        return create_graphic_object(object.type, object.name, coords, object.color, object.is_filled, object.is_clipped)
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
