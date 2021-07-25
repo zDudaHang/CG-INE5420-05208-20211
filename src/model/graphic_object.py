@@ -40,7 +40,10 @@ class GraphicObject(ABC):
         pen.setColor(self.color)
         painter.setPen(pen)
 
-        painter_path.moveTo(points[0].to_QPointF())
+        try:
+            painter_path.moveTo(points[0].to_QPointF())
+        except IndexError:
+            pass
 
         for i in range(1, len(points)):
             painter_path.lineTo(points[i].to_QPointF())

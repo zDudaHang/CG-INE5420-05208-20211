@@ -12,6 +12,7 @@ class SutherlandHodgman:
     BOTTOM = 4  # 0100
     TOP = 8     # 1000
 
+
     def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1), \
         bottom_left: Point2D = Point2D(-1,-1), top_left: Point2D = Point2D(-1,1), top_right: Point2D = Point2D(1,1), bottom_right: Point2D = Point2D(1,-1) ):
 
@@ -54,34 +55,41 @@ class SutherlandHodgman:
 
     def get_intersections(self):
         self.output.append(self.output[0])
-    
+        self.obj.is_clipped = False
+
+        clip_region = []
 
         for v in range(len(self.output)-1):
         
             rc_v1 = self.region_code(self.output[v])
             rc_v2 = self.region_code(self.output[v+1])
 
-            if rc_v1 != 0 and rc_v2 == 0:
+            if rc_v1 != 0 and rc_v2 == 0:   
+                clip_region.append(self.clip_region(rc_v1))          
                 intersection = self.new_vertex(rc_v1, self.output[v], self.output[v+1])
                 self.vertices.extend([intersection, self.output[v+1]])
+                self.obj.is_clipped = True
 
-            elif rc_v1 == 0 and rc_v2 != 0:
+            elif rc_v1 == 0 and rc_v2 != 0: 
+                clip_region.append(self.clip_region(rc_v2))    
                 intersection = self.new_vertex(rc_v2, self.output[v], self.output[v+1])
                 self.vertices.append(intersection)
+                self.obj.is_clipped = True
             elif rc_v1 == 0 and rc_v2 == 0:
                 self.vertices.append(self.output[v+1])
+            else:
+                self.obj.is_clipped = True
 
-        for v in self.subject_vertices:
-            for w in self.vertices:
-                if v != w:
-                    self.obj.is_clipped = True
-                    break
-
-        self.is_concave()        
+        if 'D' in clip_region:
+            if 'B' not in clip_region:
+                self.vertices = self.vertices[-2:] + self.vertices[:-2]
+        if 'T' in clip_region: 
+            if 'E' not in clip_region:
+                self.vertices = self.vertices[-3:] + self.vertices[:-3]
 
         self.obj.coordinates = self.vertices
         return self.obj
-       
+      # (-10,-10),(-10,100),(100,100),(100,-10)
 
     def new_vertex(self, rc, point_1, point_2):
 
@@ -99,3 +107,15 @@ class SutherlandHodgman:
             new_y = self.y_max
         
         return Point2D(new_x, new_y)
+
+    def clip_region(self, rc):
+        clip = ''
+        if rc == 1:
+            clip = 'E'
+        elif rc == 2:
+            clip = 'D'
+        elif rc == 4:
+            clip = 'B'
+        else:
+            clip = 'T'
+        return clip
