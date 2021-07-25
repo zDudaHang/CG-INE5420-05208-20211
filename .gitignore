@@ -138,5 +138,4 @@ dmypy.json
 cython_debug/
 
 #
-src\util\clipping_1.py
-src\util\objects.py
+src/util/clipping/sutherland_hodgman3.py

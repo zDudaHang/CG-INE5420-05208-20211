@@ -3,7 +3,6 @@ from src.model.graphic_object import Line
 from copy import deepcopy
 
 class CohenSutherlandLineClipper():
-
     INSIDE = 0  # 0000
     LEFT = 1    # 0001
     RIGHT = 2   # 0010

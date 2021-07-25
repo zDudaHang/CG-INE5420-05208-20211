@@ -377,7 +377,7 @@ class Controller():
                     inside_window_objs.append(new_line)
 
             elif isinstance(obj, WireFrame):
-                new_wireframe = SutherlandHodgman(obj).get_intersections()
+                new_wireframe = SutherlandHodgman(obj).sutherland_hodgman_clip()
                 
                 if new_wireframe != None:
                     inside_window_objs.append(new_wireframe)
