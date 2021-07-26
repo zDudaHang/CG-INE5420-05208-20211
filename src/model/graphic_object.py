@@ -120,10 +120,10 @@ class BezierCurve(GraphicObject):
     
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         pen = QPen()
-        pen.setWidth(3)
+        pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
-        
+
         for i in range(0, len(self.coordinates) - 3, 3):
             gb = get_GB(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
 
