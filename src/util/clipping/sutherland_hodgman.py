@@ -1,47 +1,114 @@
 from copy import deepcopy
+
 from src.model.point import Point2D
 from src.model.graphic_object import Point, WireFrame
-from src.util.clipping.cohen_sutherland_clipper import CohenSutherlandLineClipper
 
 class SutherlandHodgman:
-    def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1), \
-        bottom_left: Point2D = Point2D(-1,-1), top_left: Point2D = Point2D(-1,1), top_right: Point2D = Point2D(1,1), bottom_right: Point2D = Point2D(1,-1) ):
-        
-        self.subject_vertices = polygon.coordinates 
-        self.clip_polygon = [bottom_left, top_left, top_right, bottom_right]
+    
+    INSIDE = 0  # 0000
+    LEFT = 1    # 0001
+    RIGHT = 2   # 0010
+    BOTTOM = 4  # 0100
+    TOP = 8     # 1000
 
-        self.output = []
+    def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1) ):
+
+        self.subject_vertices = polygon.coordinates 
+
+        self.output = deepcopy(polygon.coordinates)
+        self.obj = deepcopy(polygon)
+
+        self.vertices = []
 
         self.x_min = window_min.x() 
         self.y_min = window_min.y()
         self.x_max = window_max.x()
         self.y_max = window_max.y()
 
-        self.old_polygon = polygon
-        # self.clipping_area = [bottom_left, top_left, top_right, bottom_right]
-        # self.subject = polygon.coordinates
-
-    def point_inside_window(self, point: Point2D) -> bool:
-    
-        x_inside = self.x_min <= point.x() <= self.x_max
-        y_inside = self.y_min <= point.y() <= self.y_max
-
-        return x_inside and y_inside
-
-    def output_list(self):
-
-        polygon = deepcopy(self.old_polygon)
+    def region_code(self, ponto: Point2D):
+        # Coordenadas do ponto
+        x = ponto.x()
+        y = ponto.y()
         
-        for v in range(len(polygon)-1):
-            clip = CohenSutherlandLineClipper([v, v+1]).cohenSutherlandClip()
+        rc = self.INSIDE
+        
+        if x < self.x_min:
+            rc |= self.LEFT
+        elif x > self.x_max:
+            rc |= self.RIGHT
+        if y < self.y_min:
+            rc |= self.BOTTOM
+        elif y > self.y_max:
+            rc |= self.TOP
 
-            if clip is not None:
-                self.output_list.append(clip)
-        polygon.coordinates = self.output
+        return rc
 
-        return polygon
+    def sutherland_hodgman_clip(self):
+        self.output.append(self.output[0])
+        self.obj.is_clipped = False
+        rc = [1,2,4,8]
+        clip_region = []
 
-    
+        for v in range(len(self.output)-1):
+        
+            rc_v1 = self.region_code(self.output[v])
+            rc_v2 = self.region_code(self.output[v+1])
 
+            if rc_v1 in rc and rc_v2 == 0:   
+                clip_region.append(self.clip_region(rc_v1))          
+                intersection = self.new_vertex(rc_v1, self.output[v], self.output[v+1])
+                self.vertices.extend([intersection, self.output[v+1]])
+                self.obj.is_clipped = True
 
-    
+            elif rc_v1 == 0 and rc_v2 in rc: 
+                clip_region.append(self.clip_region(rc_v2))    
+                intersection = self.new_vertex(rc_v2, self.output[v], self.output[v+1])
+                self.vertices.append(intersection)
+                self.obj.is_clipped = True
+            elif rc_v1 == 0 and rc_v2 == 0:
+                self.vertices.append(self.output[v+1])
+            else:
+                self.obj.is_clipped = True
+
+        if 'D' in clip_region:
+            if 'B' not in clip_region:
+                self.vertices = self.vertices[-2:] + self.vertices[:-2]
+        if 'T' in clip_region: 
+            if 'E' not in clip_region:
+                self.vertices = self.vertices[-3:] + self.vertices[:-3]
+
+        self.obj.coordinates = self.vertices
+        return self.obj
+      # (-10,-10),(-10,100),(100,100),(100,-10)
+      # (100,50),(150,150),(200,50)
+      #(100,100),(100,230),(230,230),(150,145),(230,100)
+      # curva (0,0),(0,5),(5,5),(5,0),(5,-5),(10,0)
+    def new_vertex(self, rc, point_1, point_2):
+
+        if rc == 1:
+            new_y = point_1.y() + (point_2.y() - point_1.y()) * (self.x_min - point_1.x()) / (point_2.x() - point_1.x())
+            new_x = self.x_min
+        if rc == 2:
+            new_y = point_1.y() + (point_2.y() - point_1.y()) * (self.x_max - point_1.x()) / (point_2.x() - point_1.x())
+            new_x = self.x_max
+        if rc == 4:
+            new_x = point_1.x() + (point_2.x() - point_1.x()) * (self.y_min - point_1.y()) / (point_2.y() - point_1.y())
+            new_y = self.y_min
+        if rc == 8:
+            new_x = point_1.x() + (point_2.x() - point_1.x()) * (self.y_max - point_1.y()) / (point_2.y() - point_1.y())
+            new_y = self.y_max
+        
+
+        return Point2D(new_x, new_y)
+
+    def clip_region(self, rc):
+        clip = ''
+        if rc == 1:
+            clip = 'E'
+        elif rc == 2:
+            clip = 'D'
+        elif rc == 4:
+            clip = 'B'
+        else:
+            clip = 'T'
+        return clip
