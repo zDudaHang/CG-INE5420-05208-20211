@@ -71,14 +71,14 @@ class Controller():
 
         self.viewport_origin = Point2D(10,10)
 
-        self.viewport_width = 400
         self.viewport_height = 400
+        self.viewport_width = 600
 
-        self.viewport_coordinates[CoordsEnum.TOP_LEFT] = Point2D(10, 410)
-        self.viewport_coordinates[CoordsEnum.TOP_RIGHT] = Point2D(410, 410)
+        self.viewport_coordinates[CoordsEnum.TOP_LEFT] = self.viewport_origin + tuple([0, self.viewport_height])
+        self.viewport_coordinates[CoordsEnum.TOP_RIGHT] = self.viewport_origin + tuple([self.viewport_width, self.viewport_height])
 
-        self.viewport_coordinates[CoordsEnum.BOTTOM_LEFT] = Point2D(10, 10)
-        self.viewport_coordinates[CoordsEnum.BOTTOM_RIGHT] = Point2D(410, 10)
+        self.viewport_coordinates[CoordsEnum.BOTTOM_LEFT] = self.viewport_origin
+        self.viewport_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.viewport_origin + tuple([self.viewport_width, 0])
         
     def set_handlers(self):
 
@@ -97,6 +97,9 @@ class Controller():
         
         self.new_object_dialog.wireframe_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.WIREFRAME))
         self.new_object_dialog.point_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.WIREFRAME))
+
+        self.new_object_dialog.curve_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.CURVE))
+        self.new_object_dialog.curve_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.CURVE))
 
         # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))

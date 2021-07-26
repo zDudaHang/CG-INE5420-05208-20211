@@ -1,3 +1,4 @@
+from src.util.curves import blending_function, get_GB
 from src.util.math import matrix_multiplication
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
@@ -111,6 +112,35 @@ class WireFrame(GraphicObject):
         else:
             painter.drawPath(painter_path)
 
+class BezierCurve(GraphicObject):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
+        if len(coordinates) < 4:
+            raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
+        super().__init__(name, type, coordinates, color)
+    
+    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+        for i in range(0, len(self.coordinates) - 3, 3):
+            gb = get_GB(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
+
+            accuracy = 0.001
+
+            t = 0.0
+
+            while t <= 1.0:
+                x1 = blending_function(t, gb.x)
+                y1 = blending_function(t, gb.y)
+
+                x2 = blending_function(t + accuracy, gb.x)
+                y2 = blending_function(t + accuracy, gb.y)
+
+                p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
+
+                p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
+
+                painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+
+                t += accuracy
+
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
 
     graphic_obj: GraphicObject = None
@@ -124,6 +154,9 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
         
         if type == GraphicObjectEnum.WIREFRAME:
             graphic_obj = WireFrame(name, coordinates, color, is_filled)
+        
+        if type == GraphicObjectEnum.CURVE:
+            graphic_obj = BezierCurve(name, type, coordinates, color)
         
     except ValueError as e:
             onError(e.__str__())

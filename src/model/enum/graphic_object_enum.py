@@ -4,15 +4,10 @@ class GraphicObjectEnum(Enum):
     POINT = "Ponto"
     LINE = "Reta"
     WIREFRAME = "Wireframe"
+    CURVE = "Curva"
 
-    def valueOf(value: str) :
-        if value == GraphicObjectEnum.POINT.value:
-            return GraphicObjectEnum.POINT
-        
-        if value == GraphicObjectEnum.LINE.value:
-            return GraphicObjectEnum.LINE
-        
-        if value == GraphicObjectEnum.WIREFRAME.value:
-            return GraphicObjectEnum.WIREFRAME
-        
+    def valueOf(value: str):
+        for g in GraphicObjectEnum:
+            if value == g.value:
+                return g
         return None

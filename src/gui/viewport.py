@@ -28,6 +28,8 @@ class Viewport(QLabel):
         # 20 => +10 para cada lado para a viewport não ocupar todo o QLabel
         self.setMinimumWidth(self.width + 20)
         self.setMinimumHeight(self.height + 20)
+        self.setMaximumHeight(self.height + 20)
+        self.setMaximumWidth(self.width + 20)
 
         self.action_scroll_zoom_in = QAction("Zoom In", self)
         self.action_scroll_zoom_out = QAction("Zoom Out", self)
@@ -66,11 +68,14 @@ class Viewport(QLabel):
         pen.setColor(QColor(224,224,224))
         painter.setPen(pen)
 
+        middle_x = (self.width / 2) + self.origin.x()
+        middle_y = (self.height / 2) + self.origin.y()
+
         # x axis
-        painter.drawLine(10, 210, 410, 210)
+        painter.drawLine(self.origin.x(), middle_y, self.width + self.origin.x(), middle_y)
 
         # y axis
-        painter.drawLine(210, 10, 210, 410)
+        painter.drawLine(middle_x, self.origin.y(), middle_x, self.height + self.origin.y())
     
     def draw_viewport_border(self, pen: QPen, painter: QPainter):
         pen.setWidth(2)
