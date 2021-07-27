@@ -13,76 +13,63 @@ class SutherlandHodgman:
 
     def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1) ):
 
-        self.subject_vertices = polygon.coordinates 
-
-        self.output = deepcopy(polygon.coordinates)
+        self.subject_vertices = deepcopy(polygon.coordinates)
         self.obj = deepcopy(polygon)
 
-        self.vertices = []
+        self.vertices = {}
 
         self.x_min = window_min.x() 
         self.y_min = window_min.y()
         self.x_max = window_max.x()
         self.y_max = window_max.y()
 
-    def region_code(self, ponto: Point2D):
-        # Coordenadas do ponto
-        x = ponto.x()
-        y = ponto.y()
-        
-        rc = self.INSIDE
-        
-        if x < self.x_min:
-            rc |= self.LEFT
-        elif x > self.x_max:
-            rc |= self.RIGHT
-        if y < self.y_min:
-            rc |= self.BOTTOM
-        elif y > self.y_max:
-            rc |= self.TOP
-
-        return rc
-
     def sutherland_hodgman_clip(self):
-        self.output.append(self.output[0])
+        self.subject_vertices.append(self.subject_vertices[0])
         self.obj.is_clipped = False
-        rc = [1,2,4,8]
-        clip_region = []
 
-        for v in range(len(self.output)-1):
+        i = 0
+
+        for v in range(len(self.subject_vertices)-1):
         
-            rc_v1 = self.region_code(self.output[v])
-            rc_v2 = self.region_code(self.output[v+1])
+            rc_v1 = self.region_code(self.subject_vertices[v])
+            rc_v2 = self.region_code(self.subject_vertices[v+1])
 
-            if rc_v1 in rc and rc_v2 == 0:   
-                clip_region.append(self.clip_region(rc_v1))          
-                intersection = self.new_vertex(rc_v1, self.output[v], self.output[v+1])
-                self.vertices.extend([intersection, self.output[v+1]])
+            if rc_v1 != 0 and rc_v2 == 0:             
+                intersection = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1])
+                self.vertices[f'i{i}'] = intersection
+                self.vertices[f'v{v}'] = self.subject_vertices[v+1]
+                i += 1
                 self.obj.is_clipped = True
 
-            elif rc_v1 == 0 and rc_v2 in rc: 
-                clip_region.append(self.clip_region(rc_v2))    
-                intersection = self.new_vertex(rc_v2, self.output[v], self.output[v+1])
-                self.vertices.append(intersection)
+            elif rc_v1 == 0 and rc_v2 != 0:  
+                intersection = self.new_vertex(rc_v2, self.subject_vertices[v], self.subject_vertices[v+1])
+                self.vertices[f'v{v}'] = self.subject_vertices[v]
+                self.vertices[f'i{i}'] = intersection
+                i += 1
                 self.obj.is_clipped = True
             elif rc_v1 == 0 and rc_v2 == 0:
-                self.vertices.append(self.output[v+1])
+                self.vertices[f'v{v}'] = self.subject_vertices[v]
+                self.vertices[f'v{v+1}'] = self.subject_vertices[v+1]
             else:
                 self.obj.is_clipped = True
 
-        if 'D' in clip_region:
-            if 'B' not in clip_region:
-                self.vertices = self.vertices[-2:] + self.vertices[:-2]
-        if 'T' in clip_region: 
-            if 'E' not in clip_region:
-                self.vertices = self.vertices[-3:] + self.vertices[:-3]
+        try:
+            sub_polygons = [[list(self.vertices.values())[0]]]
 
-        self.obj.coordinates = self.vertices
+            for i in range(1, len(self.vertices)):
+                if 'i' in list(self.vertices.keys())[i-1] and 'i' in list(self.vertices.keys())[i]: # duas interseções consecutivas, divide a lista
+                    sub_polygons.append([list(self.vertices.values())[i]])
+                else: sub_polygons[len(sub_polygons) - 1].append(list(self.vertices.values())[i])
+        except IndexError:
+            sub_polygons = [] # polígono fora da window
+    
+        
+        self.obj.coordinates = sub_polygons
         return self.obj
-      # (-10,-10),(-10,100),(100,100),(100,-10)
-      # (100,50),(150,150),(200,50)
+        
       #(100,100),(100,230),(230,230),(150,145),(230,100)
       # curva (0,0),(0,5),(5,5),(5,0),(5,-5),(10,0)
+
     def new_vertex(self, rc, point_1, point_2):
 
         if rc == 1:
@@ -98,17 +85,88 @@ class SutherlandHodgman:
             new_x = point_1.x() + (point_2.x() - point_1.x()) * (self.y_max - point_1.y()) / (point_2.y() - point_1.y())
             new_y = self.y_max
         
+        if rc == 5:
+            # Primeiro caso:
+            x_bot = point_1.x() + (point_2.x() - point_1.x()) * (self.y_min - point_1.y()) / (point_2.y() - point_1.y())
+            # Segundo caso:
+            y_esq = point_1.y() + (point_2.y() - point_1.y()) * (self.x_min - point_1.x()) / (point_2.x() - point_1.x())
+
+            if x_bot > self.x_min:
+                new_x = x_bot
+                new_y = self.y_min
+            elif y_esq > self.y_min:
+                new_x = self.x_min
+                new_y = y_esq
+            else:
+                new_x = self.x_min
+                new_y = self.y_min
+
+        if rc == 6:
+            # Primeiro caso:
+            x_bot = point_1.x() + (point_2.x() - point_1.x()) * (self.y_min - point_1.y()) / (point_2.y() - point_1.y())
+            # Segundo caso:
+            y_dir = point_1.y() + (point_2.y() - point_1.y()) * (self.x_max - point_1.x()) / (point_2.x() - point_1.x())
+
+            if x_bot < self.x_max:
+                new_x = x_bot
+                new_y = self.y_min
+            elif y_dir > self.y_min:
+                new_x = self.x_max
+                new_y = y_dir
+            else:
+                new_x = self.x_max
+                new_y = self.y_min
+
+        if rc == 9:
+            # Primeiro caso:
+            x_top = point_1.x() + (point_2.x() - point_1.x()) * (self.y_max - point_1.y()) / (point_2.y() - point_1.y())
+            # Segundo caso:
+            y_esq = point_1.y() + (point_2.y() - point_1.y()) * (self.x_min - point_1.x()) / (point_2.x() - point_1.x())
+
+            if x_top > self.x_min:
+                new_x = x_top
+                new_y = self.y_max
+            elif y_esq < self.y_max:
+                new_x = self.x_min
+                new_y = y_esq
+            else:
+                new_x = self.x_min
+                new_y = self.y_max
+
+        if rc == 10:
+            # Primeiro caso:
+            x_top = point_1.x() + (point_2.x() - point_1.x()) * (self.y_max - point_1.y()) / (point_2.y() - point_1.y())
+            # Segundo caso:
+            y_dir = point_1.y() + (point_2.y() - point_1.y()) * (self.x_max - point_1.x()) / (point_2.x() - point_1.x())
+
+            if x_top < self.x_max:
+                new_x = x_top
+                new_y = self.y_max
+            elif y_dir < self.y_max:
+                new_x = self.x_max
+                new_y = y_dir
+            else:
+                new_x = self.x_max
+                new_y = self.y_max
+
 
         return Point2D(new_x, new_y)
 
-    def clip_region(self, rc):
-        clip = ''
-        if rc == 1:
-            clip = 'E'
-        elif rc == 2:
-            clip = 'D'
-        elif rc == 4:
-            clip = 'B'
-        else:
-            clip = 'T'
-        return clip
+
+    
+    def region_code(self, ponto: Point2D):
+        x = ponto.x()
+        y = ponto.y()
+        
+        rc = self.INSIDE
+        
+        if x < self.x_min:
+            rc |= self.LEFT
+        elif x > self.x_max:
+            rc |= self.RIGHT
+        if y < self.y_min:
+            rc |= self.BOTTOM
+        elif y > self.y_max:
+            rc |= self.TOP
+
+        return rc

@@ -33,22 +33,38 @@ class GraphicObject(ABC):
     def __str__(self):
         return f'{self.type.value} ({self.name})'
 
-    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D):
-        points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max, viewport_origin)
+    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D, is_filled: bool = False, is_clipped: bool = False):
         
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
 
-        try:
-            painter_path.moveTo(points[0].to_QPointF())
-        except IndexError:
-            pass
+        if is_filled:
+            self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
+            
+        if is_clipped:
+            points = []
+            try:
+                for c in self.coordinates:
+                    points.append(iterative_viewport_transform(c, viewport_min, viewport_max, viewport_origin))
+                for p in points:
+                    painter_path.moveTo(p[0].to_QPointF())
 
-        for i in range(1, len(points)):
-            painter_path.lineTo(points[i].to_QPointF())
-        
+                    for i in range(1, len(p)):
+                        painter_path.lineTo(p[i].to_QPointF())
+            except IndexError:
+                pass
+        else:
+            try:
+                points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
+
+                painter_path.moveTo(points[0].to_QPointF())
+                
+                for i in range(1, len(points)):
+                    painter_path.lineTo(points[i].to_QPointF())
+            except IndexError:
+                pass
         
     
 class Point(GraphicObject):
@@ -101,12 +117,12 @@ class WireFrame(GraphicObject):
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         painter_path = QPainterPath()
 
-        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
+        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped)
 
         if not self.is_clipped:
-            p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
+            p_v1 = viewport_transform(self.coordinates[0][0], viewport_min, viewport_max, viewport_origin)
             
-            p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max, viewport_origin)
+            p_v2 = viewport_transform(self.coordinates[0][-1], viewport_min, viewport_max, viewport_origin)
 
             painter_path.lineTo(p_v1.to_QPointF())
 

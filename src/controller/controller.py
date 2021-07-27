@@ -373,8 +373,6 @@ class Controller():
         inside_window_objs : List[GraphicObject] = []
 
         for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
-            for c in obj.coordinates:
-                print(c)
                 
             if isinstance(obj, Point):
                 if PointClipper.clip(obj.coordinates[0]): 

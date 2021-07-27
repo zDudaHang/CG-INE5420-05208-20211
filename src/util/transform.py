@@ -7,11 +7,12 @@ from src.util.math import matrix_multiplication
 def iterative_viewport_transform(object_coordinates: List[Point2D], viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D) -> List[Point2D]:
     viewport_coordinates: List[Point2D] = []
     for p in object_coordinates:
+        
         viewport_coordinates.append(viewport_transform(p, viewport_min, viewport_max, viewport_origin))
     return viewport_coordinates
 
 def viewport_transform(point: Point2D, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D) -> Point2D:
-    
+ 
     window_min = Point2D(-1, -1)
     window_max = Point2D(1, 1)
 
