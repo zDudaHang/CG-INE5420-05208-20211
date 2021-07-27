@@ -8,6 +8,7 @@ from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 
 from src.util.transform import iterative_viewport_transform, viewport_transform
 from src.model.point import Point2D
+from src.util.clipping.curve_clipper import curve_clip
 
 class GraphicObject(ABC):
 
@@ -42,7 +43,7 @@ class GraphicObject(ABC):
 
         if is_filled:
             self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
-            
+
         if is_clipped:
             points = []
             try:
@@ -159,11 +160,15 @@ class BezierCurve(GraphicObject):
                 x2 = blending_function(t + accuracy, gb.x)
                 y2 = blending_function(t + accuracy, gb.y)
 
-                p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
+                x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
+                try:
+                    p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
 
-                p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
+                    p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
 
-                painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+                except TypeError:
+                    pass
 
                 t += accuracy
 

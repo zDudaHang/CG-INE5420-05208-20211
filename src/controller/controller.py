@@ -15,7 +15,7 @@ from src.util.math import matrix_multiplication
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point2D
 from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
 from src.util.parse import parse
@@ -394,6 +394,12 @@ class Controller():
                 
                 if new_wireframe != None:
                     inside_window_objs.append(new_wireframe)
+
+            # elif isinstance(obj, BezierCurve):
+            #     new_curve =  CurveClipper(obj).curve()
+
+            #     if new_curve != None:
+            #         inside_window_objs.append(new_curve)
 
             else: inside_window_objs.append(obj)
         

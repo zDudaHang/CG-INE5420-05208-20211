@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from src.model.point import Point2D
-from src.model.graphic_object import Point, WireFrame
+from src.model.graphic_object import WireFrame
 
 class SutherlandHodgman:
     
@@ -63,12 +63,9 @@ class SutherlandHodgman:
         except IndexError:
             sub_polygons = [] # polígono fora da window
     
-        
+
         self.obj.coordinates = sub_polygons
         return self.obj
-        
-      #(100,100),(100,230),(230,230),(150,145),(230,100)
-      # curva (0,0),(0,5),(5,5),(5,0),(5,-5),(10,0)
 
     def new_vertex(self, rc, point_1, point_2):
 
