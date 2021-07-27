@@ -116,6 +116,11 @@ class BezierCurve(GraphicObject):
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
+
+        # TOTAL DE PONTOS DE UMA CURVA BEZIER = 4 (minimo) + 3n, sendo n pertencente aos numeros naturais
+        n = (len(coordinates) - 4) % 3
+        if n != 0:
+            raise ValueError("[ERRO] A quantidade de pontos da curva deve estar na imagem da função f(x) = 4 + 3x, sendo x pertencente aos números naturais, para garantir a continuidade G(0). Alguns valores válidos: 4, 7, 10 e 13")
         super().__init__(name, type, coordinates, color)
     
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
