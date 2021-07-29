@@ -373,7 +373,6 @@ class Controller():
         inside_window_objs : List[GraphicObject] = []
 
         for obj in self.display_file[DisplayFileEnum.SCN_COORD]:
-                
             if isinstance(obj, Point):
                 if PointClipper.clip(obj.coordinates[0]): 
                     inside_window_objs.append(obj)
@@ -394,12 +393,6 @@ class Controller():
                 
                 if new_wireframe != None:
                     inside_window_objs.append(new_wireframe)
-
-            # elif isinstance(obj, BezierCurve):
-            #     new_curve =  CurveClipper(obj).curve()
-
-            #     if new_curve != None:
-            #         inside_window_objs.append(new_curve)
 
             else: inside_window_objs.append(obj)
         

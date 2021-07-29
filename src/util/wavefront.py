@@ -90,12 +90,21 @@ class WavefrontOBJ:
             url = QUrl.fromLocalFile(filename[0])
             with open(filename[0] + '.obj', 'w' ) as file:
                 for obj in objects_list:
-                    for coord in obj.coordinates:
-                        if coord in temp:
-                            continue
-                        else:
-                            file.write(f'v {coord.x()} {coord.y()}\n')
-                            temp.append(coord)
+                    if obj.type != GraphicObjectEnum.CURVE:
+                        for coord in obj.coordinates:
+                            if coord in temp:
+                                continue
+                            else:
+                                file.write(f'v {coord.x()} {coord.y()}\n')
+                                temp.append(coord)
+                    else:
+                        for coord in obj.curve_points:
+                            if coord in temp:
+                                continue
+                            else:
+                                file.write(f'v {coord.x()} {coord.y()}\n')
+                                temp.append(coord)
+                        # print(obj.curve_points)
 
                 # WINDOW PHASE:
 
@@ -120,22 +129,27 @@ class WavefrontOBJ:
                         color_list.append(obj.color)
                     
                     file.write(f'usemtl color{color_list.index(obj.color)}\n')
+            
+                    if obj.type != GraphicObjectEnum.CURVE:
+                        coords_str = ''
 
-                    coords_str = ''
+                        if len(obj.coordinates) == 1:
+                            coords_str += 'p '
+                        
+                        if obj.type == GraphicObjectEnum.WIREFRAME and obj.is_filled:
+                            coords_str += 'f '
+                        else:
+                            coords_str += 'l '
 
-                    if len(obj.coordinates) == 1:
-                        coords_str += 'p '
-                    
-                    if obj.type == GraphicObjectEnum.WIREFRAME and obj.is_filled:
-                        coords_str += 'f '
+                        # Coordenadas
+                        for coord in obj.coordinates:
+                            coords_str += f'{temp.index(coord) + 1} '
+
+                        file.write(f'{coords_str}\n')
                     else:
-                        coords_str += 'l '
-
-                    # Coordenadas
-                    for coord in obj.coordinates:
-                        coords_str += f'{temp.index(coord) + 1} '
-
-                    file.write(f'{coords_str}\n')
+                        for p in range(len(obj.curve_points)-1):
+                            coords_str = f'l {temp.index(obj.curve_points[p]) +1} {temp.index(obj.curve_points[p+1]) +1}'
+                            file.write(f'{coords_str}\n')
             
             with open(filename[0] + '.mtl', 'w' ) as file:
                 

@@ -9,6 +9,7 @@ from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 from src.util.transform import iterative_viewport_transform, viewport_transform
 from src.model.point import Point2D
 from src.util.clipping.curve_clipper import curve_clip
+from copy import deepcopy
 
 class GraphicObject(ABC):
 
@@ -135,10 +136,13 @@ class WireFrame(GraphicObject):
             painter.drawPath(painter_path)
 
 class BezierCurve(GraphicObject):
+    curve_points = []
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
         super().__init__(name, type, coordinates, color)
+
+        self.curve_points = BezierCurve.curve_points
     
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         pen = QPen()
@@ -146,19 +150,20 @@ class BezierCurve(GraphicObject):
         pen.setColor(self.color)
         painter.setPen(pen)
 
+        temp = []
         for i in range(0, len(self.coordinates) - 3, 3):
             gb = get_GB(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
 
             accuracy = 0.001
 
             t = 0.0
-
             while t <= 1.0:
                 x1 = blending_function(t, gb.x)
                 y1 = blending_function(t, gb.y)
 
                 x2 = blending_function(t + accuracy, gb.x)
                 y2 = blending_function(t + accuracy, gb.y)
+
 
                 x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
                 try:
@@ -169,8 +174,12 @@ class BezierCurve(GraphicObject):
                     painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
                 except TypeError:
                     pass
-
+                
                 t += accuracy
+
+                BezierCurve.curve_points.extend([Point2D(x1,y1), Point2D(x2,y2)])
+        
+
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
 
