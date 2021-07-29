@@ -8,6 +8,8 @@ from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 
 from src.util.transform import iterative_viewport_transform, viewport_transform
 from src.model.point import Point2D
+from src.util.clipping.curve_clipper import curve_clip
+from copy import deepcopy
 
 class GraphicObject(ABC):
 
@@ -33,20 +35,46 @@ class GraphicObject(ABC):
     def __str__(self):
         return f'{self.type.value} ({self.name})'
 
-    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D):
-        points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max, viewport_origin)
+    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D, 
+                  is_filled: bool = False, is_clipped: bool = False, is_wireframe: bool = False):
         
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
 
-        painter_path.moveTo(points[0].to_QPointF())
+        if is_wireframe:
+            if is_filled:
+                self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
 
-        for i in range(1, len(points)):
-            painter_path.lineTo(points[i].to_QPointF())
-        
-        
+            if is_clipped:
+                points = []
+                try:
+                    for c in self.coordinates:
+                        points.append(iterative_viewport_transform(c, viewport_min, viewport_max, viewport_origin))
+                    for p in points:
+                        painter_path.moveTo(p[0].to_QPointF())
+
+                        for i in range(1, len(p)):
+                            painter_path.lineTo(p[i].to_QPointF())
+                except IndexError:
+                    pass
+            else:
+                try:
+                    points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
+
+                    painter_path.moveTo(points[0].to_QPointF())
+                    
+                    for i in range(1, len(points)):
+                        painter_path.lineTo(points[i].to_QPointF())
+                except IndexError:
+                    pass
+        else:
+            points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max, viewport_origin)
+            painter_path.moveTo(points[0].to_QPointF())
+
+            for i in range(1, len(points)):
+                painter_path.lineTo(points[i].to_QPointF())
     
 class Point(GraphicObject):
 
@@ -86,26 +114,28 @@ class Line(GraphicObject):
 
 class WireFrame(GraphicObject):
 
-    def __init__(self, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool):
+    def __init__(self, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool, is_clipped: bool):
         if len(coordinates) < 3:
             raise ValueError("[ERRO] Um wireframe deve ter no mínimo três pares de coordenadas!")
 
         super().__init__(name, GraphicObjectEnum.WIREFRAME, coordinates, color)
 
         self.is_filled = is_filled
+        self.is_clipped = is_clipped
     
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         painter_path = QPainterPath()
 
-        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
+        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
 
-        p_v1 = viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
-        
-        p_v2 = viewport_transform(self.coordinates[-1], viewport_min, viewport_max, viewport_origin)
+        if not self.is_clipped:
+            p_v1 = viewport_transform(self.coordinates[0][0], viewport_min, viewport_max, viewport_origin)
+            
+            p_v2 = viewport_transform(self.coordinates[0][-1], viewport_min, viewport_max, viewport_origin)
 
-        painter_path.lineTo(p_v1.to_QPointF())
+            painter_path.lineTo(p_v1.to_QPointF())
 
-        painter_path.lineTo(p_v2.to_QPointF())
+            painter_path.lineTo(p_v2.to_QPointF())
 
         if self.is_filled:
             painter.fillPath(painter_path, QBrush(self.color))
@@ -113,6 +143,7 @@ class WireFrame(GraphicObject):
             painter.drawPath(painter_path)
 
 class BezierCurve(GraphicObject):
+    curve_points = []
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
@@ -122,6 +153,8 @@ class BezierCurve(GraphicObject):
         if n != 0:
             raise ValueError("[ERRO] A quantidade de pontos da curva deve estar na imagem da função f(x) = 4 + 3x, sendo x pertencente aos números naturais, para garantir a continuidade G(0). Alguns valores válidos: 4, 7, 10 e 13")
         super().__init__(name, type, coordinates, color)
+
+        self.curve_points = BezierCurve.curve_points
     
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         pen = QPen()
@@ -129,13 +162,13 @@ class BezierCurve(GraphicObject):
         pen.setColor(self.color)
         painter.setPen(pen)
 
+        temp = []
         for i in range(0, len(self.coordinates) - 3, 3):
             gb = get_GB(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
 
             accuracy = 0.001
 
             t = 0.0
-
             while t <= 1.0:
                 x1 = blending_function(t, gb.x)
                 y1 = blending_function(t, gb.y)
@@ -143,15 +176,24 @@ class BezierCurve(GraphicObject):
                 x2 = blending_function(t + accuracy, gb.x)
                 y2 = blending_function(t + accuracy, gb.y)
 
-                p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
 
-                p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
+                x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
+                try:
+                    p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
 
-                painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+                    p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
 
+                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+                except TypeError:
+                    pass
+                
                 t += accuracy
 
-def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
+                BezierCurve.curve_points.extend([Point2D(x1,y1), Point2D(x2,y2)])
+        
+
+
+def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
 
     graphic_obj: GraphicObject = None
 
@@ -163,7 +205,7 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
             graphic_obj = Line(name, coordinates, color)
         
         if type == GraphicObjectEnum.WIREFRAME:
-            graphic_obj = WireFrame(name, coordinates, color, is_filled)
+            graphic_obj = WireFrame(name, coordinates, color, is_filled, is_clipped)
         
         if type == GraphicObjectEnum.CURVE:
             graphic_obj = BezierCurve(name, type, coordinates, color)
