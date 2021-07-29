@@ -1,6 +1,7 @@
 from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
 from src.util.clipping.liang_barksy_clipper import LiagnBarksyClipper
 from src.util.clipping.cohen_sutherland_clipper import CohenSutherlandLineClipper
+from src.util.clipping.sutherland_hodgman import SutherlandHodgman
 
 from src.util.clipping.point_clipper import PointClipper
 from src.model.enum.graphic_object_form_enum import GraphicObjectFormEnum
@@ -14,7 +15,7 @@ from src.util.math import matrix_multiplication
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Point, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point2D
 from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, scale_window, translate_matrix_for_rotated_window, translate_window
 from src.util.parse import parse
@@ -71,14 +72,14 @@ class Controller():
 
         self.viewport_origin = Point2D(10,10)
 
-        self.viewport_width = 400
         self.viewport_height = 400
+        self.viewport_width = 600
 
-        self.viewport_coordinates[CoordsEnum.TOP_LEFT] = Point2D(10, 410)
-        self.viewport_coordinates[CoordsEnum.TOP_RIGHT] = Point2D(410, 410)
+        self.viewport_coordinates[CoordsEnum.TOP_LEFT] = self.viewport_origin + tuple([0, self.viewport_height])
+        self.viewport_coordinates[CoordsEnum.TOP_RIGHT] = self.viewport_origin + tuple([self.viewport_width, self.viewport_height])
 
-        self.viewport_coordinates[CoordsEnum.BOTTOM_LEFT] = Point2D(10, 10)
-        self.viewport_coordinates[CoordsEnum.BOTTOM_RIGHT] = Point2D(410, 10)
+        self.viewport_coordinates[CoordsEnum.BOTTOM_LEFT] = self.viewport_origin
+        self.viewport_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.viewport_origin + tuple([self.viewport_width, 0])
         
     def set_handlers(self):
 
@@ -97,6 +98,9 @@ class Controller():
         
         self.new_object_dialog.wireframe_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.WIREFRAME))
         self.new_object_dialog.point_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.WIREFRAME))
+
+        self.new_object_dialog.curve_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.CURVE))
+        self.new_object_dialog.curve_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.CURVE))
 
         # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
@@ -148,11 +152,11 @@ class Controller():
             rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]]  
 
             if len(list_points) == 1:
-                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]), False)
+                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
             elif len(list_points) == 2:
-                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]), False)
+                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
             else:
-                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), False)
+                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
             i += 1
         
         self.update_window_values(objs.window)
@@ -193,6 +197,7 @@ class Controller():
         color = values[GraphicObjectFormEnum.COLOR]
 
         is_filled = False
+        is_clipped = False
         if GraphicObjectFormEnum.FILLED in values:
             is_filled = values[GraphicObjectFormEnum.FILLED]
 
@@ -209,7 +214,7 @@ class Controller():
             self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
             return
 
-        self.add_new_object(name, coordinates, type, color, is_filled)
+        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped)
 
         self.draw_objects()
 
@@ -383,22 +388,22 @@ class Controller():
                 if new_line != None:
                     inside_window_objs.append(new_line)
 
-            # elif isinstance(obj, WireFrame):
-            #     new_wireframe = SutherlandHodgman(obj).output_list()
+            elif isinstance(obj, WireFrame):
+                new_wireframe = SutherlandHodgman(obj).sutherland_hodgman_clip()
                 
-            #     if new_wireframe != None:
-            #         inside_window_objs.append(new_wireframe)
+                if new_wireframe != None:
+                    inside_window_objs.append(new_wireframe)
 
             else: inside_window_objs.append(obj)
-
+        
         return inside_window_objs
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False):
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False):
         
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, self.main_window.log.add_item)
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)

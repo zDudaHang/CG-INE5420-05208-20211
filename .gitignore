@@ -140,3 +140,4 @@ cython_debug/
 #
 src\util\clipping_1.py
 src\util\objects.py
+CG\src\temp

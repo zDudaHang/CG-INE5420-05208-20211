@@ -14,34 +14,35 @@ class NewObjectDialog(QDialog):
         self.setGeometry(0,0,500,150)
 
         self.layout = QVBoxLayout()
+
+        self.widget_tabs : Dict[GraphicObjectEnum, GraphicObjectTabWidget] = {}
         
         self.tabs = QTabWidget()
         self.point_tab = PointTabWidget()
+        self.widget_tabs[GraphicObjectEnum.POINT] = self.point_tab
         self.tabs.addTab(self.point_tab, GraphicObjectEnum.POINT.value)
 
         self.line_tab = LineTabWidget()
+        self.widget_tabs[GraphicObjectEnum.LINE] = self.line_tab
         self.tabs.addTab(self.line_tab, GraphicObjectEnum.LINE.value)
 
         self.wireframe_tab = WireframeTabWidget()
+        self.widget_tabs[GraphicObjectEnum.WIREFRAME] = self.wireframe_tab
         self.tabs.addTab(self.wireframe_tab, GraphicObjectEnum.WIREFRAME.value)
+
+        self.curve_tab = CurveTabWidget()
+        self.widget_tabs[GraphicObjectEnum.CURVE] = self.curve_tab
+        self.tabs.addTab(self.curve_tab, GraphicObjectEnum.CURVE.value)
 
         self.layout.addWidget(self.tabs)
 
         self.setLayout(self.layout)
 
     def get_values(self, name: GraphicObjectEnum) -> Dict[GraphicObjectFormEnum, Any]:
-        if name == GraphicObjectEnum.POINT:
-            return self.point_tab.get_values()
-        elif name == GraphicObjectEnum.LINE:
-            return self.line_tab.get_values()
-        else: return self.wireframe_tab.get_values()
+        return self.widget_tabs[name].get_values()
 
     def clear_inputs(self, name: GraphicObjectEnum):
-        if name == GraphicObjectEnum.POINT:
-            return self.point_tab.clear_inputs()
-        elif name == GraphicObjectEnum.LINE:
-            return self.line_tab.clear_inputs()
-        else: return self.wireframe_tab.clear_inputs()
+        self.widget_tabs[name].clear_inputs()
 
 class GraphicObjectForm(QFormLayout):
     def __init__(self, placeholder: str, new_widgets: Dict[GraphicObjectFormEnum, NewWidget] = None):
@@ -113,10 +114,10 @@ class GraphicObjectForm(QFormLayout):
         self.color_button.setPalette(palette)
         self.color_button.setAutoFillBackground(True)
 
-class PointTabWidget(QWidget):
-    def __init__(self):
+class GraphicObjectTabWidget(QWidget):
+    def __init__(self, coord_placeholder: str, new_widgets: Dict[GraphicObjectFormEnum, NewWidget] = None):
         super().__init__()
-        self.formLayout = GraphicObjectForm('Digite as coordenadas: (x,y)')
+        self.formLayout = GraphicObjectForm(coord_placeholder, new_widgets)
         self.setLayout(self.formLayout)
     
     def get_values(self) -> Dict[GraphicObjectFormEnum, Any]:
@@ -125,35 +126,24 @@ class PointTabWidget(QWidget):
     def clear_inputs(self):
         self.formLayout.clear_inputs()
 
-class LineTabWidget(QWidget):
+class PointTabWidget(GraphicObjectTabWidget):
     def __init__(self):
-        super().__init__()
-        self.formLayout = GraphicObjectForm('Digite as coordenadas: (x1,y1),(x2,y2)')
-        self.setLayout(self.formLayout)
+        super().__init__('Digite as coordenadas: (x,y)')
 
-    def get_values(self) -> Dict[GraphicObjectFormEnum, Any]:
-        return self.formLayout.get_values()
-    
-    def clear_inputs(self):
-        self.formLayout.clear_inputs()
-
-class WireframeTabWidget(QWidget):
+class LineTabWidget(GraphicObjectTabWidget):
     def __init__(self):
-        super().__init__()
-        fill_check_box = QCheckBox('Preenchido', self)
+        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2)')
 
-        self.formLayout = GraphicObjectForm(
-            'Digite as coordenadas: (x1,y1),(x2,y2),(x3,y3),...', 
+class WireframeTabWidget(GraphicObjectTabWidget):
+    def __init__(self):
+        fill_check_box = QCheckBox('Preenchido')
+        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2),(x3,y3),...', 
             {
                 GraphicObjectFormEnum.FILLED: 
                 NewWidget(fill_check_box, fill_check_box.isChecked, lambda: fill_check_box.setChecked(False))
-            }
-        )
+            })
 
-        self.setLayout(self.formLayout)
+class CurveTabWidget(GraphicObjectTabWidget):
+    def __init__(self):
+        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2),(x3,y3), (x4,y4), ...')
 
-    def get_values(self) -> Dict[GraphicObjectFormEnum, Any]:
-        return self.formLayout.get_values()
-
-    def clear_inputs(self):
-        self.formLayout.clear_inputs()
