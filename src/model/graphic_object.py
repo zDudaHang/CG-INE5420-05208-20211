@@ -35,39 +35,46 @@ class GraphicObject(ABC):
     def __str__(self):
         return f'{self.type.value} ({self.name})'
 
-    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D, is_filled: bool = False, is_clipped: bool = False):
+    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D, 
+                  is_filled: bool = False, is_clipped: bool = False, is_wireframe: bool = False):
         
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
 
-        if is_filled:
-            self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
+        if is_wireframe:
+            if is_filled:
+                self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
 
-        if is_clipped:
-            points = []
-            try:
-                for c in self.coordinates:
-                    points.append(iterative_viewport_transform(c, viewport_min, viewport_max, viewport_origin))
-                for p in points:
-                    painter_path.moveTo(p[0].to_QPointF())
+            if is_clipped:
+                points = []
+                try:
+                    for c in self.coordinates:
+                        points.append(iterative_viewport_transform(c, viewport_min, viewport_max, viewport_origin))
+                    for p in points:
+                        painter_path.moveTo(p[0].to_QPointF())
 
-                    for i in range(1, len(p)):
-                        painter_path.lineTo(p[i].to_QPointF())
-            except IndexError:
-                pass
+                        for i in range(1, len(p)):
+                            painter_path.lineTo(p[i].to_QPointF())
+                except IndexError:
+                    pass
+            else:
+                try:
+                    points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
+
+                    painter_path.moveTo(points[0].to_QPointF())
+                    
+                    for i in range(1, len(points)):
+                        painter_path.lineTo(points[i].to_QPointF())
+                except IndexError:
+                    pass
         else:
-            try:
-                points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
+            points = iterative_viewport_transform(self.coordinates, viewport_min, viewport_max, viewport_origin)
+            painter_path.moveTo(points[0].to_QPointF())
 
-                painter_path.moveTo(points[0].to_QPointF())
-                
-                for i in range(1, len(points)):
-                    painter_path.lineTo(points[i].to_QPointF())
-            except IndexError:
-                pass
-        
+            for i in range(1, len(points)):
+                painter_path.lineTo(points[i].to_QPointF())
     
 class Point(GraphicObject):
 
@@ -119,7 +126,7 @@ class WireFrame(GraphicObject):
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         painter_path = QPainterPath()
 
-        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped)
+        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
 
         if not self.is_clipped:
             p_v1 = viewport_transform(self.coordinates[0][0], viewport_min, viewport_max, viewport_origin)

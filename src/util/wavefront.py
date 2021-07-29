@@ -104,7 +104,6 @@ class WavefrontOBJ:
                             else:
                                 file.write(f'v {coord.x()} {coord.y()}\n')
                                 temp.append(coord)
-                        # print(obj.curve_points)
 
                 # WINDOW PHASE:
 
