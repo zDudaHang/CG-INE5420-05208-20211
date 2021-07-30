@@ -26,7 +26,7 @@ class SutherlandHodgman:
     def sutherland_hodgman_clip(self):
         self.subject_vertices.append(self.subject_vertices[0])
         self.obj.is_clipped = False
-
+        temp = []
         i = 0
 
         for v in range(len(self.subject_vertices)-1):
@@ -40,31 +40,64 @@ class SutherlandHodgman:
                 self.vertices[f'v{v}'] = self.subject_vertices[v+1]
                 i += 1
                 self.obj.is_clipped = True
-
             elif rc_v1 == 0 and rc_v2 != 0:  
                 intersection = self.new_vertex(rc_v2, self.subject_vertices[v], self.subject_vertices[v+1])
                 self.vertices[f'v{v}'] = self.subject_vertices[v]
                 self.vertices[f'i{i}'] = intersection
                 i += 1
                 self.obj.is_clipped = True
+
             elif rc_v1 == 0 and rc_v2 == 0:
                 self.vertices[f'v{v}'] = self.subject_vertices[v]
                 self.vertices[f'v{v+1}'] = self.subject_vertices[v+1]
+
             else:
+                #os dois pontos estão fora
+                if rc_v1 in [1,2,4,8] and rc_v2 in [1,2,4,8] and rc_v1 != rc_v2:
+                    try:
+                        intersection = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1])
+                        intersection_2 = self.new_vertex(rc_v2, self.subject_vertices[v+1], self.subject_vertices[v])
+
+                        if rc_v1 == 1 or rc_v1 == 2: 
+                            if self.y_min < intersection.y() < self.y_max:
+                                temp.extend([intersection, intersection_2])
+    
+                        elif rc_v1 == 4 or rc_v1 == 8 and self.x_min < intersection.x() < self.x_max:
+                            temp.extend([intersection, intersection_2])
+
+                    except: pass
+
                 self.obj.is_clipped = True
+
+            if self.obj.is_filled and rc_v1 == 10 or  self.obj.is_filled and rc_v2 == 10:
+                self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
+
+            elif self.obj.is_filled  and rc_v1 == 9 or self.obj.is_filled and rc_v2 == 9:
+                self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max) 
+
+            elif self.obj.is_filled  and rc_v1 == 5 or self.obj.is_filled and rc_v2 == 5:
+                self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)    
+
+            elif self.obj.is_filled and rc_v1 == 6 or self.obj.is_filled and rc_v2 == 6:
+
+                self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)                                               
 
         try:
             sub_polygons = [[list(self.vertices.values())[0]]]
 
             for i in range(1, len(self.vertices)):
                 if 'i' in list(self.vertices.keys())[i-1] and 'i' in list(self.vertices.keys())[i]: # duas interseções consecutivas, divide a lista
+    
                     sub_polygons.append([list(self.vertices.values())[i]])
                 else: sub_polygons[len(sub_polygons) - 1].append(list(self.vertices.values())[i])
         except IndexError:
             sub_polygons = [] # polígono fora da window
-    
+
+        if temp != []:
+            sub_polygons.append(temp)
 
         self.obj.coordinates = sub_polygons
+
         return self.obj
 
     def new_vertex(self, rc, point_1, point_2):
@@ -135,7 +168,7 @@ class SutherlandHodgman:
             x_top = point_1.x() + (point_2.x() - point_1.x()) * (self.y_max - point_1.y()) / (point_2.y() - point_1.y())
             # Segundo caso:
             y_dir = point_1.y() + (point_2.y() - point_1.y()) * (self.x_max - point_1.x()) / (point_2.x() - point_1.x())
-
+            
             if x_top < self.x_max:
                 new_x = x_top
                 new_y = self.y_max
@@ -167,3 +200,18 @@ class SutherlandHodgman:
             rc |= self.TOP
 
         return rc
+
+    # def temporary(self, rc, point_1, point_2):
+
+    #     if rc == 1:
+    #         new_y = point_1.y() + (point_2.y() - point_1.y()) * (self.x_min - point_1.x()) / (point_2.x() - point_1.x())
+    #         new_x = self.x_min
+    #     if rc == 2:
+    #         new_y = point_1.y() + (point_2.y() - point_1.y()) * (self.x_max - point_1.x()) / (point_2.x() - point_1.x())
+    #         new_x = self.x_max
+    #     if rc == 4:
+    #         new_x = point_1.x() + (point_2.x() - point_1.x()) * (self.y_min - point_1.y()) / (point_2.y() - point_1.y())
+    #         new_y = self.y_min
+    #     if rc == 8:
+    #         new_x = point_1.x() + (point_2.x() - point_1.x()) * (self.y_max - point_1.y()) / (point_2.y() - point_1.y())
+    #         new_y = self.y_max
