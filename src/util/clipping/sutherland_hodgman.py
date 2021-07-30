@@ -68,19 +68,23 @@ class SutherlandHodgman:
                     except: pass
 
                 self.obj.is_clipped = True
-
-            if self.obj.is_filled and rc_v1 == 10 or  self.obj.is_filled and rc_v2 == 10:
-                self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
-
-            elif self.obj.is_filled  and rc_v1 == 9 or self.obj.is_filled and rc_v2 == 9:
-                self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max) 
-
-            elif self.obj.is_filled  and rc_v1 == 5 or self.obj.is_filled and rc_v2 == 5:
-                self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)    
-
-            elif self.obj.is_filled and rc_v1 == 6 or self.obj.is_filled and rc_v2 == 6:
-
-                self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)                                               
+            if self.obj.is_filled:
+                if rc_v1 == 10 or rc_v2 == 10:
+                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
+                if rc_v1 == 2 and rc_v2 == 8 or rc_v1 == 8 and rc_v2 == 2 :
+                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
+                if rc_v1 == 9 or rc_v2 == 9:
+                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max) 
+                if rc_v1 == 1 and rc_v2 == 8 or rc_v1 == 8 and rc_v2 == 1:
+                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max) 
+                if rc_v1 == 5 or rc_v2 == 5:
+                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)    
+                if rc_v1 == 1 and rc_v2 == 4 or rc_v1 == 4 and rc_v2 == 1:
+                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)   
+                if rc_v1 == 6 or rc_v2 == 6:
+                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)  
+                if rc_v1 == 2 and rc_v2 == 4 or rc_v1 == 4 and rc_v2 == 2:
+                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)                                               
 
         try:
             sub_polygons = [[list(self.vertices.values())[0]]]
@@ -94,7 +98,7 @@ class SutherlandHodgman:
             sub_polygons = [] # polígono fora da window
 
         if temp != []:
-            sub_polygons.append(temp)
+            sub_polygons.insert(0, temp)
 
         self.obj.coordinates = sub_polygons
 
@@ -200,18 +204,3 @@ class SutherlandHodgman:
             rc |= self.TOP
 
         return rc
-
-    # def temporary(self, rc, point_1, point_2):
-
-    #     if rc == 1:
-    #         new_y = point_1.y() + (point_2.y() - point_1.y()) * (self.x_min - point_1.x()) / (point_2.x() - point_1.x())
-    #         new_x = self.x_min
-    #     if rc == 2:
-    #         new_y = point_1.y() + (point_2.y() - point_1.y()) * (self.x_max - point_1.x()) / (point_2.x() - point_1.x())
-    #         new_x = self.x_max
-    #     if rc == 4:
-    #         new_x = point_1.x() + (point_2.x() - point_1.x()) * (self.y_min - point_1.y()) / (point_2.y() - point_1.y())
-    #         new_y = self.y_min
-    #     if rc == 8:
-    #         new_x = point_1.x() + (point_2.x() - point_1.x()) * (self.y_max - point_1.y()) / (point_2.y() - point_1.y())
-    #         new_y = self.y_max
