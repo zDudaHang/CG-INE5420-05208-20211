@@ -102,4 +102,3 @@ class CohenSutherlandLineClipper():
                 else:
                     point_2 = Point2D(new_x, new_y)
                     rc_point_2 = self.region_code(point_2)
-

@@ -37,7 +37,7 @@ class GraphicObject(ABC):
 
     def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D, 
                   is_filled: bool = False, is_clipped: bool = False, is_wireframe: bool = False):
-        
+
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
@@ -48,6 +48,7 @@ class GraphicObject(ABC):
                 self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
 
             if is_clipped:
+
                 points = []
                 try:
                     for c in self.coordinates:
@@ -210,10 +211,12 @@ class BSpline(GraphicObject):
         painter.setPen(pen)
 
       
-        for i in range(0, len(self.coordinates) - 3, 3):
+        for i in range(len(self.coordinates) - 3):
             gb = get_GB_Spline(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
             
-            d = 0.1
+            
+
+            d = 0.01
             n = 1 / d
 
             x, y = forward_differences(d, gb)
@@ -221,9 +224,10 @@ class BSpline(GraphicObject):
             x_old = x[0][0]
             y_old = y[0][0]
 
-
-            while i < n:
-                i += 1
+            j = 1
+            
+            while j < n:
+                j += 1
                 
 
                 x[0][0] += x[1][0]
@@ -234,11 +238,16 @@ class BSpline(GraphicObject):
                 y[1][0] += y[2][0]
                 y[2][0] += y[3][0]
 
-                p1 = viewport_transform(Point2D(x_old, y_old), viewport_min, viewport_max, viewport_origin)
+                x1, y1, x2, y2 = curve_clip(x_old, y_old, x[0][0], y[0][0])
+                try:
+                    p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
 
-                p2 = viewport_transform(Point2D(x[0][0], y[0][0]), viewport_min, viewport_max, viewport_origin)
+                    p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
 
-                painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+
+                except TypeError:
+                    pass
                 
                 x_old = x[0][0]
                 y_old = y[0][0]

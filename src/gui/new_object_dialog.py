@@ -1,6 +1,6 @@
 from typing import Any, Dict
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QCheckBox, QColorDialog, QDialog, QFormLayout, QPushButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
+from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QColorDialog, QDialog, QFormLayout, QPushButton, QRadioButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
 
 from src.model.graphic_object import GraphicObjectEnum
 from src.model.new_widget import NewWidget

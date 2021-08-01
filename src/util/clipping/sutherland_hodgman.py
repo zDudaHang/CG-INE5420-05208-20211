@@ -26,11 +26,12 @@ class SutherlandHodgman:
     def sutherland_hodgman_clip(self):
         self.subject_vertices.append(self.subject_vertices[0])
         self.obj.is_clipped = False
+
         temp = []
         i = 0
 
+
         for v in range(len(self.subject_vertices)-1):
-        
             rc_v1 = self.region_code(self.subject_vertices[v])
             rc_v2 = self.region_code(self.subject_vertices[v+1])
 
@@ -53,22 +54,26 @@ class SutherlandHodgman:
 
             else:
                 #os dois pontos estão fora
-                if rc_v1 in [1,2,4,8] and rc_v2 in [1,2,4,8] and rc_v1 != rc_v2:
-                    try:
-                        intersection = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1])
-                        intersection_2 = self.new_vertex(rc_v2, self.subject_vertices[v+1], self.subject_vertices[v])
+                if not self.obj.is_filled:
+                    if rc_v1 in [1,2,4,8] and rc_v2 in [1,2,4,8] and rc_v1 != rc_v2:
+                        try:
+                            intersection = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1])
+                            intersection_2 = self.new_vertex(rc_v2, self.subject_vertices[v+1], self.subject_vertices[v])
 
-                        if rc_v1 == 1 or rc_v1 == 2: 
-                            if self.y_min < intersection.y() < self.y_max:
+                            if rc_v1 == 1 or rc_v1 == 2: 
+                                if self.y_min < intersection.y() < self.y_max:
+                                    temp.extend([intersection, intersection_2])
+        
+
+                            elif rc_v1 == 4 or rc_v1 == 8 and self.x_min < intersection.x() < self.x_max:
                                 temp.extend([intersection, intersection_2])
-    
-                        elif rc_v1 == 4 or rc_v1 == 8 and self.x_min < intersection.x() < self.x_max:
-                            temp.extend([intersection, intersection_2])
 
-                    except: pass
+                        except: pass
 
                 self.obj.is_clipped = True
+
             if self.obj.is_filled:
+
                 if rc_v1 == 10 or rc_v2 == 10:
                     self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
                 if rc_v1 == 2 and rc_v2 == 8 or rc_v1 == 8 and rc_v2 == 2 :
@@ -98,7 +103,7 @@ class SutherlandHodgman:
             sub_polygons = [] # polígono fora da window
 
         if temp != []:
-            sub_polygons.insert(0, temp)
+            sub_polygons.append(temp)
 
         self.obj.coordinates = sub_polygons
 
