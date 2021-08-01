@@ -1,3 +1,4 @@
+from src.model.enum.curve_enum import CurverEnum
 from src.util.curves import blending_function, get_GB, get_GB_Spline, forward_differences
 from src.util.math import matrix_multiplication
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
@@ -253,7 +254,8 @@ class BSpline(GraphicObject):
                 y_old = y[0][0]
 
 
-def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
+def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
+    curve_option: CurverEnum = None, onError: Callable = None) -> Union[GraphicObject, None]:
 
     graphic_obj: GraphicObject = None
 
@@ -267,11 +269,11 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
         if type == GraphicObjectEnum.WIREFRAME:
             graphic_obj = WireFrame(name, coordinates, color, is_filled, is_clipped)
         
-        # if type == GraphicObjectEnum.CURVE:
-        #     graphic_obj = BezierCurve(name, type, coordinates, color)
-
         if type == GraphicObjectEnum.CURVE:
-            graphic_obj = BSpline(name, type, coordinates, color)
+            if curve_option == CurverEnum.BEZIER:
+                graphic_obj = BezierCurve(name, type, coordinates, color)
+            else:
+                graphic_obj = BSpline(name, type, coordinates, color)
         
     except ValueError as e:
             onError(e.__str__())

@@ -1,6 +1,7 @@
+from src.model.enum.curve_enum import CurverEnum
 from typing import Any, Dict
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QColorDialog, QDialog, QFormLayout, QPushButton, QRadioButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
+from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QColorDialog, QDialog, QFormLayout, QHBoxLayout, QPushButton, QRadioButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
 
 from src.model.graphic_object import GraphicObjectEnum
 from src.model.new_widget import NewWidget
@@ -145,5 +146,22 @@ class WireframeTabWidget(GraphicObjectTabWidget):
 
 class CurveTabWidget(GraphicObjectTabWidget):
     def __init__(self):
-        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2),(x3,y3), (x4,y4), ...')
+        radio_buttons_layout = QHBoxLayout()
+        curve_button_group = QButtonGroup()
+
+        bezier_radiobutton = QRadioButton("Bézier")
+        bezier_radiobutton.setChecked(True)
+        bspline_radiobutton = QRadioButton("B-Spline")
+
+        curve_button_group.addButton(bezier_radiobutton, CurverEnum.BEZIER)
+        curve_button_group.addButton(bspline_radiobutton, CurverEnum.BSPLINE)
+
+        radio_buttons_layout.addWidget(bezier_radiobutton)
+        radio_buttons_layout.addWidget(bspline_radiobutton)
+
+        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2),(x3,y3), (x4,y4), ...', 
+        {
+            GraphicObjectFormEnum.CURVE_OPTION:
+            NewWidget(radio_buttons_layout, curve_button_group.checkedId, lambda: bezier_radiobutton.setChecked(True))
+        })
 

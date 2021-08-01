@@ -1,3 +1,4 @@
+from src.model.enum.curve_enum import CurverEnum
 from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
 from src.util.clipping.liang_barksy_clipper import LiagnBarksyClipper
 from src.util.clipping.cohen_sutherland_clipper import CohenSutherlandLineClipper
@@ -195,11 +196,16 @@ class Controller():
         name = values[GraphicObjectFormEnum.NAME]
         coordinates_str = values[GraphicObjectFormEnum.COORDINATES]
         color = values[GraphicObjectFormEnum.COLOR]
-
+        
         is_filled = False
         is_clipped = False
+
         if GraphicObjectFormEnum.FILLED in values:
             is_filled = values[GraphicObjectFormEnum.FILLED]
+
+        curve_option = None
+        if GraphicObjectFormEnum.CURVE_OPTION in values:
+            curve_option = values[GraphicObjectFormEnum.CURVE_OPTION]
 
         self.new_object_dialog.clear_inputs(type)
         self.new_object_dialog.close()
@@ -214,7 +220,7 @@ class Controller():
             self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
             return
 
-        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped)
+        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option)
 
         self.draw_objects()
 
@@ -401,9 +407,9 @@ class Controller():
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False):
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurverEnum = None):
         
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, self.main_window.log.add_item)
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)
