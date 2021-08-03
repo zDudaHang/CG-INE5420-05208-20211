@@ -48,17 +48,21 @@ class GraphicObject(ABC):
             if is_filled:
                 self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
 
+
             if is_clipped:
 
                 points = []
                 try:
                     for c in self.coordinates:
                         points.append(iterative_viewport_transform(c, viewport_min, viewport_max, viewport_origin))
+
                     for p in points:
+                        
                         painter_path.moveTo(p[0].to_QPointF())
 
                         for i in range(1, len(p)):
                             painter_path.lineTo(p[i].to_QPointF())
+
                 except IndexError:
                     pass
             else:
@@ -144,6 +148,7 @@ class WireFrame(GraphicObject):
         else:
             painter.drawPath(painter_path)
 
+     
 class BezierCurve(GraphicObject):
     curve_points = []
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
