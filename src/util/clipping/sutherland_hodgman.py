@@ -40,7 +40,6 @@ class SutherlandHodgman:
             rc_v1 = self.region_code(self.subject_vertices[v])
             rc_v2 = self.region_code(self.subject_vertices[v+1])
 
-
             if rc_v1 != 0 and rc_v2 == 0:             
                 intersection = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1])
                 self.vertices[f'i{i}'] = intersection
@@ -83,28 +82,32 @@ class SutherlandHodgman:
                 self.obj.is_clipped = True
 
             if self.obj.is_filled:
-                if self.len == 3:
-                    try:
-                        if rc_v1 == 8 and rc_v2 == 2 or rc_v1 == 10:
-                            self.vertices[f'v{v}'] = self.new_vertex(10, self.subject_vertices[v], self.subject_vertices[v+1])
-                        if rc_v1==1 and rc_v2==8 or rc_v1==1 and rc_v2==9:
-                                self.vertices[f'v{v}'] = self.new_vertex(9, self.subject_vertices[v], self.subject_vertices[v+1])
-                        if rc_v1 == 5:
-                            self.vertices[f'v{v}'] = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1]) 
-                        if rc_v1 == 0 and rc_v2 == 6 or rc_v1==4 and rc_v2==6:
-                            self.vertices[f'v{v+1}'] = Point2D(self.x_max, self.y_min)
-                        if rc_v1 == 5 and rc_v2 == 0 or rc_v1==1 and rc_v2==4:
-                            temp.append(Point2D(self.x_min, self.y_min))
-                    except: pass
-                else:
-                    if rc_v1 == 10 or rc_v2 == 10:
-                        self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
-                    if rc_v1 == 9 or rc_v2 == 9:
-                        self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max)                                  
-                    if rc_v1 == 5 or rc_v2 == 5:
-                        self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)  
-                    if rc_v1 == 6 or rc_v2 == 6:
-                        self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)                
+
+                if rc_v1 in [2,8,10] and rc_v2 == 10 or \
+                    rc_v1 == 10 and rc_v2 in [2,8,10]:
+                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
+                if rc_v1 in [1,8,9] and rc_v2 == 9 or \
+                    rc_v1 == 9 and rc_v2 in [1,8,9]:
+                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max)
+                if rc_v1 in [1,4,5] and rc_v2 == 5 or \
+                    rc_v1 == 5 and rc_v2 in [1,4,5]:
+                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)
+                if rc_v1 in [2,4,6] and rc_v2 == 6 or \
+                    rc_v1 == 6 and rc_v2 in [2,4,6]:
+                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)
+                if rc_v1 == 8 and rc_v2 == 2 or \
+                    rc_v1 == 2 and rc_v2 == 8:
+                    self.vertices[f'v{v}'] = self.new_vertex(10, self.subject_vertices[v], self.subject_vertices[v+1])
+                if rc_v1 == 4 and rc_v2 == 2 or \
+                    rc_v1 == 2 and rc_v2 == 4:
+                    self.vertices[f'v{v}'] = self.new_vertex(6, self.subject_vertices[v], self.subject_vertices[v+1])
+                if rc_v1 == 4 and rc_v2 == 1 or \
+                    rc_v1 == 1 and rc_v2 == 4:
+                    self.vertices[f'v{v}'] = self.new_vertex(5, self.subject_vertices[v], self.subject_vertices[v+1])
+                if rc_v1 == 1 and rc_v2 == 8 or \
+                    rc_v1 == 8 and rc_v2 == 1:
+                    self.vertices[f'v{v}'] = self.new_vertex(9, self.subject_vertices[v], self.subject_vertices[v+1])
+               
         try:
             sub_polygons = [[list(self.vertices.values())[0]]]
 
