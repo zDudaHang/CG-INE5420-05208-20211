@@ -197,8 +197,8 @@ class RotatingTabWidget(QWidget):
         self.combo_box.currentIndexChanged.connect(self.on_change)
 
         self.angle_input = QLineEdit()
-        self.angle_input.setPlaceholderText('Digite um ângulo para rotacionar')
-        self.formLayout.addRow('Ângulo de rotação (em graus)', self.angle_input)
+        self.angle_input.setPlaceholderText('Digite um ângulo')
+        self.formLayout.addRow('Ângulo de rotação anti-horária (em graus)', self.angle_input)
 
         self.point_input = QLineEdit()
         self.point_input.setDisabled(True)
@@ -233,9 +233,9 @@ class RotatingTabWidget(QWidget):
                 self.add_transformation(None, "Um ponto deve ter apenas um par de coordenadas.")
                 return None
             else:
-                self.add_transformation(RotateTransformation(option, float(angle), points[0]))
+                self.add_transformation(RotateTransformation(option, -float(angle), points[0]))
                 return
-        self.add_transformation(RotateTransformation(option, float(angle)))
+        self.add_transformation(RotateTransformation(option, -float(angle)))
         self.clear_inputs()
 
     def clear_inputs(self):
