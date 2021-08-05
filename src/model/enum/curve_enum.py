@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-class CurverEnum(IntEnum):
+class CurveEnum(IntEnum):
     BEZIER = 0
     BSPLINE = 1
 

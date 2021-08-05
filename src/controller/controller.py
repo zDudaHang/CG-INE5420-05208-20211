@@ -1,4 +1,4 @@
-from src.model.enum.curve_enum import CurverEnum
+from src.model.enum.curve_enum import CurveEnum
 from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
 from src.util.clipping.liang_barksy_clipper import LiagnBarksyClipper
 from src.util.clipping.cohen_sutherland_clipper import CohenSutherlandLineClipper
@@ -91,14 +91,15 @@ class Controller():
 
         # NEW OBJECT DIALOG:
         self.main_window.action_open_dialog.triggered.connect(self.open_dialog_handler)
+
         self.new_object_dialog.point_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.POINT))
         self.new_object_dialog.point_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.POINT))
 
         self.new_object_dialog.line_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.LINE))
-        self.new_object_dialog.point_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.LINE))
+        self.new_object_dialog.line_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.LINE))
         
         self.new_object_dialog.wireframe_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.WIREFRAME))
-        self.new_object_dialog.point_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.WIREFRAME))
+        self.new_object_dialog.wireframe_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.WIREFRAME))
 
         self.new_object_dialog.curve_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.CURVE))
         self.new_object_dialog.curve_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.CURVE))
@@ -407,8 +408,7 @@ class Controller():
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurverEnum = None):
-        
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None):
         graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, self.main_window.log.add_item)
 
         if graphic_obj != None:

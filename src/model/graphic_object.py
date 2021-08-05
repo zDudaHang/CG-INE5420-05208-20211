@@ -1,4 +1,4 @@
-from src.model.enum.curve_enum import CurverEnum
+from src.model.enum.curve_enum import CurveEnum
 from src.util.curves import blending_function, get_GB, get_GB_Spline, forward_differences
 from src.util.math import matrix_multiplication
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
@@ -10,7 +10,6 @@ from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 from src.util.transform import iterative_viewport_transform, viewport_transform
 from src.model.point import Point2D
 from src.util.clipping.curve_clipper import curve_clip
-from copy import deepcopy
 
 class GraphicObject(ABC):
 
@@ -148,8 +147,13 @@ class WireFrame(GraphicObject):
         else:
             painter.drawPath(painter_path)
 
+class Curve(GraphicObject):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor, curve_type: CurveEnum):
+        super().__init__(name, type, coordinates, color)
+
+        self.curve_type = curve_type
      
-class BezierCurve(GraphicObject):
+class BezierCurve(Curve):
     curve_points = []
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
         if len(coordinates) < 4:
@@ -159,10 +163,11 @@ class BezierCurve(GraphicObject):
         n = (len(coordinates) - 4) % 3
         if n != 0:
             raise ValueError("[ERRO] A quantidade de pontos da curva deve estar na imagem da função f(x) = 4 + 3x, sendo x pertencente aos números naturais, para garantir a continuidade G(0). Alguns valores válidos: 4, 7, 10 e 13")
-        super().__init__(name, type, coordinates, color)
+        
+        super().__init__(name, type, coordinates, color, CurveEnum.BEZIER)
 
         self.curve_points = BezierCurve.curve_points
-    
+
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
         pen = QPen()
         pen.setWidth(2)
@@ -198,7 +203,7 @@ class BezierCurve(GraphicObject):
 
                 BezierCurve.curve_points.extend([Point2D(x1,y1), Point2D(x2,y2)])
 
-class BSpline(GraphicObject):
+class BSpline(Curve):
     
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
         if len(coordinates) < 4:
@@ -207,7 +212,9 @@ class BSpline(GraphicObject):
         n = (len(coordinates) - 4) % 3
         if n != 0:
             raise ValueError("[ERRO] A quantidade de pontos da curva deve estar na imagem da função f(x) = 4 + 3x, sendo x pertencente aos números naturais, para garantir a continuidade G(0). Alguns valores válidos: 4, 7, 10 e 13")
-        super().__init__(name, type, coordinates, color)
+        
+        super().__init__(name, type, coordinates, color, CurveEnum.BSPLINE)
+        
 
     #drawCurveFwdDiff
     def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
@@ -260,8 +267,8 @@ class BSpline(GraphicObject):
 
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
-    curve_option: CurverEnum = None, onError: Callable = None) -> Union[GraphicObject, None]:
-
+    curve_option: CurveEnum = None, onError: Callable = None) -> Union[GraphicObject, None]:
+    
     graphic_obj: GraphicObject = None
 
     try:
@@ -275,7 +282,7 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
             graphic_obj = WireFrame(name, coordinates, color, is_filled, is_clipped)
         
         if type == GraphicObjectEnum.CURVE:
-            if curve_option == CurverEnum.BEZIER:
+            if curve_option == CurveEnum.BEZIER:
                 graphic_obj = BezierCurve(name, type, coordinates, color)
             else:
                 graphic_obj = BSpline(name, type, coordinates, color)
@@ -307,8 +314,13 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
     coords = []
     for point2D in object.coordinates:
         coords.append(apply_matrix_in_point(point2D, m))
+    
     if isinstance(object, WireFrame):
-        return create_graphic_object(object.type, object.name, coords, object.color, object.is_filled)
+        return create_graphic_object(object.type, object.name, coords, object.color, is_filled=object.is_filled)
+
+    if isinstance(object, Curve):
+        return create_graphic_object(object.type, object.name, coords, object.color, curve_option=object.curve_type)
+
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
