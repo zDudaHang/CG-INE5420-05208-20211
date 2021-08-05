@@ -84,16 +84,18 @@ class SutherlandHodgman:
 
             if self.obj.is_filled:
                 if self.len == 3:
-                    if rc_v1 == 8 and rc_v2 == 2 or rc_v1 == 10:
-                        self.vertices[f'v{v}'] = self.new_vertex(10, self.subject_vertices[v], self.subject_vertices[v+1])
-                    if rc_v1==1 and rc_v2==8 or rc_v1==1 and rc_v2==9:
-                            self.vertices[f'v{v}'] = self.new_vertex(9, self.subject_vertices[v], self.subject_vertices[v+1])
-                    if rc_v1 == 5:
-                        self.vertices[f'v{v}'] = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1]) 
-                    if rc_v1 == 0 and rc_v2 == 6 or rc_v1==4 and rc_v2==6:
-                        self.vertices[f'v{v+1}'] = Point2D(self.x_max, self.y_min)
-                    if rc_v1 == 5 and rc_v2 == 0 or rc_v1==1 and rc_v2==4:
-                        temp.append(Point2D(self.x_min, self.y_min))
+                    try:
+                        if rc_v1 == 8 and rc_v2 == 2 or rc_v1 == 10:
+                            self.vertices[f'v{v}'] = self.new_vertex(10, self.subject_vertices[v], self.subject_vertices[v+1])
+                        if rc_v1==1 and rc_v2==8 or rc_v1==1 and rc_v2==9:
+                                self.vertices[f'v{v}'] = self.new_vertex(9, self.subject_vertices[v], self.subject_vertices[v+1])
+                        if rc_v1 == 5:
+                            self.vertices[f'v{v}'] = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1]) 
+                        if rc_v1 == 0 and rc_v2 == 6 or rc_v1==4 and rc_v2==6:
+                            self.vertices[f'v{v+1}'] = Point2D(self.x_max, self.y_min)
+                        if rc_v1 == 5 and rc_v2 == 0 or rc_v1==1 and rc_v2==4:
+                            temp.append(Point2D(self.x_min, self.y_min))
+                    except: pass
                 else:
                     if rc_v1 == 10 or rc_v2 == 10:
                         self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
