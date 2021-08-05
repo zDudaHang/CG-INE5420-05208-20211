@@ -14,6 +14,11 @@ class SutherlandHodgman:
     def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1) ):
 
         self.subject_vertices = deepcopy(polygon.coordinates)
+        self.len = len(self.subject_vertices)
+
+        if self.len == 3:
+            self.subject_vertices.sort(key=lambda x: x.x())
+
         self.obj = deepcopy(polygon)
 
         self.vertices = {}
@@ -26,13 +31,15 @@ class SutherlandHodgman:
     def sutherland_hodgman_clip(self):
         self.subject_vertices.append(self.subject_vertices[0])
         self.obj.is_clipped = False
+
         temp = []
         i = 0
 
         for v in range(len(self.subject_vertices)-1):
-        
+
             rc_v1 = self.region_code(self.subject_vertices[v])
             rc_v2 = self.region_code(self.subject_vertices[v+1])
+
 
             if rc_v1 != 0 and rc_v2 == 0:             
                 intersection = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1])
@@ -60,32 +67,44 @@ class SutherlandHodgman:
 
                         if rc_v1 == 1 or rc_v1 == 2: 
                             if self.y_min < intersection.y() < self.y_max:
-                                temp.extend([intersection, intersection_2])
-    
-                        elif rc_v1 == 4 or rc_v1 == 8 and self.x_min < intersection.x() < self.x_max:
-                            temp.extend([intersection, intersection_2])
+                                self.vertices[f'i{i}'] = intersection
+                                self.vertices[f'v{v}'] = intersection
+                                self.vertices[f'i{i+1}'] = intersection_2
+                                i+=2
 
+                        elif rc_v1 == 4 or rc_v1 == 8 and self.x_min < intersection.x() < self.x_max:
+
+                            self.vertices[f'i{i}'] = intersection
+                            self.vertices[f'v{v}'] = intersection
+                            self.vertices[f'i{i+1}'] = intersection_2
+                            i+=2
                     except: pass
 
                 self.obj.is_clipped = True
-            if self.obj.is_filled:
-                if rc_v1 == 10 or rc_v2 == 10:
-                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
-                if rc_v1 == 2 and rc_v2 == 8 or rc_v1 == 8 and rc_v2 == 2 :
-                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
-                if rc_v1 == 9 or rc_v2 == 9:
-                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max) 
-                if rc_v1 == 1 and rc_v2 == 8 or rc_v1 == 8 and rc_v2 == 1:
-                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max) 
-                if rc_v1 == 5 or rc_v2 == 5:
-                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)    
-                if rc_v1 == 1 and rc_v2 == 4 or rc_v1 == 4 and rc_v2 == 1:
-                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)   
-                if rc_v1 == 6 or rc_v2 == 6:
-                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)  
-                if rc_v1 == 2 and rc_v2 == 4 or rc_v1 == 4 and rc_v2 == 2:
-                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)                                               
 
+            if self.obj.is_filled:
+                if self.len == 3:
+                    try:
+                        if rc_v1 == 8 and rc_v2 == 2 or rc_v1 == 10:
+                            self.vertices[f'v{v}'] = self.new_vertex(10, self.subject_vertices[v], self.subject_vertices[v+1])
+                        if rc_v1==1 and rc_v2==8 or rc_v1==1 and rc_v2==9:
+                                self.vertices[f'v{v}'] = self.new_vertex(9, self.subject_vertices[v], self.subject_vertices[v+1])
+                        if rc_v1 == 5:
+                            self.vertices[f'v{v}'] = self.new_vertex(rc_v1, self.subject_vertices[v], self.subject_vertices[v+1]) 
+                        if rc_v1 == 0 and rc_v2 == 6 or rc_v1==4 and rc_v2==6:
+                            self.vertices[f'v{v+1}'] = Point2D(self.x_max, self.y_min)
+                        if rc_v1 == 5 and rc_v2 == 0 or rc_v1==1 and rc_v2==4:
+                            temp.append(Point2D(self.x_min, self.y_min))
+                    except: pass
+                else:
+                    if rc_v1 == 10 or rc_v2 == 10:
+                        self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
+                    if rc_v1 == 9 or rc_v2 == 9:
+                        self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max)                                  
+                    if rc_v1 == 5 or rc_v2 == 5:
+                        self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)  
+                    if rc_v1 == 6 or rc_v2 == 6:
+                        self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)                
         try:
             sub_polygons = [[list(self.vertices.values())[0]]]
 
@@ -98,11 +117,12 @@ class SutherlandHodgman:
             sub_polygons = [] # polígono fora da window
 
         if temp != []:
-            sub_polygons.insert(0, temp)
+            sub_polygons.insert(0,temp)
 
         self.obj.coordinates = sub_polygons
 
         return self.obj
+
 
     def new_vertex(self, rc, point_1, point_2):
 

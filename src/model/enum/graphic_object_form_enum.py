@@ -5,3 +5,4 @@ class GraphicObjectFormEnum(Enum):
     COLOR = 'Cor'
     COORDINATES = 'Coordenadas'
     FILLED = 'Preenchido'
+    CURVE_OPTION = 'Tipo de curva'
