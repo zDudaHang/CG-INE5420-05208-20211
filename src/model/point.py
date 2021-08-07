@@ -24,6 +24,11 @@ class Point2D:
         if (isinstance(o, Point2D)):
             return self.coordinates == o.coordinates
         return False
+    
+    def __ne__(self, o: object) -> bool:
+        if (isinstance(o, Point2D)):
+            return self.coordinates != o.coordinates
+        return False
 
     def between(self, min: object, max: object) -> bool:
         if (isinstance(min, Point2D) and isinstance(max, Point2D)):

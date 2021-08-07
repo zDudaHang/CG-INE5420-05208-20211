@@ -50,6 +50,13 @@ def generate_rotation_matrix(angleGraus: float) -> List[List[float]]:
         [0, 0, 1]
     ]
 
+def translate_object(object_coordinates: List[Point2D], dx: float, dy: float) -> List[Point2D]:
+    t = generate_translation_matrix(dx, dy)
+
+    for coord in object_coordinates:
+        coord.coordinates = matrix_multiplication(coord.coordinates, t)
+    return object_coordinates
+
 def translate_matrix_for_rotated_window(dx: float, dy: float, angle: float, cx: float, cy: float) -> List[Point2D]:
     # First, align the window with the world (-angle)
     r_align_with_world = generate_rotate_operation_matrix(cx, cy, -angle)
@@ -70,11 +77,18 @@ def translate_window(object_coordinates: List[Point2D], dx: float, dy: float, an
         coord.coordinates = matrix_multiplication(coord.coordinates, final)
     return object_coordinates
 
+def rotate_window(object_coordinates: List[Point2D], angle: float, cx: float, cy: float) -> List[Point2D]:
+    final = generate_rotate_operation_matrix(cx, cy, angle)
+    
+    for coord in object_coordinates:
+        coord.coordinates = matrix_multiplication(coord.coordinates, final)
+    return object_coordinates
+
 def scale_window(object_coordinates: List[Point2D], cx: float, cy: float, sx: float, sy: float) -> List[Point2D]:
-    final_operation = generate_scale_operation_matrix(cx, cy, sx, sy)
+    final = generate_scale_operation_matrix(cx, cy, sx, sy)
 
     for coord in object_coordinates:
-        coord.coordinates = matrix_multiplication(coord.coordinates, final_operation)
+        coord.coordinates = matrix_multiplication(coord.coordinates, final)
     return object_coordinates
 
 def generate_scale_operation_matrix(cx: float, cy: float, sx: float, sy: float) -> List[List[float]]:
