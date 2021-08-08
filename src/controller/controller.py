@@ -17,7 +17,7 @@ from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
 from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
@@ -25,7 +25,7 @@ from src.util.clipping.point_clipper import PointClipper
 
 import numpy as np
 
-ORIGIN = Point2D(0,0)
+ORIGIN = Point3D(0,0)
 
 class Controller():
 
@@ -60,9 +60,9 @@ class Controller():
 
     def set_window_values(self):
 
-        self.window_coordinates : List[Point2D] = [None, None, None, None]
+        self.window_coordinates : List[Point3D] = [None, None, None, None]
 
-        self.center = Point2D(0,0)
+        self.center = Point3D(0,0)
 
         self.window_height = 400
         self.window_width = 600
@@ -70,9 +70,9 @@ class Controller():
         self.update_window_coordinates()
     
     def set_viewport_values(self):
-        self.viewport_coordinates : List[Point2D] = [None, None, None, None]
+        self.viewport_coordinates : List[Point3D] = [None, None, None, None]
 
-        self.viewport_origin = Point2D(10,10)
+        self.viewport_origin = Point3D(10,10)
 
         self.viewport_height = 400
         self.viewport_width = 600
@@ -143,11 +143,11 @@ class Controller():
 # ========== IMPORT & EXPORT .OBJ FILES
 
     def import_handler(self):
-        objs : Dict[str, List[Point2D]]= self.main_window.new_objs
+        objs : Dict[str, List[Point3D]]= self.main_window.new_objs
         i = 0
 
         for key, value in objs.objects.items():
-            list_points = [Point2D(c[0],c[1]) for c in value]
+            list_points = [Point3D(c[0],c[1]) for c in value]
 
             usemtl = objs.usemtl[i]
             newmtl = objs.new_mtl.index(usemtl)
@@ -169,7 +169,7 @@ class Controller():
         self.draw_objects()
            
     def export_handler(self):
-        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], self.center, Point2D(self.window_width, self.window_height))
+        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], self.center, Point3D(self.window_width, self.window_height))
 
 # ========== UPDATE WINDOW VALUES
 
@@ -184,7 +184,7 @@ class Controller():
         window_center = window_obj_file[0]
         window_dimensions = window_obj_file[1]
 
-        self.center = Point2D(window_center[0], window_center[1])
+        self.center = Point3D(window_center[0], window_center[1])
 
         self.window_width = window_dimensions[0]
         self.window_height = window_dimensions[1]
@@ -197,7 +197,10 @@ class Controller():
         values = self.new_object_dialog.get_values(type)
         name = values[GraphicObjectFormEnum.NAME]
         coordinates_str = values[GraphicObjectFormEnum.COORDINATES]
-        color = values[GraphicObjectFormEnum.COLOR]
+
+        color = None
+        if GraphicObjectFormEnum.COLOR in values:
+            color = values[GraphicObjectFormEnum.COLOR]
         
         is_filled = False
         is_clipped = False
@@ -219,7 +222,7 @@ class Controller():
         coordinates = self.parse_coordinates(coordinates_str)
 
         if coordinates == None:
-            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
+            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1,z1),(x2,y2,z2),...")
             return
 
         self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option)
@@ -429,7 +432,7 @@ class Controller():
         
         return inside_window_objs
     
-    def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
+    def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:
         return parse(coordinates_expr)
 
     def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None):

@@ -3,11 +3,11 @@ from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxL
 from typing import Callable, Union
 
 from src.util.parse import parse
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.gui.log import Log
 
 class RotateTransformation():
-    def __init__(self, option: RotateOptionsEnum, angle: float, point: Point2D = None):
+    def __init__(self, option: RotateOptionsEnum, angle: float, point: Point3D = None):
         self.option = option
         self.angle = angle
         if self.option == RotateOptionsEnum.POINT:

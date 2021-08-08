@@ -3,7 +3,6 @@ import numpy as np
 
 def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
     result = []
-
     # Populate the result matrix with zeros
     for i in range(0, len(a)):
         result.append([])

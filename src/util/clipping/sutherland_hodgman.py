@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.model.graphic_object import WireFrame
 
 class SutherlandHodgman:
@@ -11,7 +11,7 @@ class SutherlandHodgman:
     BOTTOM = 4  # 0100
     TOP = 8     # 1000
 
-    def __init__(self, polygon: WireFrame, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1) ):
+    def __init__(self, polygon: WireFrame, window_min: Point3D = Point3D(-1, -1), window_max: Point3D = Point3D(1, 1) ):
 
         self.subject_vertices = deepcopy(polygon.coordinates)
         self.len = len(self.subject_vertices)
@@ -85,16 +85,16 @@ class SutherlandHodgman:
 
                 if rc_v1 in [2,8,10] and rc_v2 == 10 or \
                     rc_v1 == 10 and rc_v2 in [2,8,10]:
-                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_max)
+                    self.vertices[f'v{v}'] = Point3D(self.x_max, self.y_max)
                 if rc_v1 in [1,8,9] and rc_v2 == 9 or \
                     rc_v1 == 9 and rc_v2 in [1,8,9]:
-                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_max)
+                    self.vertices[f'v{v}'] = Point3D(self.x_min, self.y_max)
                 if rc_v1 in [1,4,5] and rc_v2 == 5 or \
                     rc_v1 == 5 and rc_v2 in [1,4,5]:
-                    self.vertices[f'v{v}'] = Point2D(self.x_min, self.y_min)
+                    self.vertices[f'v{v}'] = Point3D(self.x_min, self.y_min)
                 if rc_v1 in [2,4,6] and rc_v2 == 6 or \
                     rc_v1 == 6 and rc_v2 in [2,4,6]:
-                    self.vertices[f'v{v}'] = Point2D(self.x_max, self.y_min)
+                    self.vertices[f'v{v}'] = Point3D(self.x_max, self.y_min)
                 if rc_v1 == 8 and rc_v2 == 2 or \
                     rc_v1 == 2 and rc_v2 == 8:
                     self.vertices[f'v{v}'] = self.new_vertex(10, self.subject_vertices[v], self.subject_vertices[v+1])
@@ -207,11 +207,11 @@ class SutherlandHodgman:
                 new_y = self.y_max
 
 
-        return Point2D(new_x, new_y)
+        return Point3D(new_x, new_y)
 
 
     
-    def region_code(self, ponto: Point2D):
+    def region_code(self, ponto: Point3D):
         x = ponto.x()
         y = ponto.y()
         

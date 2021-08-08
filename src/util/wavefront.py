@@ -2,7 +2,7 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QFileDialog
 from typing import List
 
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.model.graphic_object import GraphicObject, get_rgb
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 
@@ -80,9 +80,9 @@ class WavefrontOBJ:
                     self.usemtl.append(toks[1])
   
 
-    def save_obj(objects_list: List[GraphicObject], w_center: Point2D, w_dimensions: Point2D):
+    def save_obj(objects_list: List[GraphicObject], w_center: Point3D, w_dimensions: Point3D):
         try:
-            temp : List[Point2D] = []
+            temp : List[Point3D] = []
             color_list = []
             filename = QFileDialog.getSaveFileName()
             if filename[0] == '':

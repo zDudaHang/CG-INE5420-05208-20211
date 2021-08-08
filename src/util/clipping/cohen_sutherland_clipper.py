@@ -1,4 +1,4 @@
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.model.graphic_object import Line
 from copy import deepcopy
 
@@ -10,7 +10,7 @@ class CohenSutherlandLineClipper():
     BOTTOM = 4  # 0100
     TOP = 8     # 1000
 
-    def __init__(self, line: Line, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1)):
+    def __init__(self, line: Line, window_min: Point3D = Point3D(-1, -1), window_max: Point3D = Point3D(1, 1)):
 
         self.coordinates = line.coordinates
 
@@ -22,7 +22,7 @@ class CohenSutherlandLineClipper():
         self.old_line = line
 
 
-    def region_code(self, ponto: Point2D):
+    def region_code(self, ponto: Point3D):
         # Coordenadas do ponto
         x = ponto.x()
         y = ponto.y()
@@ -56,7 +56,7 @@ class CohenSutherlandLineClipper():
         while True:
 
             if rc_point_1 == 0 and rc_point_2 == 0:
-                line.coordinates = [Point2D(point_1.x(),point_1.y()), Point2D(point_2.x(), point_2.y())]
+                line.coordinates = [Point3D(point_1.x(),point_1.y()), Point3D(point_2.x(), point_2.y())]
                 return line
             elif (rc_point_1 & rc_point_2) != 0:
                 #COMPLETAMENTE FORA da window
@@ -96,9 +96,9 @@ class CohenSutherlandLineClipper():
     
     
                 if rc_out == rc_point_1:
-                    point_1 = Point2D(new_x, new_y)
+                    point_1 = Point3D(new_x, new_y)
                     rc_point_1 = self.region_code(point_1)
     
                 else:
-                    point_2 = Point2D(new_x, new_y)
+                    point_2 = Point3D(new_x, new_y)
                     rc_point_2 = self.region_code(point_2)

@@ -8,12 +8,12 @@ from functools import reduce
 from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 
 from src.util.transform import iterative_viewport_transform, viewport_transform
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.util.clipping.curve_clipper import curve_clip
 
 class GraphicObject(ABC):
 
-    def __init__(self, name: str, type : GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
+    def __init__(self, name: str, type : GraphicObjectEnum, coordinates: List[Point3D], color: QColor):
         self.name = name
 
         self.type = type
@@ -29,13 +29,13 @@ class GraphicObject(ABC):
         self.center = calculate_center(self.coordinates)
 
     @abstractmethod
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         ...
 
     def __str__(self):
         return f'{self.type.value} ({self.name})'
 
-    def drawLines(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, painter_path : QPainterPath, viewport_origin: Point2D, 
+    def drawLines(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, painter_path : QPainterPath, viewport_origin: Point3D, 
                   is_filled: bool = False, is_clipped: bool = False, is_wireframe: bool = False):
 
         pen = QPen()
@@ -83,13 +83,13 @@ class GraphicObject(ABC):
     
 class Point(GraphicObject):
 
-    def __init__(self, name: str, coordinates: List[Point2D], color: QColor):
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor):
         if len(coordinates) > 1:
             raise ValueError("[ERRO] Um ponto deve ter apenas um par de coordenadas (x,y)!")
         
         super().__init__(name, GraphicObjectEnum.POINT, coordinates, color)
     
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         p_v = viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
 
         pen = QPen()
@@ -101,7 +101,7 @@ class Point(GraphicObject):
         
 class Line(GraphicObject):
 
-    def __init__(self, name: str, coordinates: List[Point2D], color: QColor):
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor):
         if len(coordinates) > 2:
             raise ValueError("[ERRO] Uma linha deve ter apenas 2 pares de coordenadas (x1,y1) e (x2, y2)!")
         
@@ -110,7 +110,7 @@ class Line(GraphicObject):
         
         super().__init__(name, GraphicObjectEnum.LINE, coordinates, color)
     
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
 
         self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
@@ -119,7 +119,7 @@ class Line(GraphicObject):
 
 class WireFrame(GraphicObject):
 
-    def __init__(self, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool, is_clipped: bool):
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool, is_clipped: bool):
         if len(coordinates) < 3:
             raise ValueError("[ERRO] Um wireframe deve ter no mínimo três pares de coordenadas!")
 
@@ -128,7 +128,7 @@ class WireFrame(GraphicObject):
         self.is_filled = is_filled
         self.is_clipped = is_clipped
     
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
 
         self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
@@ -148,14 +148,14 @@ class WireFrame(GraphicObject):
             painter.drawPath(painter_path)
 
 class Curve(GraphicObject):
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor, curve_type: CurveEnum):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor, curve_type: CurveEnum):
         super().__init__(name, type, coordinates, color)
 
         self.curve_type = curve_type
      
 class BezierCurve(Curve):
     curve_points = []
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
 
@@ -168,7 +168,7 @@ class BezierCurve(Curve):
 
         self.curve_points = BezierCurve.curve_points
 
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
@@ -191,9 +191,9 @@ class BezierCurve(Curve):
 
                 x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
                 try:
-                    p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
+                    p1 = viewport_transform(Point3D(x1, y1), viewport_min, viewport_max, viewport_origin)
 
-                    p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
+                    p2 = viewport_transform(Point3D(x2, y2), viewport_min, viewport_max, viewport_origin)
 
                     painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
                 except TypeError:
@@ -201,11 +201,11 @@ class BezierCurve(Curve):
                 
                 t += accuracy
 
-                BezierCurve.curve_points.extend([Point2D(x1,y1), Point2D(x2,y2)])
+                BezierCurve.curve_points.extend([Point3D(x1,y1), Point3D(x2,y2)])
 
 class BSpline(Curve):
     
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point2D], color: QColor):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma BSpline deve ter pelo menos 4 pontos!")
 
@@ -217,7 +217,7 @@ class BSpline(Curve):
         
 
     #drawCurveFwdDiff
-    def draw(self, painter: QPainter, viewport_min: Point2D, viewport_max: Point2D, viewport_origin: Point2D):
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
@@ -253,9 +253,9 @@ class BSpline(Curve):
 
                 x1, y1, x2, y2 = curve_clip(x_old, y_old, x[0][0], y[0][0])
                 try:
-                    p1 = viewport_transform(Point2D(x1, y1), viewport_min, viewport_max, viewport_origin)
+                    p1 = viewport_transform(Point3D(x1, y1), viewport_min, viewport_max, viewport_origin)
 
-                    p2 = viewport_transform(Point2D(x2, y2), viewport_min, viewport_max, viewport_origin)
+                    p2 = viewport_transform(Point3D(x2, y2), viewport_min, viewport_max, viewport_origin)
 
                     painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
 
@@ -266,7 +266,7 @@ class BSpline(Curve):
                 y_old = y[0][0]
 
 
-def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point2D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
+def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
     curve_option: CurveEnum = None, onError: Callable = None) -> Union[GraphicObject, None]:
     
     graphic_obj: GraphicObject = None
@@ -292,13 +292,13 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
     
     return graphic_obj
 
-def calculate_center(coordinates: List[Point2D]) -> Union[Point2D, None]:
+def calculate_center(coordinates: List[Point3D]) -> Union[Point3D, None]:
     size = len(coordinates)
     
     if size > 0:
         cx = reduce(lambda acc, p: acc + p.x(), coordinates, 0) / size
         cy = reduce(lambda acc, p: acc + p.y(), coordinates, 0) / size
-        return Point2D(cx, cy)
+        return Point3D(cx, cy)
     else: 
         return None
 
@@ -312,8 +312,8 @@ def get_rgb(color: QColor) -> list:
 
 def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> GraphicObject:
     coords = []
-    for point2D in object.coordinates:
-        coords.append(apply_matrix_in_point(point2D, m))
+    for Point3D in object.coordinates:
+        coords.append(apply_matrix_in_point(Point3D, m))
     
     if isinstance(object, WireFrame):
         return create_graphic_object(object.type, object.name, coords, object.color, is_filled=object.is_filled)
@@ -323,6 +323,6 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
 
     return create_graphic_object(object.type, object.name, coords, object.color)
 
-def apply_matrix_in_point(point: Point2D, m: List[List[float]]) -> Point2D:
+def apply_matrix_in_point(point: Point3D, m: List[List[float]]) -> Point3D:
     r = matrix_multiplication(point.coordinates, m)
-    return Point2D(r[0][0], r[0][1])
+    return Point3D(r[0][0], r[0][1])
