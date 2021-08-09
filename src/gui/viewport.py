@@ -4,10 +4,10 @@ from PyQt5.QtWidgets import  QAction, QLabel
 from PyQt5.QtGui import QColor, QPainter, QPainterPath, QPen, QWheelEvent
 
 from src.model.graphic_object import GraphicObject
-from src.model.point import Point2D
+from src.model.point import Point3D
 
 class Viewport(QLabel):
-    def __init__(self, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
+    def __init__(self, viewport_coordinates: List[Point3D], viewport_width: int, viewport_height: int, viewport_origin: Point3D):
         super().__init__()
         
         self.coordinates = viewport_coordinates

@@ -1,5 +1,5 @@
 from typing import List
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.util.math import matrix_multiplication
 
 BEZIER_MATRIX = [
@@ -21,7 +21,7 @@ class BezierGeometryMatrix():
         self.x = x
         self.y = y
 
-def get_GB(p0: Point2D, p1: Point2D, p2: Point2D, p3: Point2D) -> BezierGeometryMatrix:
+def get_GB(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D) -> BezierGeometryMatrix:
     gb_x = [
         [p0.x()], 
         [p1.x()], 
@@ -49,7 +49,7 @@ class BSpline:
         self.x = x
         self.y = y
 
-def get_GB_Spline(p0: Point2D, p1: Point2D, p2: Point2D, p3: Point2D):
+def get_GB_Spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
     g_x = [
         [p0.x()], 
         [p1.x()], 

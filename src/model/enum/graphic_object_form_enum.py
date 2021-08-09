@@ -6,3 +6,5 @@ class GraphicObjectFormEnum(Enum):
     COORDINATES = 'Coordenadas'
     FILLED = 'Preenchido'
     CURVE_OPTION = 'Tipo de curva'
+    EDGES = 'Arestas'
+    FACES = 'Faces'
