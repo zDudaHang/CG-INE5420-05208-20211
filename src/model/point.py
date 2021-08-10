@@ -21,7 +21,10 @@ class Point3D:
         return QPointF(self.x(), self.y())
 
     def __add__(self, other: Tuple):
-        return Point3D(self.x() + other[0], self.y() + other[1])
+        if len(other) == 2:
+            return Point3D(self.x() + other[0], self.y() + other[1])
+        elif len(other) == 3:
+            return Point3D(self.x() + other[0], self.y() + other[1], self.z() + other[2])
     
     def __eq__(self, o: object) -> bool:
         if (isinstance(o, Point3D)):

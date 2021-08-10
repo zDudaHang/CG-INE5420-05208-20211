@@ -62,7 +62,7 @@ class Controller():
 
         self.window_coordinates : List[Point3D] = [None, None, None, None]
 
-        self.center = Point3D(0,0)
+        self.center = Point3D(0,0,0)
 
         self.window_height = 400
         self.window_width = 600
@@ -174,6 +174,7 @@ class Controller():
 # ========== UPDATE WINDOW VALUES
 
     def update_window_coordinates(self):
+
         self.window_coordinates[CoordsEnum.TOP_LEFT] = self.center + tuple([-self.window_width, self.window_height])
         self.window_coordinates[CoordsEnum.TOP_RIGHT] = self.center + tuple([self.window_width, self.window_height])
 
@@ -402,7 +403,6 @@ class Controller():
         self.draw_objects()
 
     def clip(self) -> List[GraphicObject]:
-        
         clipping_line_method = self.main_window.functions_menu.clipping_method
 
         inside_window_objs : List[GraphicObject] = []
@@ -430,7 +430,7 @@ class Controller():
                     inside_window_objs.append(new_wireframe)
 
             else: inside_window_objs.append(obj)
-
+        parallel_projection(self.window_coordinates)
         return inside_window_objs
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:

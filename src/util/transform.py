@@ -57,9 +57,9 @@ def generate_rz_rotation_matrix(angleGraus: float) -> List[List[float]]:
 def generate_ry_rotation_matrix(angleGraus: float) -> List[List[float]]:
     angle = radians(angleGraus)
     return[
-            [cos(angle), 0, sin(angle), 0],
+            [cos(angle), 0, -sin(angle), 0],
             [0, 1, 0, 0],
-            [-sin(angle), 0, cos(angle), 0],
+            [sin(angle), 0, cos(angle), 0],
             [0, 0, 0, 1]]
     
 
@@ -176,8 +176,9 @@ def angle_with_vpn(vpn : List[float]):
 def parallel_projection(window_coordinates : List[Point3D]) -> List[List[float]]:
 
     vpr = get_vpr(window_coordinates)
-    
+
     trans = generate_translation_matrix(-vpr[0], -vpr[1], - vpr[2])
+  
 
     vpn = get_vpn(window_coordinates, vpr)
 
@@ -186,10 +187,12 @@ def parallel_projection(window_coordinates : List[Point3D]) -> List[List[float]]
     rot_x = generate_rx_rotation_matrix(teta_x)
     rot_y = generate_ry_rotation_matrix(teta_y)
 
+
     transform = matrix_multiplication(trans, rot_x)
     transform = matrix_multiplication(transform, rot_y)
     
     return transform
+
     # temp_x, temp_y, temp_z = 0, 0, 0
 
     # for coord in window_coordinates:
