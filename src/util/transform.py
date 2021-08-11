@@ -192,15 +192,3 @@ def parallel_projection(window_coordinates : List[Point3D]) -> List[List[float]]
     transform = matrix_multiplication(transform, rot_y)
     
     return transform
-
-    # temp_x, temp_y, temp_z = 0, 0, 0
-
-    # for coord in window_coordinates:
-    #     t = matrix_multiplication(get_w_homogen(coord), trans)
-    #     temp_x += t[0][0]
-    #     temp_y += t[0][1]
-    #     temp_z += t[0][1]
-
-    # vrpt = matrix_multiplication([[temp_x/4, temp_y/4, temp_z/4, 1]], trans)
-
-

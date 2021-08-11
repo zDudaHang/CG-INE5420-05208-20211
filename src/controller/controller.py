@@ -18,7 +18,7 @@ from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
 from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point3D
-from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window, parallel_projection
+from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from src.util.clipping.point_clipper import PointClipper
