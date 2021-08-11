@@ -13,7 +13,7 @@ from src.util.clipping.curve_clipper import curve_clip
 
 class GraphicObject(ABC):
 
-    def __init__(self, name: str, type : GraphicObjectEnum, coordinates: List[Point3D], color: QColor):
+    def __init__(self, name: str, type : GraphicObjectEnum, coordinates: List[Point3D], color: QColor = None):
         self.name = name
 
         self.type = type
@@ -56,7 +56,6 @@ class GraphicObject(ABC):
                         points.append(iterative_viewport_transform(c, viewport_min, viewport_max, viewport_origin))
 
                     for p in points:
-                        
                         painter_path.moveTo(p[0].to_QPointF())
 
                         for i in range(1, len(p)):
@@ -66,6 +65,8 @@ class GraphicObject(ABC):
                     pass
             else:
                 try:
+                    print('self.coordinates[0]')
+                    print(self.coordinates[0])
                     points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
 
                     painter_path.moveTo(points[0].to_QPointF())
@@ -101,7 +102,7 @@ class Point(GraphicObject):
         
 class Line(GraphicObject):
 
-    def __init__(self, name: str, coordinates: List[Point3D], color: QColor):
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):
         if len(coordinates) > 2:
             raise ValueError("[ERRO] Uma linha deve ter apenas 2 pares de coordenadas (x1,y1) e (x2, y2)!")
         
@@ -131,6 +132,10 @@ class WireFrame(GraphicObject):
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
 
+        print('draw')
+        for c in self.coordinates:
+            print(c)
+
         self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
 
         if not self.is_clipped:
@@ -155,7 +160,7 @@ class Curve(GraphicObject):
      
 class BezierCurve(Curve):
     curve_points = []
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor = None):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
 
@@ -205,7 +210,7 @@ class BezierCurve(Curve):
 
 class BSpline(Curve):
     
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor = None):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma BSpline deve ter pelo menos 4 pontos!")
 
@@ -227,8 +232,6 @@ class BSpline(Curve):
         for i in range(len(self.coordinates) - 3):
             gb = get_GB_Spline(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
             
-            
-
             d = 0.01
             n = 1 / d
 
@@ -265,9 +268,40 @@ class BSpline(Curve):
                 x_old = x[0][0]
                 y_old = y[0][0]
 
+class Object3D(GraphicObject):
+    
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor, edges: List[tuple], faces: List[tuple]):
+        super().__init__(name, type, coordinates, color)
+
+        self.edges = edges
+        self.faces = faces
+
+        self.edges_lines : List[Line] = []
+
+        for edge in edges:
+            first = edge[0] - 1
+            second = edge[1] - 1
+            line = Line('_', [coordinates[first], coordinates[second]])
+            self.edges_lines.append(line)
+
+        self.faces_wireframes : List[WireFrame] = []
+
+        for face in faces:
+            coords = []
+            for edge in face:
+                coords.extend(self.edges_lines[edge - 1].coordinates)
+            self.faces_wireframes.append(WireFrame('_', coords, self.color, False, True))
+
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
+        for face in self.faces_wireframes:
+            for coord in face.coordinates:
+                print(coord)
+            face.draw(painter, viewport_min, viewport_max, viewport_origin)
+
+
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
-    curve_option: CurveEnum = None, onError: Callable = None) -> Union[GraphicObject, None]:
+    curve_option: CurveEnum = None, edges: str = None, faces: str = None, onError: Callable = None) -> Union[GraphicObject, None]:
     
     graphic_obj: GraphicObject = None
 
@@ -286,6 +320,9 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
                 graphic_obj = BezierCurve(name, type, coordinates, color)
             else:
                 graphic_obj = BSpline(name, type, coordinates, color)
+        
+        if type == GraphicObjectEnum.OBJECT_3D:
+            graphic_obj = Object3D(name, type, coordinates, color, edges, faces)
         
     except ValueError as e:
             onError(e.__str__())
@@ -320,6 +357,9 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
 
     if isinstance(object, Curve):
         return create_graphic_object(object.type, object.name, coords, object.color, curve_option=object.curve_type)
+
+    if isinstance(object, Object3D):
+        return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces)
 
     return create_graphic_object(object.type, object.name, coords, object.color)
 

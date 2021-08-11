@@ -62,7 +62,7 @@ class Controller():
 
         self.window_coordinates : List[Point3D] = [None, None, None, None]
 
-        self.center = Point3D(0,0)
+        self.center = Point3D(0,0,0)
 
         self.window_height = 400
         self.window_width = 600
@@ -104,6 +104,9 @@ class Controller():
 
         self.new_object_dialog.curve_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.CURVE))
         self.new_object_dialog.curve_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.CURVE))
+
+        self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.OBJECT_3D))
+        self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.OBJECT_3D))
 
         # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
@@ -215,6 +218,18 @@ class Controller():
         self.new_object_dialog.clear_inputs(type)
         self.new_object_dialog.close()
 
+        edges = None
+        if GraphicObjectFormEnum.EDGES in values:
+            text = values[GraphicObjectFormEnum.EDGES]
+            text += ','
+            edges : List[tuple] = list(eval(text))
+
+        faces = None
+        if GraphicObjectFormEnum.FACES in values:
+            text = values[GraphicObjectFormEnum.FACES]
+            text += ','
+            faces : List[tuple] = list(eval(text))
+
         if len(name) == 0:
             self.main_window.log.add_item("[ERRO] O nome não pode ser vazio!")
             return
@@ -225,7 +240,7 @@ class Controller():
             self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1,z1),(x2,y2,z2),...")
             return
 
-        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option)
+        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option, edges, faces)
 
         self.draw_objects()
 
@@ -435,8 +450,8 @@ class Controller():
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None):
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, self.main_window.log.add_item)
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : str = None, faces : str = None):
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)
