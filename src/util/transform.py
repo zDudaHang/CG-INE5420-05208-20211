@@ -7,7 +7,6 @@ from src.util.math import matrix_multiplication, matrix_subtraction
 def iterative_viewport_transform(object_coordinates: List[Point3D], viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> List[Point3D]:
     viewport_coordinates: List[Point3D] = []
     for p in object_coordinates:
-        
         viewport_coordinates.append(viewport_transform(p, viewport_min, viewport_max, viewport_origin))
     return viewport_coordinates
 
@@ -181,6 +180,7 @@ def parallel_projection(window_coordinates : List[Point3D]) -> List[List[float]]
   
 
     vpn = get_vpn(window_coordinates, vpr)
+    
 
     teta_x, teta_y = angle_with_vpn(vpn)
 

@@ -16,9 +16,9 @@ from src.util.math import angle_between_vectors, matrix_multiplication
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point3D
-from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
+from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from src.util.clipping.point_clipper import PointClipper
@@ -105,6 +105,9 @@ class Controller():
         self.new_object_dialog.curve_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.CURVE))
         self.new_object_dialog.curve_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.CURVE))
 
+        self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.OBJECT_3D))
+        self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.OBJECT_3D))
+
         # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
         self.main_window.functions_menu.window_menu.step_minus_button.clicked.connect(lambda: self.on_step_update(-0.05))
@@ -174,6 +177,12 @@ class Controller():
 # ========== UPDATE WINDOW VALUES
 
     def update_window_coordinates(self):
+        
+        # self.window_coordinates[CoordsEnum.TOP_LEFT] = self.center + tuple([50, 200, 250])
+        # self.window_coordinates[CoordsEnum.TOP_RIGHT] = self.center + tuple([250, 200, 50])
+
+        # self.window_coordinates[CoordsEnum.BOTTOM_LEFT] = self.center + tuple([300, 0, 100])
+        # self.window_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.center + tuple([100, 0, 300])        
 
         self.window_coordinates[CoordsEnum.TOP_LEFT] = self.center + tuple([-self.window_width, self.window_height])
         self.window_coordinates[CoordsEnum.TOP_RIGHT] = self.center + tuple([self.window_width, self.window_height])
@@ -216,6 +225,18 @@ class Controller():
         self.new_object_dialog.clear_inputs(type)
         self.new_object_dialog.close()
 
+        edges = None
+        if GraphicObjectFormEnum.EDGES in values:
+            text = values[GraphicObjectFormEnum.EDGES]
+            text += ','
+            edges : List[tuple] = list(eval(text))
+
+        faces = None
+        if GraphicObjectFormEnum.FACES in values:
+            text = values[GraphicObjectFormEnum.FACES]
+            text += ','
+            faces : List[tuple] = list(eval(text))
+
         if len(name) == 0:
             self.main_window.log.add_item("[ERRO] O nome não pode ser vazio!")
             return
@@ -226,7 +247,7 @@ class Controller():
             self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1,z1),(x2,y2,z2),...")
             return
 
-        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option)
+        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option, edges, faces)
 
         self.draw_objects()
 
@@ -365,7 +386,7 @@ class Controller():
         self.main_window.viewport.draw_objects(self.clip())
 
     def scn_matrix(self) -> List[List[float]]:
-        return generate_scn_matrix(self.center.x(), self.center.y(), self.window_height, self.window_width, self.calculate_angle_vup_y_axis())
+        return generate_scn_matrix(self.center.x(), self.center.y(), self.window_height, self.window_width, 0)
 
     def calculate_angle_vup_y_axis(self) -> float:
         translated = False
@@ -398,7 +419,7 @@ class Controller():
         scn = self.scn_matrix()
 
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
-            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn, self.window_coordinates))
         
         self.draw_objects()
 
@@ -428,16 +449,21 @@ class Controller():
                 
                 if new_wireframe != None:
                     inside_window_objs.append(new_wireframe)
-
+                    
+            elif isinstance(obj, Object3D):
+                for wireframes in obj.faces_wireframes:
+                    new_obj = SutherlandHodgman(wireframes).sutherland_hodgman_clip()
+                
+                if new_obj != None:
+                    inside_window_objs.append(new_obj)
             else: inside_window_objs.append(obj)
-        parallel_projection(self.window_coordinates)
         return inside_window_objs
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None):
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, self.main_window.log.add_item)
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : str = None, faces : str = None):
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.window_coordinates, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)
@@ -446,7 +472,7 @@ class Controller():
     
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
-        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
+        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix(), self.window_coordinates))
 
     def start(self):
         self.app.exec()

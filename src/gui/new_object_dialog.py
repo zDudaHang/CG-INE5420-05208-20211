@@ -177,12 +177,15 @@ class Object3DTab(GraphicObjectTabWidget):
         new_widgets = {}
 
         edges_input = QLineEdit()
-        edges_input.setPlaceholderText('Digite os números dos pontos para criar as arestas: (1,2),(2,3),...')
+        # edges_input.setPlaceholderText('Digite os números dos pontos para criar as arestas: (1,2),(2,3),...')
+        edges_input.setText('(1,2),(2,3),(3,4),(4,1),(5,6),(6,7),(7,8),(8,5),(2,6),(5,1),(3,7),(8,4)')
         new_widgets[GraphicObjectFormEnum.EDGES] = NewWidget(edges_input, edges_input.text, edges_input.clear)
 
         faces_input = QLineEdit()
-        faces_input.setPlaceholderText('Digite os números arestas que devem formar cada face: (1,2,3), (1,2,3,4),...')
+        # faces_input.setPlaceholderText('Digite os números arestas que devem formar cada face: (1,2,3), (1,2,3,4),...')
+        faces_input.setText('(1,2,3,4),(5,6,7,8),(9,6,11,2),(10,8,12,4),(1,9,5,10),(3,11,7,12)')
         new_widgets[GraphicObjectFormEnum.FACES] = NewWidget(faces_input, faces_input.text, faces_input.clear)
 
-        super().__init__('Digite as coordenadas: (x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4), ...', new_widgets)
+        # super().__init__('Digite as coordenadas: (x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4), ...', new_widgets)
+        super().__init__('(0,0,0),(0,100,0),(100,100,0),(100,0,0),(0,0,100),(0,100,100),(100,100,100),(100,0,100)', new_widgets)
 
