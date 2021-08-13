@@ -1,3 +1,4 @@
+from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 import numpy
 from src.model.enum.curve_enum import CurveEnum
 from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
@@ -19,12 +20,13 @@ from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
 from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point3D
-from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
+from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from src.util.clipping.point_clipper import PointClipper
 
 from numpy import dot, array
+import copy
 
 ORIGIN = Point3D(0,0,0)
 
@@ -62,6 +64,8 @@ class Controller():
     def set_window_values(self):
 
         self.window_coordinates : List[Point3D] = [None, None, None, None]
+
+        self.window_coordinates_parallel_projection : List[Point3D] = None
 
         self.center = Point3D(0,0,0)
 
@@ -178,11 +182,29 @@ class Controller():
 # ========== UPDATE WINDOW VALUES
 
     def update_window_coordinates(self):
+         
         self.window_coordinates[CoordsEnum.TOP_LEFT] = self.center + tuple([-self.window_width, self.window_height])
         self.window_coordinates[CoordsEnum.TOP_RIGHT] = self.center + tuple([self.window_width, self.window_height])
 
         self.window_coordinates[CoordsEnum.BOTTOM_LEFT] = self.center + tuple([-self.window_width, -self.window_height])
         self.window_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.center + tuple([self.window_width, -self.window_height])
+
+        self.window_coordinates_parallel_projection = copy.copy(self.window_coordinates)
+
+        transform = parallel_projection(self.window_coordinates)
+
+        coords = []
+        for c in self.window_coordinates:
+            m = dot(c.coordinates,transform)
+            coords.append(Point3D(m[0][0], m[0][1], m[0][2]))
+
+        self.window_coordinates[CoordsEnum.TOP_LEFT] = coords[CoordsEnum.TOP_LEFT]
+        self.window_coordinates[CoordsEnum.TOP_RIGHT] = coords[CoordsEnum.TOP_RIGHT]
+
+        self.window_coordinates[CoordsEnum.BOTTOM_LEFT] = coords[CoordsEnum.BOTTOM_LEFT]
+        self.window_coordinates[CoordsEnum.BOTTOM_RIGHT] = coords[CoordsEnum.BOTTOM_RIGHT]
+    
+
 
     def update_window_values(self, window_obj_file: List[List[float]]):
         window_center = window_obj_file[0]
@@ -325,7 +347,9 @@ class Controller():
         dx = dx * self.window_width
         dy = dy * self.window_height
 
-        matrix = translate_window(self.window_coordinates, Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.center)
+        rotation_axis = RotateAxisOptionsEnum.valueOf(self.main_window.functions_menu.window_menu.axis_button_group.checkedId())
+
+        matrix = translate_window(self.window_coordinates, Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.center, rotation_axis)
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
@@ -343,9 +367,9 @@ class Controller():
         else:
             angle = self.step_angle
 
-        rotate_window(self.window_coordinates, angle, self.center)
+        rotation_axis = RotateAxisOptionsEnum.valueOf(self.main_window.functions_menu.window_menu.axis_button_group.checkedId())
 
-        self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.calculate_angle_vup_y_axis()}')
+        rotate_window(self.window_coordinates, angle, self.center, rotation_axis)
 
         self.calculate_scn_coordinates()
 
@@ -396,7 +420,7 @@ class Controller():
         scn = self.scn_matrix()
 
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
-            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn, self.window_coordinates_parallel_projection))
         
         self.draw_objects()
 
@@ -426,7 +450,7 @@ class Controller():
                 
                 if new_wireframe != None:
                     inside_window_objs.append(new_wireframe)
-            
+                    
             elif isinstance(obj, Object3D):
                 for wireframes in obj.faces_wireframes:
                     new_obj = SutherlandHodgman(wireframes).sutherland_hodgman_clip()
@@ -435,14 +459,13 @@ class Controller():
                         inside_window_objs.append(new_obj)
 
             else: inside_window_objs.append(obj)
-        
         return inside_window_objs
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:
         return parse(coordinates_expr)
 
     def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : str = None, faces : str = None):
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.main_window.log.add_item)
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.window_coordinates_parallel_projection, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)
@@ -451,7 +474,7 @@ class Controller():
     
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
-        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
+        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix(), self.window_coordinates_parallel_projection))
 
     def start(self):
         self.app.exec()

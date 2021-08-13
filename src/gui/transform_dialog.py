@@ -27,7 +27,8 @@ class RotateTransformation(Transformation):
         self.angle = angle
         self.point = point
         self.axis_option = axis_option
-        self.axis : Line = Line('__', [Point3D(0,0,0), axis])
+        if axis_option == RotateAxisOptionsEnum.ARBITRARY:
+            self.axis : Line = Line('__', [Point3D(0,0,0), axis])
 
     def __str__(self) -> str:
         if self.option == RotateOptionsEnum.POINT:
@@ -76,7 +77,7 @@ class RotateTransformation(Transformation):
                 print(f'Axis new coords : {new_coords.__str__()}')
 
                 # Find the angle to rotate on x to make z = 0 (xy plane)
-                angle_x = degrees(arctan(-new_coords.z()/new_coords.y()))
+                angle_x = -degrees(arctan(new_coords.z()/new_coords.y()))
 
                 print(f'theta_x = {angle_x}')
 

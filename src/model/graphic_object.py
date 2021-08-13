@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 
-from src.util.transform import iterative_viewport_transform, viewport_transform
+from src.util.transform import iterative_viewport_transform, viewport_transform, parallel_projection
 from src.model.point import Point3D
 from src.util.clipping.curve_clipper import curve_clip
 
@@ -66,6 +66,7 @@ class GraphicObject(ABC):
                     pass
             else:
                 try:
+                    
                     points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
 
                     painter_path.moveTo(points[0].to_QPointF())
@@ -130,7 +131,6 @@ class WireFrame(GraphicObject):
     
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
-
         self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
 
         if not self.is_clipped:
@@ -280,12 +280,13 @@ class Object3D(GraphicObject):
             self.edges_lines.append(line)
 
         self.faces_wireframes : List[WireFrame] = []
-
+        
         for face in faces:
             coords = []
             for edge in face:
                 coords.extend(self.edges_lines[edge - 1].coordinates)
             self.faces_wireframes.append(WireFrame('_', coords, self.color, False, True))
+
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pass
@@ -293,7 +294,7 @@ class Object3D(GraphicObject):
 
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
-    curve_option: CurveEnum = None, edges: str = None, faces: str = None, onError: Callable = None) -> Union[GraphicObject, None]:
+    curve_option: CurveEnum = None, edges: str = None, faces: str = None, window_coordinates : List[Point3D] = None, onError: Callable = None) -> Union[GraphicObject, None]:
     
     graphic_obj: GraphicObject = None
 
@@ -314,7 +315,14 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
                 graphic_obj = BSpline(name, type, coordinates, color)
         
         if type == GraphicObjectEnum.OBJECT_3D:
-            graphic_obj = Object3D(name, type, coordinates, color, edges, faces)
+
+            transform_matrix = parallel_projection(window_coordinates)
+            coords = []
+            for c in coordinates:
+                m = dot(c.coordinates,transform_matrix)
+                coords.append(Point3D(m[0][0], m[0][1]))
+
+            graphic_obj = Object3D(name, type, coords, color, edges, faces)
         
     except ValueError as e:
             onError(e.__str__())
@@ -340,7 +348,7 @@ def get_rgb(color: QColor) -> list:
 
     return rgb
 
-def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> GraphicObject:
+def apply_matrix_in_object(object: GraphicObject, m: List[List[float]], window_coordinates : List[Point3D] = None) -> GraphicObject:
     coords = []
     for Point3D in object.coordinates:
         coords.append(apply_matrix_in_point(Point3D, m))
@@ -352,7 +360,7 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
         return create_graphic_object(object.type, object.name, coords, object.color, curve_option=object.curve_type)
 
     if isinstance(object, Object3D):
-        return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces)
+        return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces, window_coordinates=window_coordinates)
 
     return create_graphic_object(object.type, object.name, coords, object.color)
 

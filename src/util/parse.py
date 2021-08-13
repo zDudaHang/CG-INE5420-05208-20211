@@ -1,7 +1,7 @@
 from typing import Union, List
 from src.model.point import Point3D
 
-def parse(text: str) -> Union[None, List[Point3D]]:   
+def parse(text: str) -> Union[None, List[Point3D]]:  
     text += ','
     l : List[tuple] = list(eval(text))
     l_points : List[Point3D] = []

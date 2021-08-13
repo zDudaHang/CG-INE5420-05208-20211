@@ -76,4 +76,3 @@ class LiagnBarksyClipper():
         line.coordinates = [Point3D(x1, y1), Point3D(x2, y2)]
 
         return line
-
