@@ -1,5 +1,6 @@
-from src.model.graphic_object import GraphicObject
-from src.util.transform import generate_rotate_operation_matrix, generate_rx_rotation_matrix, generate_ry_rotation_matrix, generate_rz_rotation_matrix, generate_scale_operation_matrix, translate_matrix_for_rotated_window
+from src.util.math import concat_transformation_matrixes
+from src.model.graphic_object import GraphicObject, Line, apply_matrix_in_object
+from src.util.transform import generate_rotate_operation_matrix, generate_rx_rotation_matrix, generate_ry_rotation_matrix, generate_rz_rotation_matrix, generate_scale_operation_matrix, generate_translation_matrix, translate_matrix_for_rotated_window
 from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 from src.model.enum.rotate_options_enum import RotateOptionsEnum
 from PyQt5.QtWidgets import QButtonGroup, QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QRadioButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
@@ -10,7 +11,7 @@ from src.model.point import Point3D
 from src.gui.log import Log
 
 from abc import ABC, abstractmethod
-from numpy import array
+from numpy import array, degrees, linalg, arctan
 
 class Transformation(ABC):
     def __init__(self):
@@ -26,14 +27,14 @@ class RotateTransformation(Transformation):
         self.angle = angle
         self.point = point
         self.axis_option = axis_option
-        self.axis = axis
+        self.axis : Line = Line('__', [Point3D(0,0,0), axis])
 
     def __str__(self) -> str:
         if self.option == RotateOptionsEnum.POINT:
             return f'Rotacionar em torno do ponto {self.point.__str__()} em {self.angle} graus'
         elif self.option == RotateOptionsEnum.AXIS:
             if self.axis_option == RotateAxisOptionsEnum.ARBITRARY:
-                return f'Rotacionar em torno de um eixo arbitrário A= {self.axis.__str__()} em {self.angle} graus'
+                return f'Rotacionar em torno de um eixo arbitrário A= {self.axis.coordinates[1].__str__()} em {self.angle} graus'
             else:
                 return f'Rotacionar em torno do eixo {RotateAxisOptionsEnum._to_str(self.axis_option)} em {self.angle} graus'
         return f'{self.option.value} em {self.angle} graus'
@@ -54,7 +55,74 @@ class RotateTransformation(Transformation):
                 return generate_rz_rotation_matrix(self.angle)
             else:
                 print('Rotação em um eixo arbitrário')
-                return generate_rz_rotation_matrix(self.angle)
+
+                a_center = self.axis.center
+                
+                print(f'Axis center {a_center.__str__()}')
+
+                # First, translate the axis to have one point (the center) in origin
+                t = generate_translation_matrix(-a_center.x(), -a_center.y(), -a_center.z())
+
+                print(f'T = {t}')
+
+                # Get the inverse of t to move it back later
+                t_inv = linalg.inv(t)
+
+                # Apply the matrix in A
+                self.axis = apply_matrix_in_object(self.axis, t)
+
+                new_coords = self.axis.coordinates[1]
+
+                print(f'Axis new coords : {new_coords.__str__()}')
+
+                # Find the angle to rotate on x to make z = 0 (xy plane)
+                angle_x = degrees(arctan(-new_coords.z()/new_coords.y()))
+
+                print(f'theta_x = {angle_x}')
+
+                # Now make the rx matrix
+                rx = generate_rx_rotation_matrix(angle_x)
+
+                # Get the inverse to go back
+                rx_inv = linalg.inv(rx)
+
+                # Apply rx on axis
+                self.axis = apply_matrix_in_object(self.axis, rx)
+
+                new_coords = self.axis.coordinates[1]
+
+                print(f'Axis new coords : {new_coords.__str__()}')
+
+                # Now get the angle to rotate in z to make x = 0 (y axis) The axis's already in xy plane, so z = 0
+                angle_z = degrees(arctan(new_coords.x()/new_coords.y()))
+
+                print(f'theta_z = {angle_z}')
+
+                # Now make the rz matrix
+                rz = generate_rz_rotation_matrix(angle_z)
+
+                # Get the inverse to go back
+                rz_inv = linalg.inv(rz)
+
+                # Apply rz on axis
+                self.axis = apply_matrix_in_object(self.axis, rz)
+
+                new_coords = self.axis.coordinates[1]
+
+                print(f'Axis new coords : {new_coords.__str__()}')
+
+                # Now rotate the angle that user wants
+                ry = generate_ry_rotation_matrix(self.angle)
+
+                return concat_transformation_matrixes([
+                    t, 
+                    rx,
+                    rz,
+                    ry,
+                    rz_inv,
+                    rx_inv,
+                    t_inv
+                ])
 
 class ScaleTransformation(Transformation):
     def __init__(self, sx: float, sy: float, sz:float):
@@ -344,7 +412,7 @@ class RotatingTabWidget(QWidget):
                 elif len(axis) != 1:
                     self.add_transformation(None, "Um vetor deve ter apenas um par de coordenadas.")
                 else:
-                    self.add_transformation(RotateTransformation(option, -float(angle), axis_option=axis_option, axis=axis))
+                    self.add_transformation(RotateTransformation(option, -float(angle), axis_option=axis_option, axis=axis[0]))
             else:
                 self.add_transformation(RotateTransformation(option, -float(angle), axis_option=axis_option))
         else:

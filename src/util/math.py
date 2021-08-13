@@ -15,3 +15,11 @@ def angle_between_vectors(u: np.array, v: np.array) -> float:
         angle = -angle
     
     return angle
+
+def concat_transformation_matrixes(matrixes: List[np.array]) -> np.array:
+    final = matrixes[0]
+
+    for m in matrixes[1:]:
+        final = np.dot(final, m)
+
+    return final

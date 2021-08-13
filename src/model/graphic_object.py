@@ -66,7 +66,6 @@ class GraphicObject(ABC):
                     pass
             else:
                 try:
-                    print(self.coordinates[0])
                     points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
 
                     painter_path.moveTo(points[0].to_QPointF())
