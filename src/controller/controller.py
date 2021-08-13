@@ -1,3 +1,4 @@
+import numpy
 from src.model.enum.curve_enum import CurveEnum
 from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
 from src.util.clipping.liang_barksy_clipper import LiagnBarksyClipper
@@ -12,18 +13,18 @@ from typing import Dict, List,  Union
 from typing import List, Union
 from PyQt5.QtGui import QColor
 
-from src.util.math import angle_between_vectors, matrix_multiplication
+from src.util.math import angle_between_vectors
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point3D
 from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from src.util.clipping.point_clipper import PointClipper
 
-import numpy as np
+from numpy import dot, array
 
 ORIGIN = Point3D(0,0,0)
 
@@ -268,30 +269,11 @@ class Controller():
             [0, 0, 0, 1]
         ]
         
-        for t in self.tranform_dialog.transformations:
-            m = []
-            
-            if isinstance(t, ScaleTransformation):
-                m = generate_scale_operation_matrix(obj.center, t.sx, t.sy, t.sz)
-            
-            elif isinstance(t, TranslateTransformation):
-                m = translate_matrix_for_rotated_window(t.dx, t.dy, t.dz, self.calculate_angle_vup_y_axis(), self.center)
-            
-            elif isinstance(t, RotateTransformation):
-
-                if t.option == RotateOptionsEnum.WORLD:
-                    m = generate_rotate_operation_matrix(0, 0, 0, t.angle)
-                
-                elif t.option == RotateOptionsEnum.OBJECT:
-                    m = generate_rotate_operation_matrix(obj.center.x(), obj.center.y(), obj.center.z(), t.angle)
-                
-                else: 
-                    m = generate_rotate_operation_matrix(t.point.x(), t.point.y(), t.point.z(), t.angle)
-                
-            matrix_t = matrix_multiplication(matrix_t, m)
+        for t in self.tranform_dialog.transformations:               
+            matrix_t = dot(matrix_t, t.generate_matrix(obj, self.calculate_angle_vup_y_axis(), self.center))
 
         for i in range(0, len(obj.coordinates)):
-            obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
+            obj.coordinates[i].coordinates = dot(obj.coordinates[i].coordinates, matrix_t)
         
         obj.center = calculate_center(obj.coordinates)
         
@@ -343,7 +325,7 @@ class Controller():
         dx = dx * self.window_width
         dy = dy * self.window_height
 
-        matrix = translate_window(self.window_coordinates, dx, dy, dz, self.calculate_angle_vup_y_axis(), self.center)
+        matrix = translate_window(self.window_coordinates, Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.center)
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
@@ -390,19 +372,19 @@ class Controller():
         # Primeiro precisamos transladar a window para a origem para o calculo funcionar corretamente
         if self.center != ORIGIN:
             translated = True
-            matrix = translate_object(self.window_coordinates, -self.center.x(), -self.center.y())
+            matrix = translate_object(self.window_coordinates, Point3D(-self.center.x(), -self.center.y()))
             self.center = calculate_center(matrix)
         
         center_TL_TR = calculate_center([self.window_coordinates[CoordsEnum.TOP_LEFT], self.window_coordinates[CoordsEnum.TOP_RIGHT]])
 
-        v_up = np.array([center_TL_TR.x(), center_TL_TR.y()])
-        y = np.array([0, 1])
+        v_up = array([center_TL_TR.x(), center_TL_TR.y()])
+        y = array([0, 1])
 
         angle = angle_between_vectors(v_up, y)
         
         # Desloca para onde estava anteriormente antes de criar a matriz SCN
         if translated:
-            matrix = translate_object(self.window_coordinates, distance.x(), distance.y())
+            matrix = translate_object(self.window_coordinates, Point3D(distance.x(), distance.y()))
             self.center = calculate_center(matrix)
         
         return angle
@@ -444,6 +426,13 @@ class Controller():
                 
                 if new_wireframe != None:
                     inside_window_objs.append(new_wireframe)
+            
+            elif isinstance(obj, Object3D):
+                for wireframes in obj.faces_wireframes:
+                    new_obj = SutherlandHodgman(wireframes).sutherland_hodgman_clip()
+                
+                    if new_obj != None:
+                        inside_window_objs.append(new_obj)
 
             else: inside_window_objs.append(obj)
         

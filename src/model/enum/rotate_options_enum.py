@@ -15,6 +15,9 @@ class RotateOptionsEnum(Enum):
         
         if value == RotateOptionsEnum.POINT.value:
             return RotateOptionsEnum.POINT
+
+        if value == RotateOptionsEnum.AXIS.value:
+            return RotateOptionsEnum.AXIS
         
         return None
 

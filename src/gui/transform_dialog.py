@@ -1,31 +1,62 @@
+from src.model.graphic_object import GraphicObject
+from src.util.transform import generate_rotate_operation_matrix, generate_rx_rotation_matrix, generate_ry_rotation_matrix, generate_rz_rotation_matrix, generate_scale_operation_matrix, translate_matrix_for_rotated_window
 from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 from src.model.enum.rotate_options_enum import RotateOptionsEnum
 from PyQt5.QtWidgets import QButtonGroup, QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QPushButton, QRadioButton, QTabWidget, QVBoxLayout, QLineEdit, QWidget
-from typing import Callable, Union
+from typing import Callable, List, Union
 
 from src.util.parse import parse
 from src.model.point import Point3D
 from src.gui.log import Log
 
-class RotateTransformation():
+from abc import ABC, abstractmethod
+from numpy import array
+
+class Transformation(ABC):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def generate_matrix(self, obj: GraphicObject, v_up_angle: float, window_center: Point3D) -> array:
+        pass
+
+class RotateTransformation(Transformation):
     def __init__(self, option: RotateOptionsEnum, angle: float, point: Point3D = None, axis_option = RotateAxisOptionsEnum, axis : Point3D = None):
         self.option = option
         self.angle = angle
-
-        if self.option == RotateOptionsEnum.POINT:
-            self.point = point
-        
-        if self.option == RotateOptionsEnum.AXIS:
-            self.axis_option = axis_option
-            if self.axis_option == RotateAxisOptionsEnum.ARBITRARY:
-                self.axis = axis
+        self.point = point
+        self.axis_option = axis_option
+        self.axis = axis
 
     def __str__(self) -> str:
-        if self.option != RotateOptionsEnum.POINT:
-            return f'{self.option.value} em {self.angle} graus'
-        return f'Rotacionar em torno do ponto {self.point.__str__()} em {self.angle} graus'
+        if self.option == RotateOptionsEnum.POINT:
+            return f'Rotacionar em torno do ponto {self.point.__str__()} em {self.angle} graus'
+        elif self.option == RotateOptionsEnum.AXIS:
+            if self.axis_option == RotateAxisOptionsEnum.ARBITRARY:
+                return f'Rotacionar em torno de um eixo arbitrário A= {self.axis.__str__()} em {self.angle} graus'
+            else:
+                return f'Rotacionar em torno do eixo {RotateAxisOptionsEnum._to_str(self.axis_option)} em {self.angle} graus'
+        return f'{self.option.value} em {self.angle} graus'
 
-class ScaleTransformation():
+    def generate_matrix(self, obj: GraphicObject, v_up_angle: float, window_center: Point3D) -> array:
+        if self.option == RotateOptionsEnum.WORLD:
+            return generate_rotate_operation_matrix(Point3D(0,0,0), self.angle)
+        elif self.option == RotateOptionsEnum.OBJECT:
+            return generate_rotate_operation_matrix(obj.center, self.angle)
+        elif self.option == RotateOptionsEnum.POINT:
+            return generate_rotate_operation_matrix(self.point, self.angle)
+        else:
+            if self.axis_option == RotateAxisOptionsEnum.X:
+                return generate_rx_rotation_matrix(self.angle)
+            elif self.axis_option == RotateAxisOptionsEnum.Y:
+                return generate_ry_rotation_matrix(self.angle)
+            elif self.axis_option == RotateAxisOptionsEnum.Z:
+                return generate_rz_rotation_matrix(self.angle)
+            else:
+                print('Rotação em um eixo arbitrário')
+                return generate_rz_rotation_matrix(self.angle)
+
+class ScaleTransformation(Transformation):
     def __init__(self, sx: float, sy: float, sz:float):
         self.sx = sx
         self.sy = sy
@@ -33,8 +64,11 @@ class ScaleTransformation():
     
     def __str__(self) -> str:
         return f'Escalonar(sx={self.sx}, sy={self.sy},sz={self.sz})'
+    
+    def generate_matrix(self, obj: GraphicObject, v_up_angle: float, window_center: Point3D) -> array:
+        return generate_scale_operation_matrix(obj.center, self.sx, self.sy, self.sz)
 
-class TranslateTransformation():
+class TranslateTransformation(Transformation):
     def __init__(self, dx: float, dy: float, dz: float):
         self.dx = dx
         self.dy = dy
@@ -43,11 +77,14 @@ class TranslateTransformation():
     def __str__(self) -> str:
         return f'Transladar(dx={self.dx}, dy={self.dy}, dz={self.dz})'
 
+    def generate_matrix(self, obj: GraphicObject, v_up_angle: float, window_center: Point3D) -> array:
+        return translate_matrix_for_rotated_window(Point3D(self.dx, self.dy, self.dz), v_up_angle, window_center)
+
 class TransformDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.transformations = []
+        self.transformations : List[Transformation]= []
 
         self.setGeometry(0,0,850,100)
 
@@ -229,8 +266,6 @@ class RotatingTabWidget(QWidget):
 
         # ====== AXIS 
 
-        self.selected_axis : RotateAxisOptionsEnum = RotateAxisOptionsEnum.X
-
         self.axis_layout = QVBoxLayout()
         self.radiobuttons_layout = QHBoxLayout()
         self.axis_layout.addWidget(QLabel('Eixo de referência para rotação'))
@@ -238,26 +273,26 @@ class RotatingTabWidget(QWidget):
         self.axis_button_group = QButtonGroup(self)
 
         # X
-        self.x_axis_button = QRadioButton('X')
+        self.x_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.X))
         self.x_axis_button.setChecked(True)
         self.axis_button_group.addButton(self.x_axis_button, RotateAxisOptionsEnum.X)
         self.radiobuttons_layout.addWidget(self.x_axis_button)
         self.x_axis_button.toggled.connect(lambda: self.handle_click(RotateAxisOptionsEnum.X))
 
         # Y
-        self.y_axis_button = QRadioButton('Y')
+        self.y_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.Y))
         self.axis_button_group.addButton(self.y_axis_button, RotateAxisOptionsEnum.Y)
         self.radiobuttons_layout.addWidget(self.y_axis_button)
         self.y_axis_button.toggled.connect(lambda: self.handle_click(RotateAxisOptionsEnum.Y))
 
         # Z
-        self.z_axis_button = QRadioButton('Z')
+        self.z_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.Z))
         self.axis_button_group.addButton(self.z_axis_button, RotateAxisOptionsEnum.Z)
         self.radiobuttons_layout.addWidget(self.z_axis_button)
         self.z_axis_button.toggled.connect(lambda: self.handle_click(RotateAxisOptionsEnum.Z))
 
         # ARBITRARY
-        self.arbitrary_axis_button = QRadioButton('Arbitrário')
+        self.arbitrary_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.ARBITRARY))
         self.axis_button_group.addButton(self.arbitrary_axis_button, RotateAxisOptionsEnum.ARBITRARY)
         self.radiobuttons_layout.addWidget(self.arbitrary_axis_button)
         self.arbitrary_axis_button.toggled.connect(lambda: self.handle_click(RotateAxisOptionsEnum.ARBITRARY))
@@ -290,24 +325,37 @@ class RotatingTabWidget(QWidget):
     def handle_submit(self):
         angle = self.angle_input.text()
         option = RotateOptionsEnum.valueOf(self.combo_box.currentText())
+        axis_option = RotateAxisOptionsEnum.valueOf(self.axis_button_group.checkedId())
+
         if option == RotateOptionsEnum.POINT:
-            points = parse(self.point_input.text())
-        if option == RotateOptionsEnum.POINT:
-            if points == None:
+            point = parse(self.point_input.text())
+            if point == None:
                 self.add_transformation(None, "As coordenadas do ponto não respeitam o formato, por favor respeite.")
-                return None
-            elif len(points) != 1:
+            elif len(point) != 1:
                 self.add_transformation(None, "Um ponto deve ter apenas um par de coordenadas.")
-                return None
             else:
-                self.add_transformation(RotateTransformation(option, -float(angle), points[0]))
-                return
-        self.add_transformation(RotateTransformation(option, -float(angle)))
+                self.add_transformation(RotateTransformation(option, -float(angle), point[0]))
+               
+        elif option == RotateOptionsEnum.AXIS:
+            if axis_option == RotateAxisOptionsEnum.ARBITRARY:
+                axis = parse(self.arbitrary_axis_input.text())
+                if axis == None:
+                    self.add_transformation(None, "As coordenadas do eixo não respeitam o formato, por favor respeite.")
+                elif len(axis) != 1:
+                    self.add_transformation(None, "Um vetor deve ter apenas um par de coordenadas.")
+                else:
+                    self.add_transformation(RotateTransformation(option, -float(angle), axis_option=axis_option, axis=axis))
+            else:
+                self.add_transformation(RotateTransformation(option, -float(angle), axis_option=axis_option))
+        else:
+            self.add_transformation(RotateTransformation(option, -float(angle)))
+        
         self.clear_inputs()
 
     def clear_inputs(self):
         self.angle_input.clear()
         self.point_input.clear()
+        self.arbitrary_axis_input.clear()
         self.combo_box.setCurrentIndex(0)
         self.x_axis_button.setChecked(True)
     
@@ -316,10 +364,9 @@ class RotatingTabWidget(QWidget):
             self.point_input.setEnabled(True)
         else:
             self.point_input.setDisabled(True)
+
+    def handle_click(self, option: RotateAxisOptionsEnum):
         if self.combo_box.currentText() == RotateOptionsEnum.AXIS.value and self.axis_button_group.checkedId() == RotateAxisOptionsEnum.ARBITRARY:
             self.arbitrary_axis_input.setEnabled(True)
         else:
             self.arbitrary_axis_input.setDisabled(True)
-
-    def handle_click(self, option: RotateAxisOptionsEnum):
-        self.selected_axis = option

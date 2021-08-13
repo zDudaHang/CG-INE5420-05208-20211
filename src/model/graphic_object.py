@@ -1,6 +1,5 @@
 from src.model.enum.curve_enum import CurveEnum
 from src.util.curves import blending_function, get_GB, get_GB_Spline, forward_differences
-from src.util.math import matrix_multiplication
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
 from abc import ABC, abstractmethod
@@ -10,6 +9,8 @@ from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 from src.util.transform import iterative_viewport_transform, viewport_transform
 from src.model.point import Point3D
 from src.util.clipping.curve_clipper import curve_clip
+
+from numpy import dot
 
 class GraphicObject(ABC):
 
@@ -65,7 +66,6 @@ class GraphicObject(ABC):
                     pass
             else:
                 try:
-                    print('self.coordinates[0]')
                     print(self.coordinates[0])
                     points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
 
@@ -131,10 +131,6 @@ class WireFrame(GraphicObject):
     
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
-
-        print('draw')
-        for c in self.coordinates:
-            print(c)
 
         self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
 
@@ -293,10 +289,7 @@ class Object3D(GraphicObject):
             self.faces_wireframes.append(WireFrame('_', coords, self.color, False, True))
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
-        for face in self.faces_wireframes:
-            for coord in face.coordinates:
-                print(coord)
-            face.draw(painter, viewport_min, viewport_max, viewport_origin)
+        pass
 
 
 
@@ -365,5 +358,6 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point3D, m: List[List[float]]) -> Point3D:
-    r = matrix_multiplication(point.coordinates, m)
+    r = dot(point.coordinates, m)
+
     return Point3D(r[0][0], r[0][1])
