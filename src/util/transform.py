@@ -78,58 +78,58 @@ def translate_object(object_coordinates: List[Point3D], dx: float, dy: float) ->
         coord.coordinates = matrix_multiplication(coord.coordinates, t)
     return object_coordinates
 
-def translate_matrix_for_rotated_window(dx: float, dy: float, angle: float, cx: float, cy: float) -> List[Point3D]:
+def translate_matrix_for_rotated_window(dx: float, dy: float, dz: float, angle: float, center: Point3D) -> List[Point3D]:
     # First, align the window with the world (-angle)
-    r_align_with_world = generate_rotate_operation_matrix(cx, cy, -angle)
+    r_align_with_world = generate_rotate_operation_matrix(center.x(), center.y(), center.z(), -angle)
 
     # Move the window
-    t = generate_translation_matrix(dx, dy)
+    t = generate_translation_matrix(dx, dy, dz)
 
     # Then rotate the window back (angle)
-    r_rotate_back = generate_rotate_operation_matrix(cx, cy, angle)
+    r_rotate_back = generate_rotate_operation_matrix(center.x(), center.y(), center.z(), angle)
 
     r = matrix_multiplication(r_align_with_world, t)
     return matrix_multiplication(r, r_rotate_back)
 
-def translate_window(object_coordinates: List[Point3D], dx: float, dy: float, angle: float, cx: float, cy: float) -> List[Point3D]:
-    final = translate_matrix_for_rotated_window(dx, dy, angle, cx, cy)
+def translate_window(object_coordinates: List[Point3D], dx: float, dy: float, dz: float, angle: float, center: Point3D) -> List[Point3D]:
+    final = translate_matrix_for_rotated_window(dx, dy, dz, angle, center)
     
     for coord in object_coordinates:
         coord.coordinates = matrix_multiplication(coord.coordinates, final)
     return object_coordinates
 
-def rotate_window(object_coordinates: List[Point3D], angle: float, cx: float, cy: float) -> List[Point3D]:
-    final = generate_rotate_operation_matrix(cx, cy, angle)
+def rotate_window(object_coordinates: List[Point3D], angle: float, center: Point3D) -> List[Point3D]:
+    final = generate_rotate_operation_matrix(center.x(), center.y(), center.z(), angle)
     
     for coord in object_coordinates:
         coord.coordinates = matrix_multiplication(coord.coordinates, final)
     return object_coordinates
 
-def scale_window(object_coordinates: List[Point3D], cx: float, cy: float, sx: float, sy: float) -> List[Point3D]:
-    final = generate_scale_operation_matrix(cx, cy, sx, sy)
+def scale_window(object_coordinates: List[Point3D], center: Point3D, sx: float, sy: float) -> List[Point3D]:
+    final = generate_scale_operation_matrix(center, sx, sy, 1)
 
     for coord in object_coordinates:
         coord.coordinates = matrix_multiplication(coord.coordinates, final)
     return object_coordinates
 
-def generate_scale_operation_matrix(cx: float, cy: float, sx: float, sy: float) -> List[List[float]]:
-    t1 = generate_translation_matrix(-cx, -cy)
-    scale = generate_scaling_matrix(sx, sy)
-    t2 = generate_translation_matrix(cx, cy)
+def generate_scale_operation_matrix(center: Point3D, sx: float, sy: float, sz: float) -> List[List[float]]:
+    t1 = generate_translation_matrix(-center.x(), -center.y(), -center.z())
+    scale = generate_scaling_matrix(sx, sy, sz)
+    t2 = generate_translation_matrix(center.x(), center.y(), center.z())
 
     r = matrix_multiplication(t1, scale)
     return matrix_multiplication(r, t2)
 
-def generate_rotate_operation_matrix(dx: float, dy: float, angle: float) -> List[List[float]]:
-    t1 = generate_translation_matrix(-dx, -dy)
+def generate_rotate_operation_matrix(dx: float, dy: float, dz: float, angle: float) -> List[List[float]]:
+    t1 = generate_translation_matrix(-dx, -dy, -dz)
     rot = generate_rz_rotation_matrix(angle)
-    t2 = generate_translation_matrix(dx, dy)
+    t2 = generate_translation_matrix(dx, dy, dz)
 
     r = matrix_multiplication(t1, rot)
     return matrix_multiplication(r, t2)
 
-def generate_scn_matrix(cx_w: float, cy_w: float, height_w: float, width_w: float, angle: float) -> List[List[float]]:
-    t = generate_translation_matrix(-cx_w, -cy_w)
+def generate_scn_matrix(center: Point3D, height_w: float, width_w: float, angle: float) -> List[List[float]]:
+    t = generate_translation_matrix(-center.x(), -center.y(), -center.z())
     r = generate_rz_rotation_matrix(-angle)
     s = generate_scaling_matrix(1/(width_w/2), 1/(height_w/2))
 

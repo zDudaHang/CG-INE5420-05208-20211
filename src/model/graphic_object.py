@@ -335,7 +335,8 @@ def calculate_center(coordinates: List[Point3D]) -> Union[Point3D, None]:
     if size > 0:
         cx = reduce(lambda acc, p: acc + p.x(), coordinates, 0) / size
         cy = reduce(lambda acc, p: acc + p.y(), coordinates, 0) / size
-        return Point3D(cx, cy)
+        cz = reduce(lambda acc, p: acc + p.z(), coordinates, 0) / size
+        return Point3D(cx, cy, cz)
     else: 
         return None
 
