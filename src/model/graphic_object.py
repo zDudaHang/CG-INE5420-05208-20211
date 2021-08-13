@@ -130,10 +130,6 @@ class WireFrame(GraphicObject):
     
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
-        # print('draw')
-        # for c in self.coordinates:
-        #     print(c)
-
         self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
 
         if not self.is_clipped:
@@ -319,6 +315,7 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
                 graphic_obj = BSpline(name, type, coordinates, color)
         
         if type == GraphicObjectEnum.OBJECT_3D:
+
             transform_matrix = parallel_projection(window_coordinates)
             coords = []
             for c in coordinates:

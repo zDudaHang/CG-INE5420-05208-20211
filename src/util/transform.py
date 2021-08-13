@@ -1,6 +1,8 @@
 from typing import List
 from math import sin, cos, radians, degrees, atan
 
+from numpy import void
+
 from src.model.point import Point3D
 from src.util.math import matrix_multiplication, matrix_subtraction
 
@@ -155,8 +157,9 @@ def get_vpn(window_coordinates : List[Point3D], vpr : List[List[float]]) -> List
     wc_list_1 = [window_coordinates[1].x(), window_coordinates[1].y(), window_coordinates[1].z()]
 
     v = matrix_subtraction(wc_list_0, vpr)
+    
     u = matrix_subtraction(vpr, wc_list_1)
-
+ 
     c_x = v[1]*u[2] - v[2]*u[1]
     c_y = v[2]*u[0] - v[0]*u[2]
     c_z = v[0]*u[1] - v[1]*u[0]
@@ -169,19 +172,18 @@ def angle_with_vpn(vpn : List[float]):
     
     # rotação em y
     teta_y = degrees(atan(vpn[0]/vpn[2]))
-
+    
     return teta_x, teta_y
 
 def parallel_projection(window_coordinates : List[Point3D]) -> List[List[float]]:
 
     vpr = get_vpr(window_coordinates)
-
-    trans = generate_translation_matrix(-vpr[0], -vpr[1], - vpr[2])
-  
-
-    vpn = get_vpn(window_coordinates, vpr)
     
+    trans = generate_translation_matrix(-vpr[0], -vpr[1], - vpr[2])
 
+    #vpn = get_vpn(window_coordinates, vpr)
+    vpn = [2, 1, 2]
+    
     teta_x, teta_y = angle_with_vpn(vpn)
 
     rot_x = generate_rx_rotation_matrix(teta_x)

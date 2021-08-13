@@ -223,8 +223,9 @@ class RotatingTabWidget(QWidget):
 
     def handle_submit(self):
         angle = self.angle_input.text()
-        points = parse(self.point_input.text())
         option = RotateOptionsEnum.valueOf(self.combo_box.currentText())
+        if option == RotateOptionsEnum.POINT:
+            points = parse(self.point_input.text() + ',')
         if option == RotateOptionsEnum.POINT:
             if points == None:
                 self.add_transformation(None, "As coordenadas do ponto não respeitam o formato, por favor respeite.")
