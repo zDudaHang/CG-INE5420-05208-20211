@@ -1,6 +1,5 @@
 from src.model.enum.curve_enum import CurveEnum
 from src.util.curves import blending_function, get_GB, get_GB_Spline, forward_differences
-from src.util.math import matrix_multiplication
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
 from abc import ABC, abstractmethod
@@ -10,6 +9,8 @@ from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 from src.util.transform import iterative_viewport_transform, viewport_transform, parallel_projection
 from src.model.point import Point3D
 from src.util.clipping.curve_clipper import curve_clip
+
+from numpy import dot
 
 class GraphicObject(ABC):
 
@@ -288,8 +289,7 @@ class Object3D(GraphicObject):
 
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
-        for face in self.faces_wireframes:
-            face.draw(painter, viewport_min, viewport_max, viewport_origin)
+        pass
 
 
 
@@ -319,7 +319,7 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
             transform_matrix = parallel_projection(window_coordinates)
             coords = []
             for c in coordinates:
-                m = matrix_multiplication(c.coordinates,transform_matrix)
+                m = dot(c.coordinates,transform_matrix)
                 coords.append(Point3D(m[0][0], m[0][1]))
 
             graphic_obj = Object3D(name, type, coords, color, edges, faces)
@@ -335,7 +335,8 @@ def calculate_center(coordinates: List[Point3D]) -> Union[Point3D, None]:
     if size > 0:
         cx = reduce(lambda acc, p: acc + p.x(), coordinates, 0) / size
         cy = reduce(lambda acc, p: acc + p.y(), coordinates, 0) / size
-        return Point3D(cx, cy)
+        cz = reduce(lambda acc, p: acc + p.z(), coordinates, 0) / size
+        return Point3D(cx, cy, cz)
     else: 
         return None
 
@@ -364,5 +365,6 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]], window_c
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point3D, m: List[List[float]]) -> Point3D:
-    r = matrix_multiplication(point.coordinates, m)
+    r = dot(point.coordinates, m)
+
     return Point3D(r[0][0], r[0][1])

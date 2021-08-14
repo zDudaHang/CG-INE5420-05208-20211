@@ -1,6 +1,6 @@
 from typing import List
 from src.model.point import Point3D
-from src.util.math import matrix_multiplication
+from numpy import dot
 
 BEZIER_MATRIX = [
     [-1, 3, -3, 1],
@@ -40,8 +40,8 @@ def get_GB(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D) -> BezierGeometry
 
 def blending_function(t: float, gb: List[List[float]]) -> float:
     matrix_t = [[pow(t, 3), pow(t, 2), t, 1]]
-    blending = matrix_multiplication(matrix_t, BEZIER_MATRIX)
-    return matrix_multiplication(blending, gb)[0][0]
+    blending = dot(matrix_t, BEZIER_MATRIX)
+    return dot(blending, gb)[0][0]
 
 
 class BSpline:
@@ -75,12 +75,12 @@ def forward_differences(d: float, gb: List[List[float]]):
         [6*pow(d, 3), 0, 0, 0]
     ]
 
-    c_x = matrix_multiplication(BSPLINE_MATRIX, gb.x)
-    c_y = matrix_multiplication(BSPLINE_MATRIX, gb.y)
+    c_x = dot(BSPLINE_MATRIX, gb.x)
+    c_y = dot(BSPLINE_MATRIX, gb.y)
 
 
-    fwdd_x = matrix_multiplication(matrix_e, c_x)
-    fwdd_y = matrix_multiplication(matrix_e, c_y)
+    fwdd_x = dot(matrix_e, c_x)
+    fwdd_y = dot(matrix_e, c_y)
 
 
     return fwdd_x, fwdd_y

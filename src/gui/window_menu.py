@@ -1,5 +1,6 @@
+from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QGridLayout, QHBoxLayout,  QVBoxLayout, QLabel, QWidget, QPushButton
+from PyQt5.QtWidgets import QButtonGroup, QGridLayout, QHBoxLayout, QRadioButton,  QVBoxLayout, QLabel, QWidget, QPushButton
 
 from src.gui.h_line import QHLine
 

@@ -1,3 +1,5 @@
+from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
+import numpy
 from src.model.enum.curve_enum import CurveEnum
 from src.model.enum.line_clipping_options_enum import LineClippingOptionsEnum
 from src.util.clipping.liang_barksy_clipper import LiagnBarksyClipper
@@ -12,21 +14,21 @@ from typing import Dict, List,  Union
 from typing import List, Union
 from PyQt5.QtGui import QColor
 
-from src.util.math import angle_between_vectors, matrix_multiplication
+from src.util.math import angle_between_vectors
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point3D
-from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
+from src.util.transform import generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_object, translate_window
 from src.util.parse import parse
-from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
+from src.gui.transform_dialog import TransformDialog
 from src.util.clipping.point_clipper import PointClipper
 
-import numpy as np
+from numpy import dot, array
 import copy
 
-ORIGIN = Point3D(0,0)
+ORIGIN = Point3D(0,0,0)
 
 class Controller():
 
@@ -193,7 +195,7 @@ class Controller():
 
         coords = []
         for c in self.window_coordinates:
-            m = matrix_multiplication(c.coordinates,transform)
+            m = dot(c.coordinates,transform)
             coords.append(Point3D(m[0][0], m[0][1], m[0][2]))
 
         self.window_coordinates[CoordsEnum.TOP_LEFT] = coords[CoordsEnum.TOP_LEFT]
@@ -289,30 +291,11 @@ class Controller():
             [0, 0, 0, 1]
         ]
         
-        for t in self.tranform_dialog.transformations:
-            m = []
-            
-            if isinstance(t, ScaleTransformation):
-                m = generate_scale_operation_matrix(obj.center.x(), obj.center.y(), t.sx, t.sy)
-            
-            elif isinstance(t, TranslateTransformation):
-                m = translate_matrix_for_rotated_window(t.dx, t.dy, self.calculate_angle_vup_y_axis(), self.center.x(), self.center.y())
-            
-            elif isinstance(t, RotateTransformation):
-
-                if t.option == RotateOptionsEnum.WORLD:
-                    m = generate_rotate_operation_matrix(0, 0, t.angle)
-                
-                elif t.option == RotateOptionsEnum.OBJECT:
-                    m = generate_rotate_operation_matrix(obj.center.x(), obj.center.y(), t.angle)
-                
-                else: 
-                    m = generate_rotate_operation_matrix(t.point.x(), t.point.y(), t.angle)
-                
-            matrix_t = matrix_multiplication(matrix_t, m)
+        for t in self.tranform_dialog.transformations:               
+            matrix_t = dot(matrix_t, t.generate_matrix(obj, self.calculate_angle_vup_y_axis(), self.center))
 
         for i in range(0, len(obj.coordinates)):
-            obj.coordinates[i].coordinates = matrix_multiplication(obj.coordinates[i].coordinates, matrix_t)
+            obj.coordinates[i].coordinates = dot(obj.coordinates[i].coordinates, matrix_t)
         
         obj.center = calculate_center(obj.coordinates)
         
@@ -337,7 +320,7 @@ class Controller():
         else:
             scale = 1 + self.step
         
-        scale_window(self.window_coordinates, self.center.x(), self.center.y(), scale, scale)
+        scale_window(self.window_coordinates, self.center, scale, scale)
 
         # The center doesn't change when we scale the window, so we don't need to update it. But, the height and width will change, so we need to update them.
         self.window_height *= scale
@@ -350,6 +333,7 @@ class Controller():
     def window_move_handler(self, direction: str):
         dx = 0
         dy = 0
+        dz = 0
 
         if direction == 'left':
             dx = -self.step
@@ -363,12 +347,12 @@ class Controller():
         dx = dx * self.window_width
         dy = dy * self.window_height
 
-        matrix = translate_window(self.window_coordinates, dx, dy, self.calculate_angle_vup_y_axis(), self.center.x(), self.center.y())
+        matrix = translate_window(self.window_coordinates, Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.center)
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
 
-        self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {round(dx, 2)} unidades em x e {round(dy, 2)} em y. Novo centro da window: {self.center}')
+        self.main_window.log.add_item(f'[DEBUG] Movimentando a window em {round(dx, 2)} unidades em x, {round(dy, 2)} em y e {round(dz, 2)} em z. Novo centro da window: {self.center}')
 
         self.calculate_scn_coordinates()
 
@@ -381,9 +365,7 @@ class Controller():
         else:
             angle = self.step_angle
 
-        rotate_window(self.window_coordinates, angle, self.center.x(), self.center.y())
-
-        self.main_window.log.add_item(f'[DEBUG] Rotacionando a window em {angle} graus. Ângulo entre v_up e Y_mundo = {self.calculate_angle_vup_y_axis()}')
+        rotate_window(self.window_coordinates, angle, self.center)
 
         self.calculate_scn_coordinates()
 
@@ -401,7 +383,7 @@ class Controller():
         self.main_window.viewport.draw_objects(self.clip())
 
     def scn_matrix(self) -> List[List[float]]:
-        return generate_scn_matrix(self.center.x(), self.center.y(), self.window_height, self.window_width, 0)
+        return generate_scn_matrix(self.center, self.window_height, self.window_width, self.calculate_angle_vup_y_axis())
 
     def calculate_angle_vup_y_axis(self) -> float:
         translated = False
@@ -410,19 +392,19 @@ class Controller():
         # Primeiro precisamos transladar a window para a origem para o calculo funcionar corretamente
         if self.center != ORIGIN:
             translated = True
-            matrix = translate_object(self.window_coordinates, -self.center.x(), -self.center.y())
+            matrix = translate_object(self.window_coordinates, Point3D(-self.center.x(), -self.center.y()))
             self.center = calculate_center(matrix)
         
         center_TL_TR = calculate_center([self.window_coordinates[CoordsEnum.TOP_LEFT], self.window_coordinates[CoordsEnum.TOP_RIGHT]])
 
-        v_up = np.array([center_TL_TR.x(), center_TL_TR.y()])
-        y = np.array([0, 1])
+        v_up = array([center_TL_TR.x(), center_TL_TR.y()])
+        y = array([0, 1])
 
         angle = angle_between_vectors(v_up, y)
         
         # Desloca para onde estava anteriormente antes de criar a matriz SCN
         if translated:
-            matrix = translate_object(self.window_coordinates, distance.x(), distance.y())
+            matrix = translate_object(self.window_coordinates, Point3D(distance.x(), distance.y()))
             self.center = calculate_center(matrix)
         
         return angle
