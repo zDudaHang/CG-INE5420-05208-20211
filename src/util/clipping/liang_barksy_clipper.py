@@ -1,10 +1,10 @@
 from typing import Optional
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.model.graphic_object import Line
 from copy import deepcopy
 
 class LiagnBarksyClipper():
-    def __init__(self, line: Line, window_min: Point2D = Point2D(-1, -1), window_max: Point2D = Point2D(1, 1)):
+    def __init__(self, line: Line, window_min: Point3D = Point3D(-1, -1), window_max: Point3D = Point3D(1, 1)):
 
         coordinates = line.coordinates
 
@@ -73,7 +73,6 @@ class LiagnBarksyClipper():
         x2 = self.x1 + c2 * self.delta_x
         y2 = self.y1 + c2 * self.delta_y
 
-        line.coordinates = [Point2D(x1, y1), Point2D(x2, y2)]
+        line.coordinates = [Point3D(x1, y1), Point3D(x2, y2)]
 
         return line
-

@@ -1,5 +1,5 @@
 from src.model.enum.curve_enum import CurveEnum
-from typing import Any, Dict
+from typing import Any, Dict, List
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QColorDialog, QDialog, QFormLayout, QHBoxLayout, QPushButton, QRadioButton, QTabWidget, QVBoxLayout, QLineEdit, QDialogButtonBox, QWidget
 
@@ -12,7 +12,7 @@ class NewObjectDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle('Criando um novo objeto')
-        self.setGeometry(0,0,500,150)
+        self.setGeometry(0,0,900,150)
 
         self.layout = QVBoxLayout()
 
@@ -35,6 +35,10 @@ class NewObjectDialog(QDialog):
         self.widget_tabs[GraphicObjectEnum.CURVE] = self.curve_tab
         self.tabs.addTab(self.curve_tab, GraphicObjectEnum.CURVE.value)
 
+        self.obj_3d_tab = Object3DTab()
+        self.widget_tabs[GraphicObjectEnum.OBJECT_3D] = self.obj_3d_tab
+        self.tabs.addTab(self.obj_3d_tab, GraphicObjectEnum.OBJECT_3D.value)
+
         self.layout.addWidget(self.tabs)
 
         self.setLayout(self.layout)
@@ -46,10 +50,12 @@ class NewObjectDialog(QDialog):
         self.widget_tabs[name].clear_inputs()
 
 class GraphicObjectForm(QFormLayout):
-    def __init__(self, placeholder: str, new_widgets: Dict[GraphicObjectFormEnum, NewWidget] = None):
+    def __init__(self, placeholder: str, new_widgets: Dict[GraphicObjectFormEnum, NewWidget] = None, removed_default_widgest: List[GraphicObjectFormEnum] = None):
         super().__init__()
 
         self.widgets : Dict[GraphicObjectFormEnum,  NewWidget] = {}
+
+        self.removed_widgets = removed_default_widgest
 
         self.color = QColor(0,0,0)
 
@@ -68,7 +74,7 @@ class GraphicObjectForm(QFormLayout):
         self.widgets[coordinates_title] = NewWidget(coordinates, coordinates.text, coordinates.clear)
 
         # COLOR BUTTON
-        color_title = GraphicObjectFormEnum.COORDINATES
+        color_title = GraphicObjectFormEnum.COLOR
         self.color_button = QPushButton()
         self.set_color()
         self.color_button.clicked.connect(self.open_dialog_color)
@@ -95,7 +101,8 @@ class GraphicObjectForm(QFormLayout):
     def get_values(self) -> Dict[GraphicObjectFormEnum, Any]:
         values = {}
 
-        values[GraphicObjectFormEnum.COLOR] = self.color
+        if self.removed_widgets != None and not GraphicObjectFormEnum.COLOR in self.removed_widgets: 
+            values[GraphicObjectFormEnum.COLOR] = self.color
 
         for title, value in self.widgets.items():
             values[title] = value.get_value()
@@ -129,16 +136,16 @@ class GraphicObjectTabWidget(QWidget):
 
 class PointTabWidget(GraphicObjectTabWidget):
     def __init__(self):
-        super().__init__('Digite as coordenadas: (x,y)')
+        super().__init__('Digite as coordenadas: (x,y,z)')
 
 class LineTabWidget(GraphicObjectTabWidget):
     def __init__(self):
-        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2)')
+        super().__init__('Digite as coordenadas: (x1,y1,z1),(x2,y2,z2)')
 
 class WireframeTabWidget(GraphicObjectTabWidget):
     def __init__(self):
         fill_check_box = QCheckBox('Preenchido')
-        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2),(x3,y3),...', 
+        super().__init__('Digite as coordenadas: (x1,y1,z1),(x2,y2,z2),(x3,y3,z3),...', 
             {
                 GraphicObjectFormEnum.FILLED: 
                 NewWidget(fill_check_box, fill_check_box.isChecked, lambda: fill_check_box.setChecked(False))
@@ -159,9 +166,26 @@ class CurveTabWidget(GraphicObjectTabWidget):
         radio_buttons_layout.addWidget(bezier_radiobutton)
         radio_buttons_layout.addWidget(bspline_radiobutton)
 
-        super().__init__('Digite as coordenadas: (x1,y1),(x2,y2),(x3,y3), (x4,y4), ...', 
+        super().__init__('Digite as coordenadas: (x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4), ...', 
         {
             GraphicObjectFormEnum.CURVE_OPTION:
             NewWidget(radio_buttons_layout, curve_button_group.checkedId, lambda: bezier_radiobutton.setChecked(True))
         })
+
+class Object3DTab(GraphicObjectTabWidget):
+    def __init__(self):
+        new_widgets = {}
+
+        edges_input = QLineEdit()
+        # edges_input.setPlaceholderText('Digite os números dos pontos para criar as arestas: (1,2),(2,3),...')
+        edges_input.setText('(1,2),(2,3),(3,4),(4,1),(5,6),(6,7),(7,8),(8,5),(2,6),(5,1),(3,7),(8,4)')
+        new_widgets[GraphicObjectFormEnum.EDGES] = NewWidget(edges_input, edges_input.text, edges_input.clear)
+
+        faces_input = QLineEdit()
+        # faces_input.setPlaceholderText('Digite os números arestas que devem formar cada face: (1,2,3), (1,2,3,4),...')
+        faces_input.setText('(1,2,3,4),(5,6,7,8),(9,6,11,2),(10,8,12,4),(1,9,5,10),(3,11,7,12)')
+        new_widgets[GraphicObjectFormEnum.FACES] = NewWidget(faces_input, faces_input.text, faces_input.clear)
+
+        # super().__init__('Digite as coordenadas: (x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4), ...', new_widgets)
+        super().__init__('(0,0,0),(0,100,0),(100,100,0),(100,0,0),(0,0,100),(0,100,100),(100,100,100),(100,0,100)', new_widgets)
 

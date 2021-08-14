@@ -16,16 +16,17 @@ from src.util.math import angle_between_vectors, matrix_multiplication
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
-from src.model.point import Point2D
-from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
+from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.point import Point3D
+from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
 from src.util.clipping.point_clipper import PointClipper
 
 import numpy as np
+import copy
 
-ORIGIN = Point2D(0,0)
+ORIGIN = Point3D(0,0)
 
 class Controller():
 
@@ -60,9 +61,11 @@ class Controller():
 
     def set_window_values(self):
 
-        self.window_coordinates : List[Point2D] = [None, None, None, None]
+        self.window_coordinates : List[Point3D] = [None, None, None, None]
 
-        self.center = Point2D(0,0)
+        self.window_coordinates_parallel_projection : List[Point3D] = None
+
+        self.center = Point3D(0,0,0)
 
         self.window_height = 400
         self.window_width = 600
@@ -70,9 +73,9 @@ class Controller():
         self.update_window_coordinates()
     
     def set_viewport_values(self):
-        self.viewport_coordinates : List[Point2D] = [None, None, None, None]
+        self.viewport_coordinates : List[Point3D] = [None, None, None, None]
 
-        self.viewport_origin = Point2D(10,10)
+        self.viewport_origin = Point3D(10,10)
 
         self.viewport_height = 400
         self.viewport_width = 600
@@ -104,6 +107,9 @@ class Controller():
 
         self.new_object_dialog.curve_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.CURVE))
         self.new_object_dialog.curve_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.CURVE))
+
+        self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.OBJECT_3D))
+        self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.OBJECT_3D))
 
         # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
@@ -143,11 +149,11 @@ class Controller():
 # ========== IMPORT & EXPORT .OBJ FILES
 
     def import_handler(self):
-        objs : Dict[str, List[Point2D]]= self.main_window.new_objs
+        objs : Dict[str, List[Point3D]]= self.main_window.new_objs
         i = 0
 
         for key, value in objs.objects.items():
-            list_points = [Point2D(c[0],c[1]) for c in value]
+            list_points = [Point3D(c[0],c[1]) for c in value]
 
             usemtl = objs.usemtl[i]
             newmtl = objs.new_mtl.index(usemtl)
@@ -169,22 +175,40 @@ class Controller():
         self.draw_objects()
            
     def export_handler(self):
-        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], self.center, Point2D(self.window_width, self.window_height))
+        WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], self.center, Point3D(self.window_width, self.window_height))
 
 # ========== UPDATE WINDOW VALUES
 
     def update_window_coordinates(self):
+         
         self.window_coordinates[CoordsEnum.TOP_LEFT] = self.center + tuple([-self.window_width, self.window_height])
         self.window_coordinates[CoordsEnum.TOP_RIGHT] = self.center + tuple([self.window_width, self.window_height])
 
         self.window_coordinates[CoordsEnum.BOTTOM_LEFT] = self.center + tuple([-self.window_width, -self.window_height])
         self.window_coordinates[CoordsEnum.BOTTOM_RIGHT] = self.center + tuple([self.window_width, -self.window_height])
 
+        self.window_coordinates_parallel_projection = copy.copy(self.window_coordinates)
+
+        transform = parallel_projection(self.window_coordinates)
+
+        coords = []
+        for c in self.window_coordinates:
+            m = matrix_multiplication(c.coordinates,transform)
+            coords.append(Point3D(m[0][0], m[0][1], m[0][2]))
+
+        self.window_coordinates[CoordsEnum.TOP_LEFT] = coords[CoordsEnum.TOP_LEFT]
+        self.window_coordinates[CoordsEnum.TOP_RIGHT] = coords[CoordsEnum.TOP_RIGHT]
+
+        self.window_coordinates[CoordsEnum.BOTTOM_LEFT] = coords[CoordsEnum.BOTTOM_LEFT]
+        self.window_coordinates[CoordsEnum.BOTTOM_RIGHT] = coords[CoordsEnum.BOTTOM_RIGHT]
+    
+
+
     def update_window_values(self, window_obj_file: List[List[float]]):
         window_center = window_obj_file[0]
         window_dimensions = window_obj_file[1]
 
-        self.center = Point2D(window_center[0], window_center[1])
+        self.center = Point3D(window_center[0], window_center[1])
 
         self.window_width = window_dimensions[0]
         self.window_height = window_dimensions[1]
@@ -197,7 +221,10 @@ class Controller():
         values = self.new_object_dialog.get_values(type)
         name = values[GraphicObjectFormEnum.NAME]
         coordinates_str = values[GraphicObjectFormEnum.COORDINATES]
-        color = values[GraphicObjectFormEnum.COLOR]
+
+        color = None
+        if GraphicObjectFormEnum.COLOR in values:
+            color = values[GraphicObjectFormEnum.COLOR]
         
         is_filled = False
         is_clipped = False
@@ -212,6 +239,18 @@ class Controller():
         self.new_object_dialog.clear_inputs(type)
         self.new_object_dialog.close()
 
+        edges = None
+        if GraphicObjectFormEnum.EDGES in values:
+            text = values[GraphicObjectFormEnum.EDGES]
+            text += ','
+            edges : List[tuple] = list(eval(text))
+
+        faces = None
+        if GraphicObjectFormEnum.FACES in values:
+            text = values[GraphicObjectFormEnum.FACES]
+            text += ','
+            faces : List[tuple] = list(eval(text))
+
         if len(name) == 0:
             self.main_window.log.add_item("[ERRO] O nome não pode ser vazio!")
             return
@@ -219,10 +258,10 @@ class Controller():
         coordinates = self.parse_coordinates(coordinates_str)
 
         if coordinates == None:
-            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1),(x2,y2),...")
+            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1,z1),(x2,y2,z2),...")
             return
 
-        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option)
+        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option, edges, faces)
 
         self.draw_objects()
 
@@ -244,9 +283,10 @@ class Controller():
         obj = self.main_window.functions_menu.object_list.edit_object_state
 
         matrix_t = [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
         ]
         
         for t in self.tranform_dialog.transformations:
@@ -361,7 +401,7 @@ class Controller():
         self.main_window.viewport.draw_objects(self.clip())
 
     def scn_matrix(self) -> List[List[float]]:
-        return generate_scn_matrix(self.center.x(), self.center.y(), self.window_height, self.window_width, self.calculate_angle_vup_y_axis())
+        return generate_scn_matrix(self.center.x(), self.center.y(), self.window_height, self.window_width, 0)
 
     def calculate_angle_vup_y_axis(self) -> float:
         translated = False
@@ -394,7 +434,7 @@ class Controller():
         scn = self.scn_matrix()
 
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
-            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
+            self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn, self.window_coordinates_parallel_projection))
         
         self.draw_objects()
 
@@ -424,16 +464,22 @@ class Controller():
                 
                 if new_wireframe != None:
                     inside_window_objs.append(new_wireframe)
+                    
+            elif isinstance(obj, Object3D):
+                for wireframes in obj.faces_wireframes:
+                    new_obj = SutherlandHodgman(wireframes).sutherland_hodgman_clip()
+                
+                    if new_obj != None:
+                        inside_window_objs.append(new_obj)
 
             else: inside_window_objs.append(obj)
-        
         return inside_window_objs
     
-    def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point2D],None]:
+    def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None):
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, self.main_window.log.add_item)
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : str = None, faces : str = None):
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.window_coordinates_parallel_projection, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)
@@ -442,7 +488,7 @@ class Controller():
     
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
-        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
+        self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix(), self.window_coordinates_parallel_projection))
 
     def start(self):
         self.app.exec()

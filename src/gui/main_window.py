@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 
 from PyQt5.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QWidget, QErrorMessage
 
-from src.model.point import Point2D
+from src.model.point import Point3D
 from src.util.wavefront import WavefrontOBJ
 from src.gui.functions_menu import FunctionsMenu
 from src.gui.viewport import Viewport
@@ -12,7 +12,7 @@ from src.gui.log import Log
 from src.text import *
 
 class MainWindow(QMainWindow):
-    def __init__(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
+    def __init__(self, step: float, angle: float, viewport_coordinates: List[Point3D], viewport_width: int, viewport_height: int, viewport_origin: Point3D):
         super().__init__()
         self.init_gui(step, angle, viewport_coordinates, viewport_width, viewport_height, viewport_origin)
         self.put_actions()
@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
         self.error_dialog = QErrorMessage()
         
     
-    def init_gui(self, step: float, angle: float, viewport_coordinates: List[Point2D], viewport_width: int, viewport_height: int, viewport_origin: Point2D):
+    def init_gui(self, step: float, angle: float, viewport_coordinates: List[Point3D], viewport_width: int, viewport_height: int, viewport_origin: Point3D):
         self.setWindowTitle('Computação gráfica')
 
         self._centralWidget = QWidget(self)

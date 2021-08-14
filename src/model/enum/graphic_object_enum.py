@@ -5,6 +5,7 @@ class GraphicObjectEnum(Enum):
     LINE = "Reta"
     WIREFRAME = "Wireframe"
     CURVE = "Curva"
+    OBJECT_3D = 'Objeto 3D'
 
     def valueOf(value: str):
         for g in GraphicObjectEnum:

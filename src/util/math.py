@@ -3,7 +3,6 @@ import numpy as np
 
 def matrix_multiplication(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
     result = []
-
     # Populate the result matrix with zeros
     for i in range(0, len(a)):
         result.append([])
@@ -31,3 +30,11 @@ def angle_between_vectors(u: np.array, v: np.array) -> float:
         angle = -angle
     
     return angle
+
+def matrix_subtraction(a: List[float], b: List[float]) -> List[float]:
+    result = []
+
+    for i in range(len(a)):
+        result.append(a[i]-b[i])
+
+    return result
