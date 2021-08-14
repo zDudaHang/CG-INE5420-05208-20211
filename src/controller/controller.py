@@ -18,11 +18,11 @@ from src.util.math import angle_between_vectors
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, BezierCurve, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point3D
-from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
+from src.util.transform import generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_object, translate_window
 from src.util.parse import parse
-from src.gui.transform_dialog import RotateOptionsEnum, RotateTransformation, ScaleTransformation, TransformDialog, TranslateTransformation
+from src.gui.transform_dialog import TransformDialog
 from src.util.clipping.point_clipper import PointClipper
 
 from numpy import dot, array
@@ -347,9 +347,7 @@ class Controller():
         dx = dx * self.window_width
         dy = dy * self.window_height
 
-        rotation_axis = RotateAxisOptionsEnum.valueOf(self.main_window.functions_menu.window_menu.axis_button_group.checkedId())
-
-        matrix = translate_window(self.window_coordinates, Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.center, rotation_axis)
+        matrix = translate_window(self.window_coordinates, Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.center)
 
         # The center changes when we move the window, so we need to update this to reflect in scn transformation
         self.center = calculate_center(matrix)
@@ -367,9 +365,7 @@ class Controller():
         else:
             angle = self.step_angle
 
-        rotation_axis = RotateAxisOptionsEnum.valueOf(self.main_window.functions_menu.window_menu.axis_button_group.checkedId())
-
-        rotate_window(self.window_coordinates, angle, self.center, rotation_axis)
+        rotate_window(self.window_coordinates, angle, self.center)
 
         self.calculate_scn_coordinates()
 

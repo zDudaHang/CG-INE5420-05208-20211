@@ -1,5 +1,5 @@
 from src.util.math import concat_transformation_matrixes
-from src.model.graphic_object import GraphicObject, Line, apply_matrix_in_object
+from src.model.graphic_object import GraphicObject, Line, apply_matrix_in_object, apply_matrix_in_point, calculate_center
 from src.util.transform import generate_rotate_operation_matrix, generate_rx_rotation_matrix, generate_ry_rotation_matrix, generate_rz_rotation_matrix, generate_scale_operation_matrix, generate_translation_matrix, translate_matrix_for_rotated_window
 from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 from src.model.enum.rotate_options_enum import RotateOptionsEnum
@@ -27,15 +27,14 @@ class RotateTransformation(Transformation):
         self.angle = angle
         self.point = point
         self.axis_option = axis_option
-        if axis_option == RotateAxisOptionsEnum.ARBITRARY:
-            self.axis : Line = Line('__', [Point3D(0,0,0), axis])
+        self.axis = axis
 
     def __str__(self) -> str:
         if self.option == RotateOptionsEnum.POINT:
             return f'Rotacionar em torno do ponto {self.point.__str__()} em {self.angle} graus'
         elif self.option == RotateOptionsEnum.AXIS:
             if self.axis_option == RotateAxisOptionsEnum.ARBITRARY:
-                return f'Rotacionar em torno de um eixo arbitrário A= {self.axis.coordinates[1].__str__()} em {self.angle} graus'
+                return f'Rotacionar em torno de um eixo arbitrário A= {self.axis.__str__()} com P={self.point.__str__()} em {self.angle} graus'
             else:
                 return f'Rotacionar em torno do eixo {RotateAxisOptionsEnum._to_str(self.axis_option)} em {self.angle} graus'
         return f'{self.option.value} em {self.angle} graus'
@@ -43,78 +42,101 @@ class RotateTransformation(Transformation):
     def generate_matrix(self, obj: GraphicObject, v_up_angle: float, window_center: Point3D) -> array:
         if self.option == RotateOptionsEnum.WORLD:
             return generate_rotate_operation_matrix(Point3D(0,0,0), self.angle)
+        
         elif self.option == RotateOptionsEnum.OBJECT:
             return generate_rotate_operation_matrix(obj.center, self.angle)
+        
         elif self.option == RotateOptionsEnum.POINT:
             return generate_rotate_operation_matrix(self.point, self.angle)
         else:
             if self.axis_option == RotateAxisOptionsEnum.X:
                 return generate_rx_rotation_matrix(self.angle)
+            
             elif self.axis_option == RotateAxisOptionsEnum.Y:
                 return generate_ry_rotation_matrix(self.angle)
+            
             elif self.axis_option == RotateAxisOptionsEnum.Z:
                 return generate_rz_rotation_matrix(self.angle)
+            
             else:
-                print('Rotação em um eixo arbitrário')
-
-                a_center = self.axis.center
-                
-                print(f'Axis center {a_center.__str__()}')
-
-                # First, translate the axis to have one point (the center) in origin
-                t = generate_translation_matrix(-a_center.x(), -a_center.y(), -a_center.z())
-
-                print(f'T = {t}')
-
-                # Get the inverse of t to move it back later
+                t = generate_translation_matrix(-self.point.x(), -self.point.y(), -self.point.z())
                 t_inv = linalg.inv(t)
-
-                # Apply the matrix in A
-                self.axis = apply_matrix_in_object(self.axis, t)
-
-                new_coords = self.axis.coordinates[1]
-
-                print(f'Axis new coords : {new_coords.__str__()}')
-
-                # Find the angle to rotate on x to make z = 0 (xy plane)
-                angle_x = -degrees(arctan(new_coords.z()/new_coords.y()))
-
-                print(f'theta_x = {angle_x}')
-
-                # Now make the rx matrix
-                rx = generate_rx_rotation_matrix(angle_x)
-
-                # Get the inverse to go back
-                rx_inv = linalg.inv(rx)
-
-                # Apply rx on axis
-                self.axis = apply_matrix_in_object(self.axis, rx)
-
-                new_coords = self.axis.coordinates[1]
-
-                print(f'Axis new coords : {new_coords.__str__()}')
-
-                # Now get the angle to rotate in z to make x = 0 (y axis) The axis's already in xy plane, so z = 0
-                angle_z = degrees(arctan(new_coords.x()/new_coords.y()))
-
-                print(f'theta_z = {angle_z}')
-
-                # Now make the rz matrix
-                rz = generate_rz_rotation_matrix(angle_z)
-
-                # Get the inverse to go back
-                rz_inv = linalg.inv(rz)
-
-                # Apply rz on axis
-                self.axis = apply_matrix_in_object(self.axis, rz)
-
-                new_coords = self.axis.coordinates[1]
-
-                print(f'Axis new coords : {new_coords.__str__()}')
-
-                # Now rotate the angle that user wants
+                self.axis = apply_matrix_in_point(self.axis, t)
                 ry = generate_ry_rotation_matrix(self.angle)
+                
+                if self.axis.y() == 0:
+                    # In Z axis => Just rotate -90 on X axis
+                    if self.axis.x() == 0:
+                        rx = generate_rx_rotation_matrix(-90)
+                        rx_inv = linalg.inv(rx)
+                        t_inv = linalg.inv(t)
+                        return concat_transformation_matrixes([
+                            t, 
+                            rx,
+                            ry,
+                            rx_inv,
+                            t_inv
+                        ])
+                
+                    # In X axis => Just rotate 90 on Z axis
+                    elif self.axis.z() == 0:
+                        rz = generate_rz_rotation_matrix(90)
+                        rz_inv = linalg.inv(rz)
+                        t_inv = linalg.inv(t)
+                        return concat_transformation_matrixes([
+                            t, 
+                            rz,
+                            ry,
+                            rz_inv,
+                            t_inv
+                        ])
+                    # In XZ plane (worst case)
+                    else:
+                        pass
 
+                
+                # Already in y axis (x=0 && z=0)
+                if (self.axis.x() == 0 and self.axis.z() == 0):
+                    return concat_transformation_matrixes([
+                        t, 
+                        ry,
+                        t_inv
+                    ])
+                
+                # Don't need Rx rotation for put in xy plane (z=0)
+                elif self.axis.z() == 0:
+                    angle_z = degrees(arctan(self.axis.x()/self.axis.y()))
+                    rz = generate_rz_rotation_matrix(angle_z)
+                    rz_inv = linalg.inv(rz)
+                    return concat_transformation_matrixes([
+                        t, 
+                        rz,
+                        ry,
+                        rz_inv,
+                        t_inv
+                    ])
+                
+                # Don't need Rz rotation to put in y (x=0 and z!=0)
+                elif self.axis.x() == 0:
+                    angle_x = -degrees(arctan(self.axis.z()/self.axis.y()))
+                    rx = generate_rx_rotation_matrix(angle_x)
+                    rx_inv = linalg.inv(rx)
+                    return concat_transformation_matrixes([
+                        t, 
+                        rx,
+                        ry,
+                        rx_inv,
+                        t_inv
+                    ])
+                
+                angle_x = -degrees(arctan(self.axis.z()/self.axis.y()))
+                rx = generate_rx_rotation_matrix(angle_x)
+                rx_inv = linalg.inv(rx)
+                self.axis = apply_matrix_in_point(self.axis, rx)
+
+                angle_z = degrees(arctan(self.axis.x()/self.axis.y()))
+                rz = generate_rz_rotation_matrix(angle_z)
+                rz_inv = linalg.inv(rz)
                 return concat_transformation_matrixes([
                     t, 
                     rx,
@@ -408,12 +430,13 @@ class RotatingTabWidget(QWidget):
         elif option == RotateOptionsEnum.AXIS:
             if axis_option == RotateAxisOptionsEnum.ARBITRARY:
                 axis = parse(self.arbitrary_axis_input.text())
+                point = parse(self.point_input.text())
                 if axis == None:
                     self.add_transformation(None, "As coordenadas do eixo não respeitam o formato, por favor respeite.")
                 elif len(axis) != 1:
                     self.add_transformation(None, "Um vetor deve ter apenas um par de coordenadas.")
                 else:
-                    self.add_transformation(RotateTransformation(option, -float(angle), axis_option=axis_option, axis=axis[0]))
+                    self.add_transformation(RotateTransformation(option, -float(angle), point[0], axis_option, axis[0]))
             else:
                 self.add_transformation(RotateTransformation(option, -float(angle), axis_option=axis_option))
         else:
@@ -437,5 +460,7 @@ class RotatingTabWidget(QWidget):
     def handle_click(self, option: RotateAxisOptionsEnum):
         if self.combo_box.currentText() == RotateOptionsEnum.AXIS.value and self.axis_button_group.checkedId() == RotateAxisOptionsEnum.ARBITRARY:
             self.arbitrary_axis_input.setEnabled(True)
+            self.point_input.setEnabled(True)
         else:
             self.arbitrary_axis_input.setDisabled(True)
+            self.point_input.setDisabled(True)

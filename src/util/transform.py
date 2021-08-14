@@ -78,28 +78,28 @@ def translate_object(object_coordinates: List[Point3D], d: Point3D) -> List[Poin
         coord.coordinates = dot(coord.coordinates, t)
     return object_coordinates
 
-def translate_matrix_for_rotated_window(d: Point3D, angle: float, center: Point3D, axis_option: RotateAxisOptionsEnum) -> array:
+def translate_matrix_for_rotated_window(d: Point3D, angle: float, center: Point3D) -> array:
     # First, align the window with the world (-angle)
-    r_align_with_world = generate_rotate_operation_matrix(center, -angle, axis_option)
+    r_align_with_world = generate_rotate_operation_matrix(center, -angle)
 
     # Move the window
     t = generate_translation_matrix(d.x(), d.y(), d.z())
 
     # Then rotate the window back (angle)
-    r_rotate_back = generate_rotate_operation_matrix(center, angle, axis_option)
+    r_rotate_back = generate_rotate_operation_matrix(center, angle)
 
     r = dot(r_align_with_world, t)
     return dot(r, r_rotate_back)
 
-def translate_window(object_coordinates: List[Point3D], d: Point3D, angle: float, center: Point3D, axis_option: RotateAxisOptionsEnum) -> List[Point3D]:
-    final = translate_matrix_for_rotated_window(d, angle, center, axis_option)
+def translate_window(object_coordinates: List[Point3D], d: Point3D, angle: float, center: Point3D) -> List[Point3D]:
+    final = translate_matrix_for_rotated_window(d, angle, center)
     
     for coord in object_coordinates:
         coord.coordinates = dot(coord.coordinates, final)
     return object_coordinates
 
-def rotate_window(object_coordinates: List[Point3D], angle: float, center: Point3D, axis_option : RotateAxisOptionsEnum) -> List[Point3D]:
-    final = generate_rotate_operation_matrix(center, angle, axis_option)
+def rotate_window(object_coordinates: List[Point3D], angle: float, center: Point3D) -> List[Point3D]:
+    final = generate_rotate_operation_matrix(center, angle)
     
     for coord in object_coordinates:
         coord.coordinates = dot(coord.coordinates, final)
@@ -120,15 +120,9 @@ def generate_scale_operation_matrix(center: Point3D, sx: float, sy: float, sz: f
     r = dot(t1, scale)
     return dot(r, t2)
 
-def generate_rotate_operation_matrix(d: Point3D, angle: float, axis_option : RotateAxisOptionsEnum) -> array:
+def generate_rotate_operation_matrix(d: Point3D, angle: float) -> array:
     t1 = generate_translation_matrix(-d.x(), -d.y(), -d.z())
-    rot = array([])
-    if axis_option == RotateAxisOptionsEnum.X:
-        rot = generate_rx_rotation_matrix(angle)
-    elif axis_option == RotateAxisOptionsEnum.Y:
-        rot = generate_ry_rotation_matrix(angle)
-    else:
-        rot = generate_rz_rotation_matrix(angle)
+    rot = generate_rz_rotation_matrix(angle)
     t2 = generate_translation_matrix(d.x(), d.y(), d.z())
 
     r = dot(t1, rot)

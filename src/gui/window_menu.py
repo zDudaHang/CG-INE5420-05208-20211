@@ -75,31 +75,6 @@ class WindowMenu(QWidget):
 
         self.layout.addLayout(self.rotation_menu_box)
 
-        # Axis options
-        self.axis_layout = QVBoxLayout()
-        self.radiobuttons_layout = QHBoxLayout()
-        self.axis_layout.addWidget(QLabel('Eixo de referência para rotação'))
-
-        self.axis_button_group = QButtonGroup(self)
-
-        # X
-        self.x_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.X))
-        self.axis_button_group.addButton(self.x_axis_button, RotateAxisOptionsEnum.X)
-        self.radiobuttons_layout.addWidget(self.x_axis_button)
-
-        # Y
-        self.y_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.Y))
-        self.axis_button_group.addButton(self.y_axis_button, RotateAxisOptionsEnum.Y)
-        self.radiobuttons_layout.addWidget(self.y_axis_button)
-
-        # Z
-        self.z_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.Z))
-        self.z_axis_button.setChecked(True)
-        self.axis_button_group.addButton(self.z_axis_button, RotateAxisOptionsEnum.Z)
-        self.radiobuttons_layout.addWidget(self.z_axis_button)
-
-        self.layout.addLayout(self.radiobuttons_layout)
-
         self.layout.addWidget(QHLine())
 
         # Direction:
