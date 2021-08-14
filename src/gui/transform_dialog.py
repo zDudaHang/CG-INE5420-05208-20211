@@ -63,13 +63,12 @@ class RotateTransformation(Transformation):
                 t_inv = linalg.inv(t)
                 self.axis = apply_matrix_in_point(self.axis, t)
                 ry = generate_ry_rotation_matrix(self.angle)
-                
+
                 if self.axis.y() == 0:
                     # In Z axis => Just rotate -90 on X axis
                     if self.axis.x() == 0:
                         rx = generate_rx_rotation_matrix(-90)
                         rx_inv = linalg.inv(rx)
-                        t_inv = linalg.inv(t)
                         return concat_transformation_matrixes([
                             t, 
                             rx,
@@ -82,7 +81,6 @@ class RotateTransformation(Transformation):
                     elif self.axis.z() == 0:
                         rz = generate_rz_rotation_matrix(90)
                         rz_inv = linalg.inv(rz)
-                        t_inv = linalg.inv(t)
                         return concat_transformation_matrixes([
                             t, 
                             rz,
@@ -90,10 +88,26 @@ class RotateTransformation(Transformation):
                             rz_inv,
                             t_inv
                         ])
-                    # In XZ plane (worst case)
+                    
+                    # In XZ plane (worst case) (x != 0, y = 0, z != 0)
                     else:
-                        pass
+                        # Rotate -90 on x axis to force the y to be != 0, will make the z to be zero (XY plane)
+                        rx = generate_rx_rotation_matrix(-90)
+                        rx_inv = linalg.inv(rx)
 
+                        angle_z = degrees(arctan(self.axis.x()/self.axis.y()))
+                        rz = generate_rz_rotation_matrix(angle_z)
+                        rz_inv = linalg.inv(rz)
+
+                        return concat_transformation_matrixes([
+                            t, 
+                            rx,
+                            rz,
+                            ry,
+                            rz_inv,
+                            rx_inv,
+                            t_inv
+                        ])
                 
                 # Already in y axis (x=0 && z=0)
                 if (self.axis.x() == 0 and self.axis.z() == 0):
