@@ -1,3 +1,4 @@
+from src.model.graphic_object import WireFrame, apply_matrix_in_object, apply_matrix_in_point
 from src.util.math import concat_transformation_matrixes
 from typing import List
 from math import sin, cos, radians, degrees, atan
@@ -5,31 +6,6 @@ from math import sin, cos, radians, degrees, atan
 from src.model.point import Point3D
 
 from numpy import array, dot, linalg, cross
-
-def iterative_viewport_transform(object_coordinates: List[Point3D], viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> List[Point3D]:
-    viewport_coordinates: List[Point3D] = []
-    for p in object_coordinates:
-        viewport_coordinates.append(viewport_transform(p, viewport_min, viewport_max, viewport_origin))
-    return viewport_coordinates
-
-def viewport_transform(point: Point3D, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> Point3D:
- 
-    window_min = Point3D(-1, -1)
-    window_max = Point3D(1, 1)
-
-    # x_div = (x_w - x_w_min) / (x_w_max - x_w_min)
-    x_div = (point.x() - window_min.x()) / (window_max.x() - window_min.x())
-
-    # x_v = x_div * (x_v_max - x_v_min)
-    x_vp = x_div * (viewport_max.x() - viewport_min.x())
-
-    # y_div = (y_w - y_w_min) / (y_w_max - y_w_min)
-    y_div = (point.y() - window_min.y()) / (window_max.y() - window_min.y())
-
-    # y_v = (1 - y_div) * (y_v_max - y_v_min)
-    y_vp = (1 - y_div) * (viewport_max.y() - viewport_min.y())
-
-    return Point3D(x_vp + viewport_origin.x(), y_vp + viewport_origin.y())
 
 def generate_translation_matrix(dx: float, dy: float, dz: float = 0) -> array:
     return array([
@@ -133,15 +109,6 @@ def generate_scn_matrix(center: Point3D, height_w: float, width_w: float, angle:
 def get_w_homogen(window_coordinates : Point3D) -> List[List[float]]:
     return [[window_coordinates.x(), window_coordinates.y(), window_coordinates.z(), 1]]
 
-
-def get_vpr(window_coordinates : List[Point3D]) -> List[float]:
-
-    vpr_x = (window_coordinates[0].x() + window_coordinates[1].x() + window_coordinates[2].x() + window_coordinates[3].x()) / 4
-    vpr_y = (window_coordinates[0].y() + window_coordinates[1].y() + window_coordinates[2].y() + window_coordinates[3].y()) / 4
-    vpr_z = (window_coordinates[0].z() + window_coordinates[1].z() + window_coordinates[2].z() + window_coordinates[3].z()) / 4
-
-    return [vpr_x, vpr_y, vpr_z]
-
 def get_vpn(window_coordinates : List[Point3D], vpr : List[List[float]]) -> List[float]:
     
     wc_list_0 = [window_coordinates[0].x(), window_coordinates[0].y(), window_coordinates[0].z()]
@@ -157,7 +124,7 @@ def get_vpn(window_coordinates : List[Point3D], vpr : List[List[float]]) -> List
 
     return [c_x, c_y, c_z]
 
-def angle_with_vpn(vpn : List[float]):
+def angle_with_vpn(vpn : array):
     # rotação em x
     teta_x = degrees(atan(vpn[1]/vpn[2]))
     
@@ -166,30 +133,49 @@ def angle_with_vpn(vpn : List[float]):
     
     return teta_x, teta_y
 
-def parallel_projection(window_coordinates : List[Point3D], window_center: Point3D) -> List[List[float]]:
+def parallel_projection(window: WireFrame):
 
-    # print('parallel_projection:')
+    print('parallel_projection:')
 
-    vpr = get_vpr(window_coordinates)
+    vpr = window.center
     
-    trans = generate_translation_matrix(-vpr[0], -vpr[1], - vpr[2])
+    print(f'vpr: {vpr.__str__()}')
 
-    # print(f'vpr: {vpr.__str__()}')
-    # print(f'trans: {trans.__str__()}')
+    t = generate_translation_matrix(-vpr.x(), -vpr.y(), -vpr.z())
+
+    t_inv = linalg.inv(t)
+
+    # window = apply_matrix_in_object(window, t)
+
+    vpn2 = find_VPN(window.center)
+
+    vpn2 = apply_matrix_in_point(vpn2, t)
+
+    print(f'new VPN {vpn2}')
+
+    # rotação em x
+    teta_x2 = degrees(atan(vpn2.y()/vpn2.z()))
+    
+    # rotação em y
+    teta_y2 = degrees(atan(vpn2.x()/vpn2.z()))
+
+    print(f'theta_x2={teta_x2}')
+    print(f'teta_y2={teta_y2}')
 
     #      x, y, z
     vpn = [2, 1, 2]
 
-    # print(f'w_c: {window_center.__str__()}')
-
-    find_VPN(window_center)
-    
     teta_x, teta_y = angle_with_vpn(vpn)
+
+    print(f'theta_x={teta_x}')
+    print(f'teta_y={teta_y}')
 
     rot_x = generate_rx_rotation_matrix(teta_x)
     rot_y = generate_ry_rotation_matrix(teta_y)
 
-    return concat_transformation_matrixes([trans, rot_x, rot_y])
+    # window = apply_matrix_in_object(window, concat_transformation_matrixes([rot_x, rot_y, t_inv]))
+
+    return concat_transformation_matrixes([t, rot_x, rot_y, t_inv])
 
 def find_VPN(window_center: Point3D) -> Point3D:
     # Pegar dois vetores que estao no plano da window e realizar o produto vetorial para obter um vetor ortogonal ao plano
@@ -198,21 +184,21 @@ def find_VPN(window_center: Point3D) -> Point3D:
     u = array([window_center.x() + 1, window_center.y(), window_center.z()])
     v = array([window_center.x(), window_center.y() + 1, window_center.z()])
 
-    # print('Vectors:')
-    # print(u)
-    # print(v)
+    print('Vectors:')
+    print(u)
+    print(v)
 
     unit_u = u / linalg.norm(u)
     unit_v = v / linalg.norm(v)
 
-    # print('Unit vectors:')
-    # print(unit_u)
-    # print(unit_v)
+    print('Unit vectors:')
+    print(unit_u)
+    print(unit_v)
 
     n = cross(unit_u, unit_v)
 
-    # print('Normal:')
-    # print(n)    
+    print('Normal:')
+    print(n)    
 
     # rotação em x => y / z
     teta_x = degrees(atan(n[1]/n[2]))
@@ -220,7 +206,9 @@ def find_VPN(window_center: Point3D) -> Point3D:
     # rotação em y => x / z
     teta_y = degrees(atan(n[0]/n[2]))
 
-    # print(f'theta_x={teta_x},theta_y={teta_y}')
+    print(f'theta_x={teta_x},theta_y={teta_y}')
+
+    return Point3D(n[0],n[1],n[2])
 
 def perspective_projection(window_coordinates : List[Point3D], focal_distance: float) ->  array:
     t = generate_translation_matrix(0, 0, -focal_distance)

@@ -175,7 +175,7 @@ class Controller():
 
         self.calculate_scn_coordinates()
 
-        self.draw_objects()
+        # self.draw_objects()
            
     def export_handler(self):
         WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], self.center, Point3D(self.window_width, self.window_height))
@@ -252,7 +252,7 @@ class Controller():
 
         self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option, edges, faces)
 
-        self.draw_objects()
+        self.calculate_scn_coordinates()
 
     def new_object_dialog_cancelled_handler(self, type: GraphicObjectEnum):
         self.new_object_dialog.clear_inputs(type)
@@ -337,8 +337,6 @@ class Controller():
         dx = dx * self.window_width
         dy = dy * self.window_height
 
-        # matrix = translate_window(self.window_coordinates, Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.center)
-
         t = translate_matrix_for_rotated_window(Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.window.center)
 
         self.window = apply_matrix_in_object(self.window, t)
@@ -373,15 +371,6 @@ class Controller():
 # ====================== UTILITIES:
 
     def draw_objects(self):
-        # self.window_coordinates_parallel_projection = copy.copy(self.window_coordinates)
-
-        # transform = parallel_projection(self.window_coordinates, self.center)
-        # transform = perspective_projection(self.window_coordinates, self.focal_distance)
-
-        # coords = []
-        # for c in self.window_coordinates:
-        #     m = dot(c.coordinates,transform)
-        #     coords.append(Point3D(m[0][0], m[0][1], m[0][2]))
         self.main_window.viewport.draw_objects(self.clip())
 
     def scn_matrix(self) -> List[List[float]]:
@@ -409,11 +398,23 @@ class Controller():
             t = generate_translation_matrix(distance.x(), distance.y())
             self.window = apply_matrix_in_object(self.window, t)
         
+        print(f'v_up={angle}')
+
         return angle
 
     def calculate_scn_coordinates(self):
 
         self.display_file[DisplayFileEnum.SCN_COORD].clear()
+
+        transform = parallel_projection(self.window)
+        # transform = perspective_projection(self.window_coordinates, self.focal_distance)
+
+        print(transform)
+
+        self.window = apply_matrix_in_object(self.window, transform)
+
+        for index in range(0,len(self.display_file[DisplayFileEnum.WORLD_COORD])): 
+            self.display_file[DisplayFileEnum.WORLD_COORD][index] = apply_matrix_in_object(self.display_file[DisplayFileEnum.WORLD_COORD][index], transform)
 
         scn = self.scn_matrix()
 
