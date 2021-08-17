@@ -18,7 +18,7 @@ from src.util.math import angle_between_vectors
 from src.gui.main_window import *
 from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
-from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, apply_matrix_in_object, calculate_center, create_graphic_object
+from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, apply_matrix_in_object, calculate_center, create_graphic_object, BezierBicubicSurface
 from src.model.point import Point3D
 from src.util.transform import generate_scn_matrix, parallel_projection, rotate_window, scale_window, translate_object, translate_window
 from src.util.parse import parse

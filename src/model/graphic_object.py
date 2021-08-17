@@ -1,5 +1,6 @@
 from src.model.enum.curve_enum import CurveEnum
 from src.util.curves import blending_function, get_GB, get_GB_Spline, forward_differences
+from src.util.bicubic import get_bicubic_GB, blending_function_bicubic
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
 from abc import ABC, abstractmethod
@@ -209,10 +210,6 @@ class BSpline(Curve):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma BSpline deve ter pelo menos 4 pontos!")
 
-        n = (len(coordinates) - 4) % 3
-        if n != 0:
-            raise ValueError("[ERRO] A quantidade de pontos da curva deve estar na imagem da função f(x) = 4 + 3x, sendo x pertencente aos números naturais, para garantir a continuidade G(0). Alguns valores válidos: 4, 7, 10 e 13")
-        
         super().__init__(name, type, coordinates, color, CurveEnum.BSPLINE)
         
 
@@ -291,6 +288,52 @@ class Object3D(GraphicObject):
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pass
 
+
+class BezierBicubicSurface():
+    
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor = None):
+        if len(coordinates) < 16:
+            raise ValueError("[ERRO] Uma superfície bicúbica de Bézier deve ter 16 pontos!")
+        
+        super().__init__(name, type, coordinates, color)
+
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
+        pen = QPen()
+        pen.setWidth(2)
+        pen.setColor(self.color)
+        painter.setPen(pen)
+
+      
+        gb = get_bicubic_GB(self.coordinates)
+
+        accuracy = 0.001
+        s = 0.0
+        t = 0.0
+        while s <= 1.0:
+            while t <= 1.0:
+                x1 = blending_function_bicubic(s, t, gb.x)
+                y1 = blending_function_bicubic(s, t, gb.y)
+                z1 = blending_function_bicubic(s, t, gb.z)
+
+                x2 = blending_function(s, t + accuracy, gb.x)
+                y2 = blending_function(s, t + accuracy, gb.y)
+                z2 = blending_function(s, t + accuracy, gb.z)
+
+
+                # x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
+                try:
+                    p1 = viewport_transform(Point3D(x1, y1, z1), viewport_min, viewport_max, viewport_origin)
+
+                    p2 = viewport_transform(Point3D(x2, y2, z2), viewport_min, viewport_max, viewport_origin)
+
+                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+                except TypeError:
+                    pass
+                
+                t += accuracy
+            s += accuracy    
+
+  
 
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
