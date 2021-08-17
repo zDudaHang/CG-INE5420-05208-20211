@@ -1,12 +1,10 @@
-from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
+from src.util.math import concat_transformation_matrixes
 from typing import List
 from math import sin, cos, radians, degrees, atan
 
-from numpy import void
-
 from src.model.point import Point3D
 
-from numpy import array, dot
+from numpy import array, dot, linalg, cross
 
 def iterative_viewport_transform(object_coordinates: List[Point3D], viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> List[Point3D]:
     viewport_coordinates: List[Point3D] = []
@@ -88,8 +86,7 @@ def translate_matrix_for_rotated_window(d: Point3D, angle: float, center: Point3
     # Then rotate the window back (angle)
     r_rotate_back = generate_rotate_operation_matrix(center, angle)
 
-    r = dot(r_align_with_world, t)
-    return dot(r, r_rotate_back)
+    return concat_transformation_matrixes([r_align_with_world, t, r_rotate_back])
 
 def translate_window(object_coordinates: List[Point3D], d: Point3D, angle: float, center: Point3D) -> List[Point3D]:
     final = translate_matrix_for_rotated_window(d, angle, center)
@@ -116,25 +113,21 @@ def generate_scale_operation_matrix(center: Point3D, sx: float, sy: float, sz: f
     t1 = generate_translation_matrix(-center.x(), -center.y(), -center.z())
     scale = generate_scaling_matrix(sx, sy, sz)
     t2 = generate_translation_matrix(center.x(), center.y(), center.z())
-
-    r = dot(t1, scale)
-    return dot(r, t2)
+    return concat_transformation_matrixes([t1, scale, t2])
 
 def generate_rotate_operation_matrix(d: Point3D, angle: float) -> array:
     t1 = generate_translation_matrix(-d.x(), -d.y(), -d.z())
     rot = generate_rz_rotation_matrix(angle)
     t2 = generate_translation_matrix(d.x(), d.y(), d.z())
 
-    r = dot(t1, rot)
-    return dot(r, t2)
+    return concat_transformation_matrixes([t1, rot, t2])
 
 def generate_scn_matrix(center: Point3D, height_w: float, width_w: float, angle: float) -> array:
     t = generate_translation_matrix(-center.x(), -center.y(), -center.z())
     r = generate_rz_rotation_matrix(-angle)
     s = generate_scaling_matrix(1/(width_w/2), 1/(height_w/2))
 
-    temp = dot(t, r)
-    return dot(temp, s)
+    return concat_transformation_matrixes([t, r, s])
 
 
 def get_w_homogen(window_coordinates : Point3D) -> List[List[float]]:
@@ -173,22 +166,79 @@ def angle_with_vpn(vpn : List[float]):
     
     return teta_x, teta_y
 
-def parallel_projection(window_coordinates : List[Point3D]) -> List[List[float]]:
+def parallel_projection(window_coordinates : List[Point3D], window_center: Point3D) -> List[List[float]]:
+
+    # print('parallel_projection:')
 
     vpr = get_vpr(window_coordinates)
     
     trans = generate_translation_matrix(-vpr[0], -vpr[1], - vpr[2])
 
-    #vpn = get_vpn(window_coordinates, vpr)
+    # print(f'vpr: {vpr.__str__()}')
+    # print(f'trans: {trans.__str__()}')
+
+    #      x, y, z
     vpn = [2, 1, 2]
+
+    # print(f'w_c: {window_center.__str__()}')
+
+    find_VPN(window_center)
     
     teta_x, teta_y = angle_with_vpn(vpn)
 
     rot_x = generate_rx_rotation_matrix(teta_x)
     rot_y = generate_ry_rotation_matrix(teta_y)
 
+    return concat_transformation_matrixes([trans, rot_x, rot_y])
 
-    transform = dot(trans, rot_x)
-    transform = dot(transform, rot_y)
+def find_VPN(window_center: Point3D) -> Point3D:
+    # Pegar dois vetores que estao no plano da window e realizar o produto vetorial para obter um vetor ortogonal ao plano
+    # u sera um vetor unitario com 
+
+    u = array([window_center.x() + 1, window_center.y(), window_center.z()])
+    v = array([window_center.x(), window_center.y() + 1, window_center.z()])
+
+    # print('Vectors:')
+    # print(u)
+    # print(v)
+
+    unit_u = u / linalg.norm(u)
+    unit_v = v / linalg.norm(v)
+
+    # print('Unit vectors:')
+    # print(unit_u)
+    # print(unit_v)
+
+    n = cross(unit_u, unit_v)
+
+    # print('Normal:')
+    # print(n)    
+
+    # rotação em x => y / z
+    teta_x = degrees(atan(n[1]/n[2]))
     
-    return transform
+    # rotação em y => x / z
+    teta_y = degrees(atan(n[0]/n[2]))
+
+    # print(f'theta_x={teta_x},theta_y={teta_y}')
+
+def perspective_projection(window_coordinates : List[Point3D], focal_distance: float) ->  array:
+    t = generate_translation_matrix(0, 0, -focal_distance)
+
+    per = array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 1/focal_distance, 0]])
+
+    # Determine VPR, translate it to origin, rotate on x and y axes to align on z axis
+    p = parallel_projection(window_coordinates)
+
+    return concat_transformation_matrixes([p, t, per])
+
+def generate_perspective_matrix(focal_distance: float) -> array:
+    return array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 1/focal_distance, 0]])
