@@ -135,47 +135,30 @@ def angle_with_vpn(vpn : array):
 
 def parallel_projection(window: WireFrame):
 
-    print('parallel_projection:')
-
     vpr = window.center
     
-    print(f'vpr: {vpr.__str__()}')
-
     t = generate_translation_matrix(-vpr.x(), -vpr.y(), -vpr.z())
 
-    t_inv = linalg.inv(t)
 
-    # window = apply_matrix_in_object(window, t)
 
-    vpn2 = find_VPN(window.center)
-
-    vpn2 = apply_matrix_in_point(vpn2, t)
-
-    print(f'new VPN {vpn2}')
-
-    # rotação em x
-    teta_x2 = degrees(atan(vpn2.y()/vpn2.z()))
+    # vpn2 = find_VPN(window.center)
+  
+    # vpn2 = apply_matrix_in_point(vpn2, t)
+    # # rotação em x
+    # teta_x2 = degrees(atan(vpn2.y()/vpn2.z()))
     
-    # rotação em y
-    teta_y2 = degrees(atan(vpn2.x()/vpn2.z()))
-
-    print(f'theta_x2={teta_x2}')
-    print(f'teta_y2={teta_y2}')
-
+    # # rotação em y
+    # teta_y2 = degrees(atan(vpn2.x()/vpn2.z()))
     #      x, y, z
     vpn = [2, 1, 2]
 
     teta_x, teta_y = angle_with_vpn(vpn)
 
-    print(f'theta_x={teta_x}')
-    print(f'teta_y={teta_y}')
 
     rot_x = generate_rx_rotation_matrix(teta_x)
     rot_y = generate_ry_rotation_matrix(teta_y)
 
-    # window = apply_matrix_in_object(window, concat_transformation_matrixes([rot_x, rot_y, t_inv]))
-
-    return concat_transformation_matrixes([t, rot_x, rot_y, t_inv])
+    return concat_transformation_matrixes([t, rot_x, rot_y])
 
 def find_VPN(window_center: Point3D) -> Point3D:
     # Pegar dois vetores que estao no plano da window e realizar o produto vetorial para obter um vetor ortogonal ao plano
@@ -184,21 +167,12 @@ def find_VPN(window_center: Point3D) -> Point3D:
     u = array([window_center.x() + 1, window_center.y(), window_center.z()])
     v = array([window_center.x(), window_center.y() + 1, window_center.z()])
 
-    print('Vectors:')
-    print(u)
-    print(v)
-
     unit_u = u / linalg.norm(u)
     unit_v = v / linalg.norm(v)
 
-    print('Unit vectors:')
-    print(unit_u)
-    print(unit_v)
 
     n = cross(unit_u, unit_v)
 
-    print('Normal:')
-    print(n)    
 
     # rotação em x => y / z
     teta_x = degrees(atan(n[1]/n[2]))
@@ -206,7 +180,6 @@ def find_VPN(window_center: Point3D) -> Point3D:
     # rotação em y => x / z
     teta_y = degrees(atan(n[0]/n[2]))
 
-    print(f'theta_x={teta_x},theta_y={teta_y}')
 
     return Point3D(n[0],n[1],n[2])
 

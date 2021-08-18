@@ -366,7 +366,7 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
 def apply_matrix_in_point(point: Point3D, m: List[List[float]]) -> Point3D:
     r = dot(point.coordinates, m)
 
-    return Point3D(r[0][0], r[0][1])
+    return Point3D(r[0][0], r[0][1], r[0][2])
 
 def iterative_viewport_transform(object_coordinates: List[Point3D], viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> List[Point3D]:
     viewport_coordinates: List[Point3D] = []

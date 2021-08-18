@@ -48,7 +48,9 @@ class Controller():
 
         self.display_file : Dict[DisplayFileEnum, List[GraphicObject]] = {
             DisplayFileEnum.WORLD_COORD: [], 
-            DisplayFileEnum.SCN_COORD: []
+            DisplayFileEnum.SCN_COORD: [],
+            DisplayFileEnum.PROJ_COORD: []
+
         }
 
         self.set_handlers()
@@ -397,29 +399,30 @@ class Controller():
         if translated:
             t = generate_translation_matrix(distance.x(), distance.y())
             self.window = apply_matrix_in_object(self.window, t)
-        
-        print(f'v_up={angle}')
+
 
         return angle
 
     def calculate_scn_coordinates(self):
-
+        
         self.display_file[DisplayFileEnum.SCN_COORD].clear()
+        self.display_file[DisplayFileEnum.PROJ_COORD].clear()
 
         transform = parallel_projection(self.window)
         # transform = perspective_projection(self.window_coordinates, self.focal_distance)
 
-        print(transform)
+        for obj in self.display_file[DisplayFileEnum.WORLD_COORD]: 
+            
+            if obj.type == GraphicObjectEnum.OBJECT_3D:
+                new_obj = apply_matrix_in_object(obj, transform)
+                self.display_file[DisplayFileEnum.PROJ_COORD].append(new_obj)
+            else:
+                self.display_file[DisplayFileEnum.PROJ_COORD].append(obj)
 
-        self.window = apply_matrix_in_object(self.window, transform)
-
-        for index in range(0,len(self.display_file[DisplayFileEnum.WORLD_COORD])): 
-            self.display_file[DisplayFileEnum.WORLD_COORD][index] = apply_matrix_in_object(self.display_file[DisplayFileEnum.WORLD_COORD][index], transform)
 
         scn = self.scn_matrix()
 
-        for obj in self.display_file[DisplayFileEnum.WORLD_COORD]:
-            # self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn, self.window_coordinates_parallel_projection))
+        for obj in self.display_file[DisplayFileEnum.PROJ_COORD]:
             self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj,scn))
         
         self.draw_objects()
