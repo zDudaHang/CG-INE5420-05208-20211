@@ -1,3 +1,4 @@
+from src.model.enum.projection_enum import ProjectionEnum
 from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 import numpy
 from src.model.enum.curve_enum import CurveEnum
@@ -26,8 +27,6 @@ from src.gui.transform_dialog import TransformDialog
 from src.util.clipping.point_clipper import PointClipper
 
 from numpy import dot, array
-import copy
-
 ORIGIN = Point3D(0,0,0)
 
 class Controller():
@@ -62,13 +61,11 @@ class Controller():
         # Rotation step:
         self.step_angle = 10 # (graus)
 
-        self.focal_distance = 200
+        self.focal_distance = 400
 
     def set_window_values(self):
 
         self.window_coordinates : List[Point3D] = [None, None, None, None]
-
-        # self.window_coordinates_parallel_projection : List[Point3D] = None
 
         self.center = Point3D(0,0,0)
 
@@ -148,6 +145,9 @@ class Controller():
 
         # LINE CLIPPING
         self.main_window.functions_menu.clipping_updated_action.triggered.connect(self.clip)
+
+        # PROJECTION
+        self.main_window.functions_menu.proj_updated_action.triggered.connect(self.calculate_scn_coordinates)
 
 # ====================== HANDLERS:
 
@@ -408,8 +408,14 @@ class Controller():
         self.display_file[DisplayFileEnum.SCN_COORD].clear()
         self.display_file[DisplayFileEnum.PROJ_COORD].clear()
 
-        transform = parallel_projection(self.window)
-        # transform = perspective_projection(self.window_coordinates, self.focal_distance)
+        proj = self.main_window.functions_menu.projection_method
+
+        transform = array([])
+
+        if proj == ProjectionEnum.PARALLEL:
+            transform = parallel_projection(self.window)
+        else:
+            transform = perspective_projection(self.window, self.focal_distance)
 
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]: 
             
@@ -418,7 +424,6 @@ class Controller():
                 self.display_file[DisplayFileEnum.PROJ_COORD].append(new_obj)
             else:
                 self.display_file[DisplayFileEnum.PROJ_COORD].append(obj)
-
 
         scn = self.scn_matrix()
 

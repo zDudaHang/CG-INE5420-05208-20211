@@ -183,7 +183,7 @@ def find_VPN(window_center: Point3D) -> Point3D:
 
     return Point3D(n[0],n[1],n[2])
 
-def perspective_projection(window_coordinates : List[Point3D], focal_distance: float) ->  array:
+def perspective_projection(window: WireFrame, focal_distance: float) ->  array:
     t = generate_translation_matrix(0, 0, -focal_distance)
 
     per = array([
@@ -193,9 +193,9 @@ def perspective_projection(window_coordinates : List[Point3D], focal_distance: f
         [0, 0, 1/focal_distance, 0]])
 
     # Determine VPR, translate it to origin, rotate on x and y axes to align on z axis
-    p = parallel_projection(window_coordinates)
+    pa = parallel_projection(window)
 
-    return concat_transformation_matrixes([p, t, per])
+    return concat_transformation_matrixes([pa, t, per])
 
 def generate_perspective_matrix(focal_distance: float) -> array:
     return array([
