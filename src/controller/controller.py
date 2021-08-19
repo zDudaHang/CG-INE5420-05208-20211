@@ -311,7 +311,6 @@ class Controller():
         else:
             scale = 1 + self.step
         
-        # scale_window(self.window_coordinates, self.center, scale, scale)
         s = generate_scale_operation_matrix(self.window.center, scale, scale, 1)
 
         self.window = apply_matrix_in_object(self.window, s)
@@ -485,8 +484,6 @@ class Controller():
         return parse(coordinates_expr)
 
     def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : str = None, faces : str = None):
-        # graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.window_coordinates_parallel_projection, self.main_window.log.add_item)
-
         graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.main_window.log.add_item)
 
         if graphic_obj != None:
@@ -496,7 +493,6 @@ class Controller():
     
     def add_object_to_display_file(self, obj: GraphicObject):
         self.display_file[DisplayFileEnum.WORLD_COORD].append(obj)
-        # self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix(), self.window_coordinates_parallel_projection))
         self.display_file[DisplayFileEnum.SCN_COORD].append(apply_matrix_in_object(obj, self.scn_matrix()))
 
     def start(self):
