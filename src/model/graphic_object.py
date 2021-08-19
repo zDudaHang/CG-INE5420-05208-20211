@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from PyQt5.QtGui import QBrush, QPainter, QColor, QPainterPath, QPen
 
-from src.util.transform import iterative_viewport_transform, viewport_transform, parallel_projection
 from src.model.point import Point3D
 from src.util.clipping.curve_clipper import curve_clip
 
@@ -294,7 +293,7 @@ class Object3D(GraphicObject):
 
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
-    curve_option: CurveEnum = None, edges: str = None, faces: str = None, window_coordinates : List[Point3D] = None, onError: Callable = None) -> Union[GraphicObject, None]:
+    curve_option: CurveEnum = None, edges: str = None, faces: str = None, onError: Callable = None) -> Union[GraphicObject, None]:
     
     graphic_obj: GraphicObject = None
 
@@ -316,13 +315,13 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
         
         if type == GraphicObjectEnum.OBJECT_3D:
 
-            transform_matrix = parallel_projection(window_coordinates)
-            coords = []
-            for c in coordinates:
-                m = dot(c.coordinates,transform_matrix)
-                coords.append(Point3D(m[0][0], m[0][1]))
+            # transform_matrix = parallel_projection(window_coordinates)
+            # coords = []
+            # for c in coordinates:
+            #     m = dot(c.coordinates,transform_matrix)
+            #     coords.append(Point3D(m[0][0], m[0][1]))
 
-            graphic_obj = Object3D(name, type, coords, color, edges, faces)
+            graphic_obj = Object3D(name, type, coordinates, color, edges, faces)
         
     except ValueError as e:
             onError(e.__str__())
@@ -348,23 +347,48 @@ def get_rgb(color: QColor) -> list:
 
     return rgb
 
-def apply_matrix_in_object(object: GraphicObject, m: List[List[float]], window_coordinates : List[Point3D] = None) -> GraphicObject:
+def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> GraphicObject:
     coords = []
     for Point3D in object.coordinates:
         coords.append(apply_matrix_in_point(Point3D, m))
     
     if isinstance(object, WireFrame):
         return create_graphic_object(object.type, object.name, coords, object.color, is_filled=object.is_filled)
-
+    
     if isinstance(object, Curve):
         return create_graphic_object(object.type, object.name, coords, object.color, curve_option=object.curve_type)
 
     if isinstance(object, Object3D):
-        return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces, window_coordinates=window_coordinates)
-
+        # return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces, window_coordinates=window_coordinates)
+        return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces)
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point3D, m: List[List[float]]) -> Point3D:
     r = dot(point.coordinates, m)
 
-    return Point3D(r[0][0], r[0][1])
+    return Point3D(r[0][0], r[0][1], r[0][2])
+
+def iterative_viewport_transform(object_coordinates: List[Point3D], viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> List[Point3D]:
+    viewport_coordinates: List[Point3D] = []
+    for p in object_coordinates:
+        viewport_coordinates.append(viewport_transform(p, viewport_min, viewport_max, viewport_origin))
+    return viewport_coordinates
+
+def viewport_transform(point: Point3D, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> Point3D:
+ 
+    window_min = Point3D(-1, -1)
+    window_max = Point3D(1, 1)
+
+    # x_div = (x_w - x_w_min) / (x_w_max - x_w_min)
+    x_div = (point.x() - window_min.x()) / (window_max.x() - window_min.x())
+
+    # x_v = x_div * (x_v_max - x_v_min)
+    x_vp = x_div * (viewport_max.x() - viewport_min.x())
+
+    # y_div = (y_w - y_w_min) / (y_w_max - y_w_min)
+    y_div = (point.y() - window_min.y()) / (window_max.y() - window_min.y())
+
+    # y_v = (1 - y_div) * (y_v_max - y_v_min)
+    y_vp = (1 - y_div) * (viewport_max.y() - viewport_min.y())
+
+    return Point3D(x_vp + viewport_origin.x(), y_vp + viewport_origin.y())

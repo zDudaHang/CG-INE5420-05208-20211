@@ -69,6 +69,7 @@ class GraphicObjectForm(QFormLayout):
         # COORDINATES INPUT
         coordinates_title = GraphicObjectFormEnum.COORDINATES
         coordinates = QLineEdit()
+        # coordinates.setText('(0,0,0),(0,100,0),(100,100,0),(100,0,0),(0,0,100),(0,100,100),(100,100,100),(100,0,100)')
         coordinates.setPlaceholderText(placeholder)
         self.addRow(coordinates_title.value, coordinates)
         self.widgets[coordinates_title] = NewWidget(coordinates, coordinates.text, coordinates.clear)
