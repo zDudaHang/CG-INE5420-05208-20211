@@ -138,50 +138,15 @@ def parallel_projection(window: WireFrame):
     vpr = window.center
     
     t = generate_translation_matrix(-vpr.x(), -vpr.y(), -vpr.z())
-
-
-
-    # vpn2 = find_VPN(window.center)
-  
-    # vpn2 = apply_matrix_in_point(vpn2, t)
-    # # rotação em x
-    # teta_x2 = degrees(atan(vpn2.y()/vpn2.z()))
-    
-    # # rotação em y
-    # teta_y2 = degrees(atan(vpn2.x()/vpn2.z()))
     #      x, y, z
     vpn = [2, 1, 2]
 
     teta_x, teta_y = angle_with_vpn(vpn)
 
-
     rot_x = generate_rx_rotation_matrix(teta_x)
     rot_y = generate_ry_rotation_matrix(teta_y)
 
     return concat_transformation_matrixes([t, rot_x, rot_y])
-
-def find_VPN(window_center: Point3D) -> Point3D:
-    # Pegar dois vetores que estao no plano da window e realizar o produto vetorial para obter um vetor ortogonal ao plano
-    # u sera um vetor unitario com 
-
-    u = array([window_center.x() + 1, window_center.y(), window_center.z()])
-    v = array([window_center.x(), window_center.y() + 1, window_center.z()])
-
-    unit_u = u / linalg.norm(u)
-    unit_v = v / linalg.norm(v)
-
-
-    n = cross(unit_u, unit_v)
-
-
-    # rotação em x => y / z
-    teta_x = degrees(atan(n[1]/n[2]))
-    
-    # rotação em y => x / z
-    teta_y = degrees(atan(n[0]/n[2]))
-
-
-    return Point3D(n[0],n[1],n[2])
 
 def perspective_projection(window: WireFrame, focal_distance: float) ->  array:
     t = generate_translation_matrix(0, 0, -focal_distance)

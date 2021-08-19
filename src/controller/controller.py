@@ -134,6 +134,8 @@ class Controller():
         self.main_window.functions_menu.window_menu.right_button.clicked.connect(lambda: self.window_move_handler('right'))
         self.main_window.functions_menu.window_menu.up_button.clicked.connect(lambda: self.window_move_handler('up'))
         self.main_window.functions_menu.window_menu.down_button.clicked.connect(lambda: self.window_move_handler('down'))
+        self.main_window.functions_menu.window_menu.forward_button.clicked.connect(lambda: self.window_move_handler('forward'))
+        self.main_window.functions_menu.window_menu.back_button.clicked.connect(lambda: self.window_move_handler('back'))
 
         # SCROLL
         self.main_window.viewport.action_scroll_zoom_in.triggered.connect(lambda: self.zoom_handler('in'))
@@ -333,11 +335,16 @@ class Controller():
             dx = self.step
         elif direction == 'up':
             dy = self.step
-        else:
+        elif direction == 'down':
             dy = -self.step
+        elif direction == 'forward':
+            dz = self.step
+        else:
+            dz = -self.step
         
         dx = dx * self.window_width
         dy = dy * self.window_height
+        dz = dz * 100
 
         t = translate_matrix_for_rotated_window(Point3D(dx, dy, dz), self.calculate_angle_vup_y_axis(), self.window.center)
 
@@ -412,10 +419,15 @@ class Controller():
 
         transform = array([])
 
+
         if proj == ProjectionEnum.PARALLEL:
             transform = parallel_projection(self.window)
         else:
             transform = perspective_projection(self.window, self.focal_distance)
+
+        t_inv = generate_translation_matrix(self.window.center.x(), self.window.center.y(), self.window.center.z())
+
+        transform = dot(transform, t_inv)
 
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]: 
             

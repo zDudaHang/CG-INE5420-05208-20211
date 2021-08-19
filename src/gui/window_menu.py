@@ -82,21 +82,29 @@ class WindowMenu(QWidget):
 
         self.layout.addWidget(QLabel('Direção'))
         
-        self.left_button = QPushButton('◄')
+        self.left_button = QPushButton('Esq')
         self.left_button.setFixedSize(QSize(50,20))
         self.direction_box.addWidget(self.left_button, 2, 0)
 
-        self.right_button = QPushButton('►')
+        self.right_button = QPushButton('Dir')
         self.right_button.setFixedSize(QSize(50,20))
         self.direction_box.addWidget(self.right_button, 2, 2)
 
-        self.up_button = QPushButton('▲')
+        self.up_button = QPushButton('Cima')
         self.up_button.setFixedSize(QSize(50,20))
         self.direction_box.addWidget(self.up_button, 1, 1)
 
-        self.down_button = QPushButton('▼')
+        self.down_button = QPushButton('Baixo')
         self.down_button.setFixedSize(QSize(50,20))
         self.direction_box.addWidget(self.down_button, 2, 1)
+
+        self.forward_button = QPushButton('Frente')
+        self.forward_button.setFixedSize(QSize(50,20))
+        self.direction_box.addWidget(self.forward_button, 2, 3)
+
+        self.back_button = QPushButton('Trás')
+        self.back_button.setFixedSize(QSize(50,20))
+        self.direction_box.addWidget(self.back_button, 2, 4)
 
         self.layout.addLayout(self.direction_box)
 
