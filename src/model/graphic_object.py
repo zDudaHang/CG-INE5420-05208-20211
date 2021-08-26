@@ -11,6 +11,7 @@ from src.model.point import Point3D
 from src.util.clipping.curve_clipper import curve_clip
 
 from numpy import dot
+from collections import defaultdict
 
 class GraphicObject(ABC):
 
@@ -309,8 +310,8 @@ class BezierBicubicSurface(GraphicObject):
 
         gb = get_bicubic_GB(self.coordinates)
         
-
-        accuracy = 0.1
+        points = defaultdict(list)
+        accuracy = 0.111
         s = 0.0
         t = 0.0
         while s <= 1.0:
@@ -319,23 +320,31 @@ class BezierBicubicSurface(GraphicObject):
                 x1 = blending_function_bicubic(s, t, gb.x)
                 y1 = blending_function_bicubic(s, t, gb.y)
                 z1 = blending_function_bicubic(s, t, gb.z)
+                points[s].append(Point3D(x1[0][0], y1[0][0], z1[0][0]))            
+                t += accuracy
+            s += accuracy    
 
-                x2 = blending_function_bicubic(s, t + accuracy, gb.x)
-                y2 = blending_function_bicubic(s, t + accuracy, gb.y)
-                z2 = blending_function_bicubic(s, t + accuracy, gb.z)
-
-                x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
+        # Direção S
+        for k, v in points.items():
+            for i in range(len(v)-1):
+                x1, y1, x2, y2 = curve_clip(v[i].x(), v[i].y(), v[i+1].x(), v[i+1].y())
                 try:
-                    p1 = viewport_transform(Point3D(x1[0][0], y1[0][0], z1[0][0]), viewport_min, viewport_max, viewport_origin)
-
-                    p2 = viewport_transform(Point3D(x2[0][0], y2[0][0], z2[0][0]), viewport_min, viewport_max, viewport_origin)
-
+                    p1 = viewport_transform(Point3D(x1, y1, v[i].z()), viewport_min, viewport_max, viewport_origin)
+                    p2 = viewport_transform(Point3D(x2, y2, v[i+1].z()), viewport_min, viewport_max, viewport_origin)
                     painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
                 except TypeError:
                     pass
-                
-                t += accuracy
-            s += accuracy    
+        # Direção T
+        for i in range(9):
+            t_list = [elem[i] for elem in points.values()]
+            for j in range(len(t_list)- 1):
+                x1, y1, x2, y2 = curve_clip(t_list[j].x(), t_list[j].y(), t_list[j+1].x(), t_list[j+1].y())
+                try:
+                    p1 = viewport_transform(Point3D(x1, y1, t_list[j].z()), viewport_min, viewport_max, viewport_origin)
+                    p2 = viewport_transform(Point3D(x2, y2, t_list[j+1].z()), viewport_min, viewport_max, viewport_origin)
+                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
+                except TypeError:
+                    pass
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
     curve_option: CurveEnum = None, edges: str = None, faces: str = None, onError: Callable = None) -> Union[GraphicObject, None]:
