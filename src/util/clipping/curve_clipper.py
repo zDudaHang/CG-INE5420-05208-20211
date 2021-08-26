@@ -71,9 +71,11 @@ def curve_clip(x1, y1, x2, y2):
 
 
             if rc_out == rc_point_1:
+                x1 = new_x
+                y1 = new_y
                 rc_point_1 = region_code(new_x, new_y)
             else:
+                x2 = new_x
+                y2 = new_y
                 rc_point_2 = region_code(new_x, new_y)
 
-
-        #(0,0),(0,15),(15,15),(15,0),(15,-15),(10,0)

@@ -113,6 +113,9 @@ class Controller():
         self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.OBJECT_3D))
         self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.OBJECT_3D))
 
+        self.new_object_dialog.bicubic_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.BICUBIC))
+        self.new_object_dialog.bicubic_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.BICUBIC))
+
         # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
         self.main_window.functions_menu.window_menu.step_minus_button.clicked.connect(lambda: self.on_step_update(-0.05))

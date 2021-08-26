@@ -39,6 +39,10 @@ class NewObjectDialog(QDialog):
         self.widget_tabs[GraphicObjectEnum.OBJECT_3D] = self.obj_3d_tab
         self.tabs.addTab(self.obj_3d_tab, GraphicObjectEnum.OBJECT_3D.value)
 
+        self.bicubic_tab = BicubicTabWidget()
+        self.widget_tabs[GraphicObjectEnum.BICUBIC] = self.bicubic_tab
+        self.tabs.addTab(self.bicubic_tab, GraphicObjectEnum.BICUBIC.value)
+
         self.layout.addWidget(self.tabs)
 
         self.setLayout(self.layout)
@@ -190,3 +194,6 @@ class Object3DTab(GraphicObjectTabWidget):
         super().__init__('Digite as coordenadas: (x1,y1,z1),(x2,y2,z2),(x3,y3,z3),(x4,y4,z4), ...', new_widgets)
         # super().__init__('(0,0,0),(0,100,0),(100,100,0),(100,0,0),(0,0,100),(0,100,100),(100,100,100),(100,0,100)', new_widgets)
 
+class BicubicTabWidget(GraphicObjectTabWidget):
+    def __init__(self):
+        super().__init__('Digite os 16 pontos de controle: (x1,y1,z1),(x2,y2,z2),..., (x16,y16,z16)')
