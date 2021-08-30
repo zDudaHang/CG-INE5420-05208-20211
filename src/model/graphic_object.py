@@ -327,14 +327,8 @@ class BezierBicubicSurface(GraphicObject):
         # Direção S
         for k, v in points.items():
             for i in range(len(v)-1):
-                if i == 8:
-                    print(v[i].x(), v[i].y(), v[i+1].x(), v[i+1].y())
-
                 x1, y1, x2, y2 = curve_clip(v[i].x(), v[i].y(), v[i+1].x(), v[i+1].y())
-
-                if i == 8:
-                    print(x1, y1, x2, y2)
-                    print('='*30)                    
+                 
                 try:
                     p1 = viewport_transform(Point3D(x1, y1, v[i].z()), viewport_min, viewport_max, viewport_origin)
                     p2 = viewport_transform(Point3D(x2, y2, v[i+1].z()), viewport_min, viewport_max, viewport_origin)

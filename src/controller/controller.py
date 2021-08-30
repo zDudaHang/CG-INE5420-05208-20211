@@ -164,11 +164,14 @@ class Controller():
 
         for key, value in objs.objects.items():
             list_points = [Point3D(c[0],c[1]) for c in value]
+            
+            if objs.mtls:
+                usemtl = objs.usemtl[i]
+                newmtl = objs.new_mtl.index(usemtl)
 
-            usemtl = objs.usemtl[i]
-            newmtl = objs.new_mtl.index(usemtl)
-
-            rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]]  
+                rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]] 
+            else:
+                rgb = [0,0,0] 
 
             if len(list_points) == 1:
                 self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])

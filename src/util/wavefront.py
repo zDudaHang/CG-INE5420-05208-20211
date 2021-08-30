@@ -10,7 +10,7 @@ class WavefrontOBJ:
     def __init__( self, default_mtl='default_mtl' ):
         self.path      = None               
         self.mtllibs   = []                
-        self.mtls      = [ default_mtl ]    
+        self.mtls      = False    
         self.vertices  = []                  
         self.window    = []                 
         self.objects_name = []              
@@ -22,7 +22,10 @@ class WavefrontOBJ:
 
 
     def parse_mtl(self, filename_mtl ):
+        if filename_mtl == 'file not exists':
+            return
         with open( filename_mtl, 'r' ) as objm:
+            self.mtls = True
             for line in objm:
                 toks = line.split()
                 if not toks:
@@ -33,7 +36,7 @@ class WavefrontOBJ:
                     self.kd_params.append(toks[1:])    
    
 
-    def load_obj(self, filename_obj: str, filename_mtl: str, default_mtl='default_mtl'):
+    def load_obj(self, filename_obj: str, filename_mtl: str):
 
         self.parse_mtl(filename_mtl) 
         with open( filename_obj, 'r' ) as objf:
@@ -41,8 +44,11 @@ class WavefrontOBJ:
 
             for line in objf:
                 toks = line.split()
+
                 if not toks:
                     continue
+
+                #Vértice
                 if toks[0] == 'v':
                     t = []
                     for v in toks[1:]:
@@ -51,15 +57,23 @@ class WavefrontOBJ:
                         else:
                             t.append(float(v))
                     self.vertices.append(t)
+
+                #Window
                 elif toks[0] == 'w':
                     indices = [ float(v)-1 for v in toks[1:]]
                     for i in indices:
                         self.window.append( self.vertices[int(i)] )
+
+                #Object
                 elif toks[0] == 'o':
                     self.objects_name.append( toks[1] )
+                
+                #Point
                 elif toks[0] == 'p':
                     self.objects[self.objects_name[-1]] = [self.vertices[int(toks[1])]]
                     self.filled.append(False)
+                
+                #Line
                 elif toks[0] == 'l':
                     indices = [ float(v)-1 for v in toks[1:]]
                     temp = []
@@ -67,6 +81,7 @@ class WavefrontOBJ:
                         temp.append( self.vertices[int(i)])                             
                     self.objects[self.objects_name[-1]] = temp
                     self.filled.append(False)
+                
                 elif toks[0] == 'f':
                     indices = [ float(v)-1 for v in toks[1:]]
                     temp = []
@@ -74,7 +89,8 @@ class WavefrontOBJ:
                         temp.append( self.vertices[int(i)])                             
                     self.objects[self.objects_name[-1]] = temp  
                     self.filled.append(True)           
-                elif toks[0] == 'mtllib':
+                    
+                elif self.mtls and toks[0] == 'mtllib':
                     self.mtllibs.append( toks[1] )
                 elif toks[0] == 'usemtl':
                     self.usemtl.append(toks[1])
