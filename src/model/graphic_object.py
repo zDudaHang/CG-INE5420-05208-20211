@@ -1,5 +1,5 @@
 from src.model.enum.curve_enum import CurveEnum
-from src.util.curves import blending_function, get_GB, get_GB_Spline, forward_differences
+from src.util.curves import blending_function, fwd_diff, generate_curve_initial_values, generate_delta_matrix, get_GB_bezier, get_GB_spline
 from src.util.bicubic import get_bicubic_GB, blending_function_bicubic
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
@@ -23,8 +23,7 @@ class GraphicObject(ABC):
         self.coordinates = coordinates
 
         if color == None:
-            self.color = QColor(0,0,0)
-        
+            self.color = QColor(0,0,0)       
         else:
             self.color = color
         
@@ -37,7 +36,7 @@ class GraphicObject(ABC):
     def __str__(self):
         return f'{self.type.value} ({self.name})'
 
-    def drawLines(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, painter_path : QPainterPath, viewport_origin: Point3D, 
+    def draw_lines(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, painter_path : QPainterPath, viewport_origin: Point3D, 
                   is_filled: bool = False, is_clipped: bool = False, is_wireframe: bool = False):
 
         pen = QPen()
@@ -49,9 +48,7 @@ class GraphicObject(ABC):
             if is_filled:
                 self.coordinates = [[item for sublist in self.coordinates for item in sublist]]
 
-
             if is_clipped:
-
                 points = []
                 try:
                     for c in self.coordinates:
@@ -62,12 +59,10 @@ class GraphicObject(ABC):
 
                         for i in range(1, len(p)):
                             painter_path.lineTo(p[i].to_QPointF())
-
                 except IndexError:
                     pass
             else:
-                try:
-                    
+                try:                   
                     points = iterative_viewport_transform(self.coordinates[0], viewport_min, viewport_max, viewport_origin)
 
                     painter_path.moveTo(points[0].to_QPointF())
@@ -114,9 +109,7 @@ class Line(GraphicObject):
     
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
-
-        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
-
+        self.draw_lines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
         painter.drawPath(painter_path)
 
 class WireFrame(GraphicObject):
@@ -132,15 +125,13 @@ class WireFrame(GraphicObject):
     
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         painter_path = QPainterPath()
-        self.drawLines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
+        self.draw_lines(painter, viewport_min, viewport_max, painter_path, viewport_origin, self.is_filled, self.is_clipped, is_wireframe=True)
 
         if not self.is_clipped:
-            p_v1 = viewport_transform(self.coordinates[0][0], viewport_min, viewport_max, viewport_origin)
-            
+            p_v1 = viewport_transform(self.coordinates[0][0], viewport_min, viewport_max, viewport_origin)        
             p_v2 = viewport_transform(self.coordinates[0][-1], viewport_min, viewport_max, viewport_origin)
 
             painter_path.lineTo(p_v1.to_QPointF())
-
             painter_path.lineTo(p_v2.to_QPointF())
 
         if self.is_filled:
@@ -153,9 +144,19 @@ class Curve(GraphicObject):
         super().__init__(name, type, coordinates, color)
 
         self.curve_type = curve_type
+    
+    def draw_line(self, painter: QPainter, x1: float, x2: float, y1: float, y2: float, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D, z1: float = 0, z2: float = 0):
+        # 2D Clip
+        x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
+
+        if x1 != None and x2 != None and y1 != None and y2 != None:
+            p1 = viewport_transform(Point3D(x1, y1, z1), viewport_min, viewport_max, viewport_origin)
+            p2 = viewport_transform(Point3D(x2, y2, z2), viewport_min, viewport_max, viewport_origin)
+            painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
      
 class BezierCurve(Curve):
     curve_points = []
+
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor = None):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
@@ -175,9 +176,8 @@ class BezierCurve(Curve):
         pen.setColor(self.color)
         painter.setPen(pen)
 
-      
         for i in range(0, len(self.coordinates) - 3, 3):
-            gb = get_GB(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
+            gb = get_GB_bezier(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
 
             accuracy = 0.001
 
@@ -189,16 +189,7 @@ class BezierCurve(Curve):
                 x2 = blending_function(t + accuracy, gb.x)
                 y2 = blending_function(t + accuracy, gb.y)
 
-
-                x1, y1, x2, y2 = curve_clip(x1, y1, x2, y2)
-                try:
-                    p1 = viewport_transform(Point3D(x1, y1), viewport_min, viewport_max, viewport_origin)
-
-                    p2 = viewport_transform(Point3D(x2, y2), viewport_min, viewport_max, viewport_origin)
-
-                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
-                except TypeError:
-                    pass
+                self.draw_line(painter, x1, x2, y1, y2, viewport_min, viewport_max, viewport_origin)
                 
                 t += accuracy
 
@@ -211,54 +202,21 @@ class BSpline(Curve):
             raise ValueError("[ERRO] Uma BSpline deve ter pelo menos 4 pontos!")
 
         super().__init__(name, type, coordinates, color, CurveEnum.BSPLINE)
-        
-
-    #drawCurveFwdDiff
+    
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
 
-      
+        delta = 0.01
+        n = 1 / delta
+        delta_matrix = generate_delta_matrix(delta)
+
         for i in range(len(self.coordinates) - 3):
-            gb = get_GB_Spline(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
-            
-            d = 0.01
-            n = 1 / d
-
-            x, y = forward_differences(d, gb)
-            
-            x_old = x[0][0]
-            y_old = y[0][0]
-
-            j = 1
-            
-            while j < n:
-                j += 1
-                
-
-                x[0][0] += x[1][0]
-                x[1][0] += x[2][0]
-                x[2][0] += x[3][0]
-
-                y[0][0] += y[1][0]
-                y[1][0] += y[2][0]
-                y[2][0] += y[3][0]
-
-                x1, y1, x2, y2 = curve_clip(x_old, y_old, x[0][0], y[0][0])
-                try:
-                    p1 = viewport_transform(Point3D(x1, y1), viewport_min, viewport_max, viewport_origin)
-
-                    p2 = viewport_transform(Point3D(x2, y2), viewport_min, viewport_max, viewport_origin)
-
-                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
-
-                except TypeError:
-                    pass
-                
-                x_old = x[0][0]
-                y_old = y[0][0]
+            gb = get_GB_spline(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
+            initial_values = generate_curve_initial_values(delta_matrix, gb)
+            fwd_diff(n, initial_values, self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
 
 class Object3D(GraphicObject):
     
@@ -288,25 +246,27 @@ class Object3D(GraphicObject):
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pass
 
-class BezierBicubicSurface(GraphicObject):
-    
-    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):
+class BicubicSurface(Curve):
+    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], curve: CurveEnum, color: QColor = None):
         if len(coordinates) < 16:
-            raise ValueError("[ERRO] Uma superfície bicúbica de Bézier deve ter 16 pontos!")
+            raise ValueError("[ERRO] Uma superfície bicúbica deve ter 16 pontos!")
 
-        # TOTAL DE PONTOS DE UMA CURVA BEZIER = 4 (minimo) + 3n, sendo n pertencente aos numeros naturais
         n = (len(coordinates)) % 16
         if n != 0:
             raise ValueError("[ERRO] Adicionar conjuntos de pontos de controle 16 a 16.")
         
-        super().__init__(name, GraphicObjectEnum.BICUBIC, coordinates, color)
+        super().__init__(name, type, coordinates, color, curve)
+
+class BezierBicubicSurface(BicubicSurface):
+    
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):
+        super().__init__(name, GraphicObjectEnum.BICUBIC_BEZIER, coordinates, CurveEnum.BEZIER, color)
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
         pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
-
 
         gb = get_bicubic_GB(self.coordinates)
         
@@ -327,32 +287,24 @@ class BezierBicubicSurface(GraphicObject):
         # Direção S
         for k, v in points.items():
             for i in range(len(v)-1):
-                if i == 8:
-                    print(v[i].x(), v[i].y(), v[i+1].x(), v[i+1].y())
+                self.draw_line(painter, v[i].x(), v[i+1].x(), v[i].y(), v[i+1].y(), viewport_min, viewport_max, viewport_origin, v[i].z(), v[i+1].z())
 
-                x1, y1, x2, y2 = curve_clip(v[i].x(), v[i].y(), v[i+1].x(), v[i+1].y())
-
-                if i == 8:
-                    print(x1, y1, x2, y2)
-                    print('='*30)                    
-                try:
-                    p1 = viewport_transform(Point3D(x1, y1, v[i].z()), viewport_min, viewport_max, viewport_origin)
-                    p2 = viewport_transform(Point3D(x2, y2, v[i+1].z()), viewport_min, viewport_max, viewport_origin)
-                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
-                except TypeError:
-                    pass
         # Direção T
         for i in range(10):
             t_list = [elem[i] for elem in points.values()]
-            
             for j in range(len(t_list)-1):
-                x1, y1, x2, y2 = curve_clip(t_list[j].x(), t_list[j].y(), t_list[j+1].x(), t_list[j+1].y())
-                try:
-                    p1 = viewport_transform(Point3D(x1, y1, t_list[j].z()), viewport_min, viewport_max, viewport_origin)
-                    p2 = viewport_transform(Point3D(x2, y2, t_list[j+1].z()), viewport_min, viewport_max, viewport_origin)
-                    painter.drawLine(p1.to_QPointF(), p2.to_QPointF())
-                except TypeError:
-                    pass
+                self.draw_line(painter, t_list[j].x(), t_list[j+1].x(), t_list[j].y(), t_list[j+1].y(), viewport_min, viewport_max, viewport_origin, t_list[j].z(), t_list[j+1].z())
+
+class BSplineBicubicSurface(BicubicSurface):
+    
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):       
+        super().__init__(name, GraphicObjectEnum.BICUBIC_BSPLINE, coordinates, CurveEnum.BSPLINE, color)
+
+    def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
+        pen = QPen()
+        pen.setWidth(2)
+        pen.setColor(self.color)
+        painter.setPen(pen)
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
     curve_option: CurveEnum = None, edges: str = None, faces: str = None, onError: Callable = None) -> Union[GraphicObject, None]:
@@ -376,13 +328,6 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
                 graphic_obj = BSpline(name, type, coordinates, color)
         
         if type == GraphicObjectEnum.OBJECT_3D:
-
-            # transform_matrix = parallel_projection(window_coordinates)
-            # coords = []
-            # for c in coordinates:
-            #     m = dot(c.coordinates,transform_matrix)
-            #     coords.append(Point3D(m[0][0], m[0][1]))
-
             graphic_obj = Object3D(name, type, coordinates, color, edges, faces)
         
         if type == GraphicObjectEnum.BICUBIC:
@@ -424,13 +369,11 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
         return create_graphic_object(object.type, object.name, coords, object.color, curve_option=object.curve_type)
 
     if isinstance(object, Object3D):
-        # return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces, window_coordinates=window_coordinates)
         return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces)
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point3D, m: List[List[float]]) -> Point3D:
     r = dot(point.coordinates, m)
-
     return Point3D(r[0][0], r[0][1], r[0][2])
 
 def iterative_viewport_transform(object_coordinates: List[Point3D], viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> List[Point3D]:

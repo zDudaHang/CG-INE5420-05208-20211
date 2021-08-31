@@ -1,6 +1,7 @@
-from typing import List
+from PyQt5.QtGui import QPainter
+from typing import Callable, List
 from src.model.point import Point3D
-from numpy import dot
+from numpy import array, dot
 
 BEZIER_MATRIX = [
     [-1, 3, -3, 1],
@@ -21,7 +22,7 @@ class BezierGeometryMatrix():
         self.x = x
         self.y = y
 
-def get_GB(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D) -> BezierGeometryMatrix:
+def get_GB_bezier(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D) -> BezierGeometryMatrix:
     gb_x = [
         [p0.x()], 
         [p1.x()], 
@@ -44,12 +45,13 @@ def blending_function(t: float, gb: List[List[float]]) -> float:
     return dot(blending, gb)[0][0]
 
 
-class BSpline:
-    def __init__(self, x: List[List[float]], y: List[List[float]]):
+class BSplineGeometryMatrix:
+    def __init__(self, x: List[List[float]], y: List[List[float]], z: List[List[float]]):
         self.x = x
         self.y = y
+        self.z = z
 
-def get_GB_Spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
+def get_GB_spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
     g_x = [
         [p0.x()], 
         [p1.x()], 
@@ -64,23 +66,85 @@ def get_GB_Spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
         [p3.y()]
     ]
 
-    return BSpline(g_x, g_y)
-
-def forward_differences(d: float, gb: List[List[float]]):
-    
-    matrix_e = [
-        [0, 0, 0, 1],
-        [pow(d, 3), pow(d, 2), d, 0],
-        [6*pow(d, 3), 2*pow(d, 2), 0, 0],
-        [6*pow(d, 3), 0, 0, 0]
+    g_z = [
+        [p0.z()], 
+        [p1.z()], 
+        [p2.z()], 
+        [p3.z()]
     ]
 
+    return BSplineGeometryMatrix(g_x, g_y, g_z)
+
+# def forward_differences(d: float, gb: List[List[float]]):
+    
+#     matrix_e = [
+#         [0, 0, 0, 1],
+#         [pow(d, 3), pow(d, 2), d, 0],
+#         [6*pow(d, 3), 2*pow(d, 2), 0, 0],
+#         [6*pow(d, 3), 0, 0, 0]
+#     ]
+
+#     c_x = dot(BSPLINE_MATRIX, gb.x)
+#     c_y = dot(BSPLINE_MATRIX, gb.y)
+
+
+#     fwdd_x = dot(matrix_e, c_x)
+#     fwdd_y = dot(matrix_e, c_y)
+
+
+#     return fwdd_x, fwdd_y
+
+def generate_delta_matrix(delta: float) -> array:
+    delta2 = pow(delta, 2)
+    delta3 = pow(delta, 3)
+                        
+    return array([
+        [0, 0, 0, 1],
+        [delta3, delta2, delta, 0],
+        [6*delta3, 2*delta2, 0, 0],
+        [6*delta3, 0, 0, 0]
+    ])
+
+class ForwardDifferenceValues:
+    def __init__(self, x: float, derivx: List[float], y: float, derivy: List[float], z: float, derivz: List[float]):
+        self.x = x
+        self.derivx = derivx
+
+        self.y = y
+        self.derivy = derivy
+
+        self.z = z
+        self.derivz = derivz
+    
+    def update(self):
+        self.x += self.derivx[0]; self.derivx[0] += self.derivx[1]; self.derivx[1] += self.derivx[2]
+        self.y += self.derivy[0]; self.derivy[0] += self.derivy[1]; self.derivy[1] += self.derivy[2]
+        self.z += self.derivz[0]; self.derivz[0] += self.derivz[1]; self.derivz[1] += self.derivz[2]
+
+def generate_curve_initial_values(delta_matrix: array, gb: BSplineGeometryMatrix) -> ForwardDifferenceValues:
     c_x = dot(BSPLINE_MATRIX, gb.x)
     c_y = dot(BSPLINE_MATRIX, gb.y)
+    c_z = dot(BSPLINE_MATRIX, gb.z)
 
+    initial_x = dot(delta_matrix, c_x)
+    initial_y = dot(delta_matrix, c_y)
+    initial_z = dot(delta_matrix, c_z)
 
-    fwdd_x = dot(matrix_e, c_x)
-    fwdd_y = dot(matrix_e, c_y)
+    return ForwardDifferenceValues(initial_x[0][0], initial_x[1:], initial_y[0][0], initial_y[1:], initial_z[0][0], initial_z[1:])
 
+def fwd_diff(n: int, values: ForwardDifferenceValues, drawLine: Callable[[QPainter, float, float, float, float, Point3D, Point3D, Point3D], None], painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> ForwardDifferenceValues:
+    i = 1
 
-    return fwdd_x, fwdd_y
+    x_old = values.x
+    y_old = values.y
+    z_old = values.z
+
+    while i < n:
+        i += 1
+        values.update()
+        drawLine(painter, x_old, values.x, y_old, values.y, viewport_min, viewport_max, viewport_origin)
+        x_old = values.x
+        y_old = values.y 
+        z_old = values.z
+
+    return values

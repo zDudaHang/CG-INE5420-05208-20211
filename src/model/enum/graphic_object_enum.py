@@ -6,7 +6,8 @@ class GraphicObjectEnum(Enum):
     WIREFRAME = "Wireframe"
     CURVE = "Curva"
     OBJECT_3D = "Objeto 3D"
-    BICUBIC = "Superfície Bicúbica de Bézier"
+    BICUBIC_BEZIER = "Superfície Bicúbica de Bézier"
+    BICUBIC_BSPLINE = "Superfície Bicúbica de B-Spline"
 
 
     def valueOf(value: str):

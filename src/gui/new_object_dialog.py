@@ -40,8 +40,8 @@ class NewObjectDialog(QDialog):
         self.tabs.addTab(self.obj_3d_tab, GraphicObjectEnum.OBJECT_3D.value)
 
         self.bicubic_tab = BicubicTabWidget()
-        self.widget_tabs[GraphicObjectEnum.BICUBIC] = self.bicubic_tab
-        self.tabs.addTab(self.bicubic_tab, GraphicObjectEnum.BICUBIC.value)
+        self.widget_tabs[GraphicObjectEnum.BICUBIC_BEZIER] = self.bicubic_tab
+        self.tabs.addTab(self.bicubic_tab, GraphicObjectEnum.BICUBIC_BEZIER.value)
 
         self.layout.addWidget(self.tabs)
 
