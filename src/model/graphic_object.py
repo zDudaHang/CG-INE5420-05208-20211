@@ -119,6 +119,7 @@ class Line(GraphicObject):
 
         painter.drawPath(painter_path)
 
+
 class WireFrame(GraphicObject):
 
     def __init__(self, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool, is_clipped: bool):
@@ -260,6 +261,7 @@ class BSpline(Curve):
                 x_old = x[0][0]
                 y_old = y[0][0]
 
+
 class Object3D(GraphicObject):
     
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor, edges: List[tuple], faces: List[tuple]):
@@ -294,7 +296,6 @@ class BezierBicubicSurface(GraphicObject):
         if len(coordinates) < 16:
             raise ValueError("[ERRO] Uma superfície bicúbica de Bézier deve ter 16 pontos!")
 
-        # TOTAL DE PONTOS DE UMA CURVA BEZIER = 4 (minimo) + 3n, sendo n pertencente aos numeros naturais
         n = (len(coordinates)) % 16
         if n != 0:
             raise ValueError("[ERRO] Adicionar conjuntos de pontos de controle 16 a 16.")
