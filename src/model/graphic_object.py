@@ -1,6 +1,9 @@
+from copy import deepcopy
+from math import ceil, floor
+from numpy.core.fromnumeric import transpose
 from src.model.enum.curve_enum import CurveEnum
 from src.util.curves import blending_function, fwd_diff, generate_curve_initial_values, generate_delta_matrix, get_GB_bezier, get_GB_spline
-from src.util.bicubic import get_bicubic_GB, blending_function_bicubic
+from src.util.bicubic import generate_surface_initial_values, get_bicubic_GB, blending_function_bicubic, get_bicubic_geometry_matrix
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
 from abc import ABC, abstractmethod
@@ -297,7 +300,7 @@ class BezierBicubicSurface(BicubicSurface):
 
 class BSplineBicubicSurface(BicubicSurface):
     
-    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):       
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):    
         super().__init__(name, GraphicObjectEnum.BICUBIC_BSPLINE, coordinates, CurveEnum.BSPLINE, color)
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
@@ -305,6 +308,33 @@ class BSplineBicubicSurface(BicubicSurface):
         pen.setWidth(2)
         pen.setColor(self.color)
         painter.setPen(pen)
+
+        # Mesmo delta para s e t, logo o mesmo n tambem
+        delta = 0.111
+        n = ceil(1 / delta)
+
+        delta_matrix = generate_delta_matrix(delta)
+
+        # Valores iniciais:
+        gb = get_bicubic_geometry_matrix(self.coordinates)
+
+        initial_values = generate_surface_initial_values(delta_matrix, transpose(delta_matrix), gb)
+        
+        # Cria uma copia para ser usada no lugar da original
+        auxiliary = deepcopy(initial_values)
+
+        # t
+        for i in range(0, n):
+            fwd_diff(n, auxiliary.to_fwd_diff(), self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
+            auxiliary.update()
+        
+        initial_values.transpose()
+
+        # s
+        for j in range(0, n):
+            fwd_diff(n, initial_values.to_fwd_diff(), self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
+            initial_values.update()
+
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
     curve_option: CurveEnum = None, edges: str = None, faces: str = None, onError: Callable = None) -> Union[GraphicObject, None]:
@@ -330,11 +360,12 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
         if type == GraphicObjectEnum.OBJECT_3D:
             graphic_obj = Object3D(name, type, coordinates, color, edges, faces)
         
-        if type == GraphicObjectEnum.BICUBIC:
-            graphic_obj = BezierBicubicSurface(name, coordinates, color)
+        if type == GraphicObjectEnum.BICUBIC_BEZIER or type == GraphicObjectEnum.BICUBIC_BSPLINE:
+            # graphic_obj = BezierBicubicSurface(name, coordinates, color)
+            graphic_obj = BSplineBicubicSurface(name, coordinates, color)
 
     except ValueError as e:
-            onError(e.__str__())
+        onError(e.__str__())
     
     return graphic_obj
 

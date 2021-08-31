@@ -218,6 +218,16 @@ class Controller():
         name = values[GraphicObjectFormEnum.NAME]
         coordinates_str = values[GraphicObjectFormEnum.COORDINATES]
 
+        if len(name) == 0:
+            self.main_window.log.add_item("[ERRO] O nome não pode ser vazio!")
+            return
+        
+        coordinates = self.parse_coordinates(coordinates_str)
+
+        if coordinates == None:
+            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1,z1),(x2,y2,z2),...")
+            return
+        
         color = None
         if GraphicObjectFormEnum.COLOR in values:
             color = values[GraphicObjectFormEnum.COLOR]
@@ -246,17 +256,7 @@ class Controller():
             text = values[GraphicObjectFormEnum.FACES]
             text += ','
             faces : List[tuple] = list(eval(text))
-
-        if len(name) == 0:
-            self.main_window.log.add_item("[ERRO] O nome não pode ser vazio!")
-            return
         
-        coordinates = self.parse_coordinates(coordinates_str)
-
-        if coordinates == None:
-            self.main_window.log.add_item("[ERRO] As coordenadas passadas não respeitam o formato da aplicação. Por favor, utilize o seguinte formato para as coordenadas: (x1,y1,z1),(x2,y2,z2),...")
-            return
-
         self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option, edges, faces)
 
         self.calculate_scn_coordinates()

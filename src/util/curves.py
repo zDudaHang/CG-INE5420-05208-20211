@@ -75,25 +75,6 @@ def get_GB_spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
 
     return BSplineGeometryMatrix(g_x, g_y, g_z)
 
-# def forward_differences(d: float, gb: List[List[float]]):
-    
-#     matrix_e = [
-#         [0, 0, 0, 1],
-#         [pow(d, 3), pow(d, 2), d, 0],
-#         [6*pow(d, 3), 2*pow(d, 2), 0, 0],
-#         [6*pow(d, 3), 0, 0, 0]
-#     ]
-
-#     c_x = dot(BSPLINE_MATRIX, gb.x)
-#     c_y = dot(BSPLINE_MATRIX, gb.y)
-
-
-#     fwdd_x = dot(matrix_e, c_x)
-#     fwdd_y = dot(matrix_e, c_y)
-
-
-#     return fwdd_x, fwdd_y
-
 def generate_delta_matrix(delta: float) -> array:
     delta2 = pow(delta, 2)
     delta3 = pow(delta, 3)
@@ -132,7 +113,7 @@ def generate_curve_initial_values(delta_matrix: array, gb: BSplineGeometryMatrix
 
     return ForwardDifferenceValues(initial_x[0][0], initial_x[1:], initial_y[0][0], initial_y[1:], initial_z[0][0], initial_z[1:])
 
-def fwd_diff(n: int, values: ForwardDifferenceValues, drawLine: Callable[[QPainter, float, float, float, float, Point3D, Point3D, Point3D], None], painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D) -> ForwardDifferenceValues:
+def fwd_diff(n: int, values: ForwardDifferenceValues, drawLine: Callable[[QPainter, float, float, float, float, Point3D, Point3D, Point3D], None], painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
     i = 1
 
     x_old = values.x
@@ -147,4 +128,3 @@ def fwd_diff(n: int, values: ForwardDifferenceValues, drawLine: Callable[[QPaint
         y_old = values.y 
         z_old = values.z
 
-    return values
