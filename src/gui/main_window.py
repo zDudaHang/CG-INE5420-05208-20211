@@ -10,7 +10,6 @@ from src.gui.functions_menu import FunctionsMenu
 from src.gui.viewport import Viewport
 from src.gui.log import Log
 from src.text import *
-import os.path
 
 class MainWindow(QMainWindow):
     def __init__(self, step: float, angle: float, viewport_coordinates: List[Point3D], viewport_width: int, viewport_height: int, viewport_origin: Point3D):
@@ -136,18 +135,22 @@ class MainWindow(QMainWindow):
 # ========== IMPORT & EXPORT .OBJ FILES
  
     def open_file_dialog(self):
-        filename = QFileDialog().getOpenFileName()
+        filename = QFileDialog().getOpenFileNames()
 
         if filename[0] == []:
             return
 
-        path_obj = filename[0]
-        path_mtl = os.path.dirname(filename[0])
-
-        if path_obj[-3:] != "obj":
-            self.error_dialog.showMessage('Você deve selecionar um arquivo no formato .obj')
+        try:
+            if filename[0][0].find('.obj') != -1:
+                path_obj = filename[0][0]
+                path_mtl = filename[0][1]
+            else:
+                path_obj = filename[0][1]
+                path_mtl = filename[0][0]
+        except IndexError:
+            self.error_dialog.showMessage('Selecione os arquivos .mtl e .obj para realizar a importação.')
             return
-        
+
         try:
             self.new_objs.load_obj(path_obj,path_mtl)
             self.add_new_obj_action.trigger()

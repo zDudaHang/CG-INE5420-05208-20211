@@ -5,13 +5,12 @@ from typing import List
 from src.model.point import Point3D
 from src.model.graphic_object import GraphicObject, get_rgb
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
-import os.path
 
 class WavefrontOBJ:
-    def __init__( self ):
+    def __init__( self, default_mtl='default_mtl' ):
         self.path      = None               
         self.mtllibs   = []                
-        self.mtls      = False    
+        self.mtls      = [ default_mtl ]    
         self.vertices  = []                  
         self.window    = []                 
         self.objects_name = []              
@@ -20,14 +19,9 @@ class WavefrontOBJ:
         self.kd_params = []
         self.objects = {}
         self.filled = []
-        self.faces = []
 
 
     def parse_mtl(self, filename_mtl ):
-        if not os.path.exists(filename_mtl):
-            self.mtls = False 
-            return
-
         with open( filename_mtl, 'r' ) as objm:
             for line in objm:
                 toks = line.split()
@@ -39,24 +33,16 @@ class WavefrontOBJ:
                     self.kd_params.append(toks[1:])    
    
 
-    def load_obj(self, filename_obj: str, filename_mtl: str):
-        
-        
+    def load_obj(self, filename_obj: str, filename_mtl: str, default_mtl='default_mtl'):
+
+        self.parse_mtl(filename_mtl) 
         with open( filename_obj, 'r' ) as objf:
             self.path = filename_obj
 
             for line in objf:
                 toks = line.split()
-
                 if not toks:
                     continue
-                
-                if toks[0] == 'mtllib':
-                    self.mtls = True
-                    filename_mtl += f'/{toks[1]}'
-                    self.parse_mtl(filename_mtl) 
-
-                #Vértice
                 if toks[0] == 'v':
                     t = []
                     for v in toks[1:]:
@@ -65,41 +51,31 @@ class WavefrontOBJ:
                         else:
                             t.append(float(v))
                     self.vertices.append(t)
-
-                #Window
                 elif toks[0] == 'w':
                     indices = [ float(v)-1 for v in toks[1:]]
                     for i in indices:
                         self.window.append( self.vertices[int(i)] )
-
-                #Object
                 elif toks[0] == 'o':
                     self.objects_name.append( toks[1] )
-                
-                #Point
                 elif toks[0] == 'p':
                     self.objects[self.objects_name[-1]] = [self.vertices[int(toks[1])]]
                     self.filled.append(False)
-                
-                #Line
                 elif toks[0] == 'l':
                     indices = [ float(v)-1 for v in toks[1:]]
-                    indices.append(indices[0])
                     temp = []
                     for i in indices:
                         temp.append( self.vertices[int(i)])                             
                     self.objects[self.objects_name[-1]] = temp
                     self.filled.append(False)
-                
                 elif toks[0] == 'f':
-                    # indices = [ float(v.split('/')[0])-1 for v in toks[1:]]
                     indices = [ float(v)-1 for v in toks[1:]]
                     temp = []
                     for i in indices:
-                        temp.append( self.vertices[int(i)])    
-                    self.faces.append(temp)
-                    self.filled.append(False)           
-                    
+                        temp.append( self.vertices[int(i)])                             
+                    self.objects[self.objects_name[-1]] = temp  
+                    self.filled.append(True)           
+                elif toks[0] == 'mtllib':
+                    self.mtllibs.append( toks[1] )
                 elif toks[0] == 'usemtl':
                     self.usemtl.append(toks[1])
   

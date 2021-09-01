@@ -163,15 +163,12 @@ class Controller():
         i = 0
 
         for key, value in objs.objects.items():
-            list_points = [Point3D(c[0],c[1], c[2]) for c in value]
+            list_points = [Point3D(c[0],c[1]) for c in value]
 
-            if objs.mtls:
-                usemtl = objs.usemtl[i]
-                newmtl = objs.new_mtl.index(usemtl)
+            usemtl = objs.usemtl[i]
+            newmtl = objs.new_mtl.index(usemtl)
 
-                rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]] 
-            else:
-                rgb = [0,0,0] 
+            rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]]  
 
             if len(list_points) == 1:
                 self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
@@ -180,14 +177,8 @@ class Controller():
             else:
                 self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
             i += 1
-
-        rgb = [0,0,0]
-        for face in objs.faces:
-            list_points = [Point3D(c[0],c[1],c[2]) for c in face]        
-            self.add_new_object("teste", list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
-
-        if objs.window:
-            self.update_window_values(objs.window)
+        
+        self.update_window_values(objs.window)
 
         self.calculate_scn_coordinates()
 
