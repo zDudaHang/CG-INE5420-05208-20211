@@ -234,7 +234,7 @@ class Object3D(GraphicObject):
         for edge in edges:
             first = edge[0] - 1
             second = edge[1] - 1
-            print(f'Edge: {coordinates[first]} -> {coordinates[second]}')
+            # print(f'Edge: {coordinates[first]} -> {coordinates[second]}')
             line = Line('_', [coordinates[first], coordinates[second]])
             self.edges_lines.append(line)
 

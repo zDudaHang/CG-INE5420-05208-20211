@@ -46,7 +46,7 @@ class WindowMenu(QWidget):
 
         self.layout.addWidget(QHLine())
 
-        # Step Rotation:
+        # Rotation:
         self.step_rotation_box = QHBoxLayout()
         self.step_rotation_box.addWidget(QLabel('Ângulo a rotacionar:'))
         self.step_rotation_label = QLabel('%.2fº graus' % angle)
@@ -58,7 +58,7 @@ class WindowMenu(QWidget):
 
         self.rotation_step_minus_button = QPushButton('-')
         self.rotation_step_minus_button.setFixedSize(QSize(50,20))
-        self.step_rotation_box.addWidget(self.rotation_step_minus_button)
+        self.step_rotation_box.addWidget(self.rotation_step_minus_button)  
 
         self.layout.addLayout(self.step_rotation_box)
 
@@ -74,6 +74,37 @@ class WindowMenu(QWidget):
         self.rotation_menu_box.addWidget(self.rotate_right_button)
 
         self.layout.addLayout(self.rotation_menu_box)
+
+        
+        # Axis choice:
+        self.axis_menu_box = QHBoxLayout()
+        self.axis_menu_box.addWidget(QLabel('Eixo:'))
+        self.radiobuttons_layout = QHBoxLayout()
+        self.axis_button_group = QButtonGroup(self)
+
+        # X
+        self.x_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.X))
+        self.axis_button_group.addButton(self.x_axis_button, RotateAxisOptionsEnum.X)
+        self.radiobuttons_layout.addWidget(self.x_axis_button)
+        self.x_axis_button.toggled.connect(lambda: self.handle_click(RotateAxisOptionsEnum.X))
+
+        # Y
+        self.y_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.Y))
+        self.axis_button_group.addButton(self.y_axis_button, RotateAxisOptionsEnum.Y)
+        self.radiobuttons_layout.addWidget(self.y_axis_button)
+        self.y_axis_button.toggled.connect(lambda: self.handle_click(RotateAxisOptionsEnum.Y))
+
+        # Z
+        self.z_axis_button = QRadioButton(RotateAxisOptionsEnum._to_str(RotateAxisOptionsEnum.Z))
+        self.z_axis_button.setChecked(True)
+        self.rotation_axis = RotateAxisOptionsEnum.Z
+        self.axis_button_group.addButton(self.z_axis_button, RotateAxisOptionsEnum.Z)
+        self.radiobuttons_layout.addWidget(self.z_axis_button)
+        self.z_axis_button.toggled.connect(lambda: self.handle_click(RotateAxisOptionsEnum.Z))
+
+        self.axis_menu_box.addLayout(self.radiobuttons_layout)
+
+        self.layout.addLayout(self.axis_menu_box)
 
         self.layout.addWidget(QHLine())
 
@@ -117,3 +148,7 @@ class WindowMenu(QWidget):
 
     def update_step_rotation_value(self, value: str):
         self.step_rotation_label.setText('%.2fº graus' % value)
+
+    def handle_click(self, value: RotateAxisOptionsEnum):
+        self.rotation_axis = value
+

@@ -100,5 +100,4 @@ class FunctionsMenu(QWidget):
 
     def handle_proj_click(self, option: ProjectionEnum):
         self.proj_method = option
-        print(f'handle_proj_click(option={option.value})')
         self.proj_updated_action.trigger()

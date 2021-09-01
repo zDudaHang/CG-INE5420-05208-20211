@@ -21,7 +21,7 @@ from src.util.wavefront import WavefrontOBJ
 from src.gui.new_object_dialog import NewObjectDialog, GraphicObjectEnum
 from src.model.graphic_object import GraphicObject, Line, Object3D, Point, WireFrame, apply_matrix_in_object, calculate_center, create_graphic_object
 from src.model.point import Point3D
-from src.util.transform import generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, parallel_projection, perspective_projection, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
+from src.util.transform import generate_rotate_on_axis_matrix, generate_rotate_operation_matrix, generate_scale_operation_matrix, generate_scn_matrix, generate_translation_matrix, parallel_projection, perspective_projection, rotate_window, scale_window, translate_matrix_for_rotated_window, translate_object, translate_window
 from src.util.parse import parse
 from src.gui.transform_dialog import TransformDialog
 from src.util.clipping.point_clipper import PointClipper
@@ -383,14 +383,16 @@ class Controller():
 
     def window_rotate_handler(self, direction: str):
         angle = 0
-
+        
         if direction == 'left':
             angle = -self.step_angle
 
         else:
             angle = self.step_angle
 
-        r = generate_rotate_operation_matrix(self.window.center, angle)
+        axis = self.main_window.functions_menu.window_menu.rotation_axis
+        
+        r = generate_rotate_on_axis_matrix(self.window.center, angle, axis)
 
         self.window = apply_matrix_in_object(self.window, r)
 

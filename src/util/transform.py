@@ -1,3 +1,4 @@
+from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 from src.model.graphic_object import WireFrame, apply_matrix_in_object, apply_matrix_in_point
 from src.util.math import concat_transformation_matrixes
 from typing import List
@@ -90,6 +91,21 @@ def generate_scale_operation_matrix(center: Point3D, sx: float, sy: float, sz: f
     scale = generate_scaling_matrix(sx, sy, sz)
     t2 = generate_translation_matrix(center.x(), center.y(), center.z())
     return concat_transformation_matrixes([t1, scale, t2])
+
+def generate_rotate_on_axis_matrix(d: Point3D, angle: float, axis: RotateAxisOptionsEnum) -> array:
+    t1 = generate_translation_matrix(-d.x(), -d.y(), -d.z())
+    
+    rot = array([])
+    if axis == RotateAxisOptionsEnum.Z:
+        rot = generate_rz_rotation_matrix(angle)
+    elif axis == RotateAxisOptionsEnum.Y:
+        rot = generate_ry_rotation_matrix(angle)
+    else: 
+        rot = generate_rx_rotation_matrix(angle)
+
+    t2 = generate_translation_matrix(d.x(), d.y(), d.z())
+
+    return concat_transformation_matrixes([t1, rot, t2])
 
 def generate_rotate_operation_matrix(d: Point3D, angle: float) -> array:
     t1 = generate_translation_matrix(-d.x(), -d.y(), -d.z())
