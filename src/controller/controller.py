@@ -52,7 +52,32 @@ class Controller():
 
         }
 
+        self.add_test_objects()
+
         self.set_handlers()
+
+    def add_test_objects(self):
+        cubo1 : Object3D = Object3D('cubo1', [
+            Point3D(0,0,0), Point3D(0,100,0), Point3D(100,100,0), Point3D(100,0,0), Point3D(0,0,100), Point3D(0,100,100), Point3D(100,100,100), Point3D(100,0,100)
+            ],
+            QColor(0,0,0), [
+                (1,2),(2,3),(3,4),(4,1),(5,6),(6,7),(7,8),(8,5),(2,6),(5,1),(3,7),(8,4)
+            ]
+        )
+
+        cubo2 : Object3D = Object3D('cubo2', [
+            Point3D(100,100,0), Point3D(200,100,0), Point3D(200,200,0), Point3D(100,200,0), Point3D(100,100,100), Point3D(200,100,100), Point3D(200,200,100), Point3D(100,200,100)
+            ],
+            QColor(0,0,0), [
+                (0,1),(1,2),(2,3),(3,0),(0,4),(1,5),(2,6),(3,7),(4,5),(5,6),(6,7),(7,4)
+            ]
+        )
+
+        self.display_file[DisplayFileEnum.WORLD_COORD].append(cubo1)
+        self.display_file[DisplayFileEnum.WORLD_COORD].append(cubo2)
+
+        self.calculate_scn_coordinates()
+        
 
     def set_initial_values(self):
         # Zoom and move step:
@@ -233,7 +258,6 @@ class Controller():
             color = values[GraphicObjectFormEnum.COLOR]
         
         is_filled = False
-        is_clipped = False
 
         if GraphicObjectFormEnum.FILLED in values:
             is_filled = values[GraphicObjectFormEnum.FILLED]
@@ -241,9 +265,6 @@ class Controller():
         curve_option = None
         if GraphicObjectFormEnum.CURVE_OPTION in values:
             curve_option = values[GraphicObjectFormEnum.CURVE_OPTION]
-
-        self.new_object_dialog.clear_inputs(type)
-        self.new_object_dialog.close()
 
         edges = None
         if GraphicObjectFormEnum.EDGES in values:
@@ -254,10 +275,14 @@ class Controller():
         faces = None
         if GraphicObjectFormEnum.FACES in values:
             text = values[GraphicObjectFormEnum.FACES]
-            text += ','
-            faces : List[tuple] = list(eval(text))
+            if text != '':
+                text += ','
+                faces : List[tuple] = list(eval(text))
         
-        self.add_new_object(name, coordinates, type, color, is_filled, is_clipped, curve_option, edges, faces)
+        self.new_object_dialog.clear_inputs(type)
+        self.new_object_dialog.close()
+
+        self.add_new_object(name, coordinates, type, color, is_filled, False, curve_option, edges, faces)
 
         self.calculate_scn_coordinates()
 
@@ -403,12 +428,13 @@ class Controller():
         y = array([0, 1])
 
         angle = angle_between_vectors(v_up, y)
+
+        print(f'angle between v_up and y_axis = {angle}')
         
         # Desloca para onde estava anteriormente antes de criar a matriz SCN
         if translated:
             t = generate_translation_matrix(distance.x(), distance.y())
             self.window = apply_matrix_in_object(self.window, t)
-
 
         return angle
 
@@ -417,10 +443,11 @@ class Controller():
         self.display_file[DisplayFileEnum.SCN_COORD].clear()
         self.display_file[DisplayFileEnum.PROJ_COORD].clear()
 
-        proj = self.main_window.functions_menu.projection_method
+        proj = self.main_window.functions_menu.proj_method
 
         transform = array([])
 
+        print(f'proj selected: {proj.value}')
 
         if proj == ProjectionEnum.PARALLEL:
             transform = parallel_projection(self.window)
@@ -460,33 +487,40 @@ class Controller():
 
                 if clipping_line_method == LineClippingOptionsEnum.LIANG_B:
                     new_line = LiagnBarksyClipper(obj).clip()
-                
                 else:
                     new_line = CohenSutherlandLineClipper(obj).cohenSutherlandClip()
                 
                 if new_line != None:
                     inside_window_objs.append(new_line)
-
             elif isinstance(obj, WireFrame):
                 new_wireframe = SutherlandHodgman(obj).sutherland_hodgman_clip()
                 
                 if new_wireframe != None:
-                    inside_window_objs.append(new_wireframe)
-                    
+                    inside_window_objs.append(new_wireframe)         
             elif isinstance(obj, Object3D):
-                for wireframes in obj.faces_wireframes:
-                    new_obj = SutherlandHodgman(wireframes).sutherland_hodgman_clip()
-                
-                    if new_obj != None:
-                        inside_window_objs.append(new_obj)
-
+                if len(obj.edges_lines) != 0:
+                    for line in obj.edges_lines:
+                        if clipping_line_method == LineClippingOptionsEnum.LIANG_B:
+                            new_line = LiagnBarksyClipper(line).clip()
+                        else:
+                            new_line = CohenSutherlandLineClipper(line).cohenSutherlandClip()
+                        
+                        if new_line != None:
+                            inside_window_objs.append(new_line)
+                else:
+                    for wireframe in obj.faces_wireframes:
+                        new_wireframe = SutherlandHodgman(wireframe).sutherland_hodgman_clip()
+                    
+                        if new_wireframe != None:
+                            inside_window_objs.append(new_wireframe)
             else: inside_window_objs.append(obj)
+        
         return inside_window_objs
     
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : str = None, faces : str = None):
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : List[tuple] = None, faces : List[tuple] = None):
         graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.main_window.log.add_item)
 
         if graphic_obj != None:

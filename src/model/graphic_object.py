@@ -143,8 +143,8 @@ class WireFrame(GraphicObject):
             painter.drawPath(painter_path)
 
 class Curve(GraphicObject):
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor, curve_type: CurveEnum):
-        super().__init__(name, type, coordinates, color)
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor, curve_type: CurveEnum):
+        super().__init__(name, GraphicObjectEnum.CURVE, coordinates, color)
 
         self.curve_type = curve_type
     
@@ -160,7 +160,7 @@ class Curve(GraphicObject):
 class BezierCurve(Curve):
     curve_points = []
 
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor = None):
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma curva de Bézier deve ter pelo menos 4 pontos!")
 
@@ -169,7 +169,7 @@ class BezierCurve(Curve):
         if n != 0:
             raise ValueError("[ERRO] A quantidade de pontos da curva deve estar na imagem da função f(x) = 4 + 3x, sendo x pertencente aos números naturais, para garantir a continuidade G(0). Alguns valores válidos: 4, 7, 10 e 13")
         
-        super().__init__(name, type, coordinates, color, CurveEnum.BEZIER)
+        super().__init__(name, GraphicObjectEnum.CURVE, coordinates, color, CurveEnum.BEZIER)
 
         self.curve_points = BezierCurve.curve_points
 
@@ -200,11 +200,11 @@ class BezierCurve(Curve):
 
 class BSpline(Curve):
     
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor = None):
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma BSpline deve ter pelo menos 4 pontos!")
 
-        super().__init__(name, type, coordinates, color, CurveEnum.BSPLINE)
+        super().__init__(name, GraphicObjectEnum.CURVE, coordinates, color, CurveEnum.BSPLINE)
     
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
@@ -223,8 +223,8 @@ class BSpline(Curve):
 
 class Object3D(GraphicObject):
     
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor, edges: List[tuple], faces: List[tuple]):
-        super().__init__(name, type, coordinates, color)
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor, edges: List[tuple], faces: List[tuple] = None):
+        super().__init__(name, GraphicObjectEnum.OBJECT_3D, coordinates, color)
 
         self.edges = edges
         self.faces = faces
@@ -234,17 +234,18 @@ class Object3D(GraphicObject):
         for edge in edges:
             first = edge[0] - 1
             second = edge[1] - 1
+            print(f'Edge: {coordinates[first]} -> {coordinates[second]}')
             line = Line('_', [coordinates[first], coordinates[second]])
             self.edges_lines.append(line)
 
         self.faces_wireframes : List[WireFrame] = []
         
-        for face in faces:
-            coords = []
-            for edge in face:
-                coords.extend(self.edges_lines[edge - 1].coordinates)
-            self.faces_wireframes.append(WireFrame('_', coords, self.color, False, True))
-
+        if faces != None:
+            for face in faces:
+                coords = []
+                for edge in face:
+                    coords.extend(self.edges_lines[edge - 1].coordinates)
+                self.faces_wireframes.append(WireFrame('_', coords, self.color, False, True))
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pass
@@ -310,7 +311,7 @@ class BSplineBicubicSurface(BicubicSurface):
         painter.setPen(pen)
 
         # Mesmo delta para s e t, logo o mesmo n tambem
-        delta = 0.111
+        delta = 0.01
         n = ceil(1 / delta)
 
         delta_matrix = generate_delta_matrix(delta)
@@ -353,12 +354,12 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
         
         if type == GraphicObjectEnum.CURVE:
             if curve_option == CurveEnum.BEZIER:
-                graphic_obj = BezierCurve(name, type, coordinates, color)
+                graphic_obj = BezierCurve(name, coordinates, color)
             else:
-                graphic_obj = BSpline(name, type, coordinates, color)
+                graphic_obj = BSpline(name, coordinates, color)
         
         if type == GraphicObjectEnum.OBJECT_3D:
-            graphic_obj = Object3D(name, type, coordinates, color, edges, faces)
+            graphic_obj = Object3D(name, coordinates, color, edges, faces)
         
         if type == GraphicObjectEnum.BICUBIC_BEZIER or type == GraphicObjectEnum.BICUBIC_BSPLINE:
             # graphic_obj = BezierBicubicSurface(name, coordinates, color)

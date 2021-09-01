@@ -123,7 +123,7 @@ def fwd_diff(n: int, values: ForwardDifferenceValues, drawLine: Callable[[QPaint
     while i < n:
         i += 1
         values.update()
-        drawLine(painter, x_old, values.x, y_old, values.y, viewport_min, viewport_max, viewport_origin)
+        drawLine(painter, x_old, values.x, y_old, values.y, viewport_min, viewport_max, viewport_origin, z_old, values.z)
         x_old = values.x
         y_old = values.y 
         z_old = values.z
