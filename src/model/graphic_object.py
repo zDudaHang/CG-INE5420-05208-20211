@@ -234,7 +234,6 @@ class Object3D(GraphicObject):
         for edge in edges:
             first = edge[0] - 1
             second = edge[1] - 1
-            # print(f'Edge: {coordinates[first]} -> {coordinates[second]}')
             line = Line('_', [coordinates[first], coordinates[second]])
             self.edges_lines.append(line)
 
@@ -251,7 +250,7 @@ class Object3D(GraphicObject):
         pass
 
 class BicubicSurface(Curve):
-    def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], curve: CurveEnum, color: QColor = None):
+    def __init__(self, name: str, coordinates: List[Point3D], curve: CurveEnum, color: QColor = None):
         if len(coordinates) < 16:
             raise ValueError("[ERRO] Uma superfície bicúbica deve ter 16 pontos!")
 
@@ -259,12 +258,14 @@ class BicubicSurface(Curve):
         if n != 0:
             raise ValueError("[ERRO] Adicionar conjuntos de pontos de controle 16 a 16.")
         
-        super().__init__(name, type, coordinates, color, curve)
+        super().__init__(name, coordinates, color, curve)
+
+        self.type = GraphicObjectEnum.BICUBIC
 
 class BezierBicubicSurface(BicubicSurface):
     
     def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):
-        super().__init__(name, GraphicObjectEnum.BICUBIC_BEZIER, coordinates, CurveEnum.BEZIER, color)
+        super().__init__(name, coordinates, CurveEnum.BEZIER, color)
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
@@ -302,7 +303,7 @@ class BezierBicubicSurface(BicubicSurface):
 class BSplineBicubicSurface(BicubicSurface):
     
     def __init__(self, name: str, coordinates: List[Point3D], color: QColor = None):    
-        super().__init__(name, GraphicObjectEnum.BICUBIC_BSPLINE, coordinates, CurveEnum.BSPLINE, color)
+        super().__init__(name, coordinates, CurveEnum.BSPLINE, color)
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
@@ -361,9 +362,11 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
         if type == GraphicObjectEnum.OBJECT_3D:
             graphic_obj = Object3D(name, coordinates, color, edges, faces)
         
-        if type == GraphicObjectEnum.BICUBIC_BEZIER or type == GraphicObjectEnum.BICUBIC_BSPLINE:
-            # graphic_obj = BezierBicubicSurface(name, coordinates, color)
-            graphic_obj = BSplineBicubicSurface(name, coordinates, color)
+        if type == GraphicObjectEnum.BICUBIC:
+            if curve_option == CurveEnum.BEZIER:
+                graphic_obj = BezierBicubicSurface(name, coordinates, color)
+            else:
+                graphic_obj = BSplineBicubicSurface(name, coordinates, color)
 
     except ValueError as e:
         onError(e.__str__())

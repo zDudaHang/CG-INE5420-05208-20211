@@ -138,8 +138,8 @@ class Controller():
         self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.OBJECT_3D))
         self.new_object_dialog.obj_3d_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.OBJECT_3D))
 
-        self.new_object_dialog.bicubic_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.BICUBIC_BEZIER))
-        self.new_object_dialog.bicubic_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.BICUBIC_BEZIER))
+        self.new_object_dialog.bicubic_tab.formLayout.buttons_box.accepted.connect(lambda: self.new_object_dialog_submitted_handler(GraphicObjectEnum.BICUBIC))
+        self.new_object_dialog.bicubic_tab.formLayout.buttons_box.rejected.connect(lambda: self.new_object_dialog_cancelled_handler(GraphicObjectEnum.BICUBIC))
 
         # STEP ZOOM:
         self.main_window.functions_menu.window_menu.step_plus_button.clicked.connect(lambda: self.on_step_update(0.05))
@@ -431,8 +431,6 @@ class Controller():
 
         angle = angle_between_vectors(v_up, y)
 
-        print(f'angle between v_up and y_axis = {angle}')
-        
         # Desloca para onde estava anteriormente antes de criar a matriz SCN
         if translated:
             t = generate_translation_matrix(distance.x(), distance.y())
@@ -448,8 +446,6 @@ class Controller():
         proj = self.main_window.functions_menu.proj_method
 
         transform = array([])
-
-        print(f'proj selected: {proj.value}')
 
         if proj == ProjectionEnum.PARALLEL:
             transform = parallel_projection(self.window)

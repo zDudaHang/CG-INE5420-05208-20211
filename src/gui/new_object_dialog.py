@@ -40,8 +40,8 @@ class NewObjectDialog(QDialog):
         self.tabs.addTab(self.obj_3d_tab, GraphicObjectEnum.OBJECT_3D.value)
 
         self.bicubic_tab = BicubicTabWidget()
-        self.widget_tabs[GraphicObjectEnum.BICUBIC_BEZIER] = self.bicubic_tab
-        self.tabs.addTab(self.bicubic_tab, GraphicObjectEnum.BICUBIC_BEZIER.value)
+        self.widget_tabs[GraphicObjectEnum.BICUBIC] = self.bicubic_tab
+        self.tabs.addTab(self.bicubic_tab, GraphicObjectEnum.BICUBIC.value)
 
         self.layout.addWidget(self.tabs)
 
@@ -193,4 +193,21 @@ class Object3DTab(GraphicObjectTabWidget):
 
 class BicubicTabWidget(GraphicObjectTabWidget):
     def __init__(self):
-        super().__init__('Digite os 16 pontos de controle: (x1,y1,z1),(x2,y2,z2),..., (x16,y16,z16)')
+        radio_buttons_layout = QHBoxLayout()
+        curve_button_group = QButtonGroup()
+
+        bezier_radiobutton = QRadioButton("Bézier")
+        bezier_radiobutton.setChecked(True)
+        bspline_radiobutton = QRadioButton("B-Spline")
+
+        curve_button_group.addButton(bezier_radiobutton, CurveEnum.BEZIER)
+        curve_button_group.addButton(bspline_radiobutton, CurveEnum.BSPLINE)
+
+        radio_buttons_layout.addWidget(bezier_radiobutton)
+        radio_buttons_layout.addWidget(bspline_radiobutton)
+
+        super().__init__('Digite os 16 pontos de controle: (x1,y1,z1),(x2,y2,z2),..., (x16,y16,z16)', 
+        {
+            GraphicObjectFormEnum.CURVE_OPTION:
+            NewWidget(radio_buttons_layout, curve_button_group.checkedId, lambda: bezier_radiobutton.setChecked(True))
+        })
