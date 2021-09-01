@@ -454,12 +454,7 @@ class Controller():
         else:
             transform = perspective_projection(self.window, self.focal_distance)
 
-        t_inv = generate_translation_matrix(self.window.center.x(), self.window.center.y(), self.window.center.z())
-
-        transform = dot(transform, t_inv)
-
         for obj in self.display_file[DisplayFileEnum.WORLD_COORD]: 
-            
             if obj.type == GraphicObjectEnum.OBJECT_3D:
                 new_obj = apply_matrix_in_object(obj, transform)
                 self.display_file[DisplayFileEnum.PROJ_COORD].append(new_obj)

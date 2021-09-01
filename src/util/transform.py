@@ -105,7 +105,6 @@ def generate_scn_matrix(center: Point3D, height_w: float, width_w: float, angle:
 
     return concat_transformation_matrixes([t, r, s])
 
-
 def get_w_homogen(window_coordinates : Point3D) -> List[List[float]]:
     return [[window_coordinates.x(), window_coordinates.y(), window_coordinates.z(), 1]]
 
@@ -161,10 +160,3 @@ def perspective_projection(window: WireFrame, focal_distance: float) ->  array:
     pa = parallel_projection(window)
 
     return concat_transformation_matrixes([pa, t, per])
-
-def generate_perspective_matrix(focal_distance: float) -> array:
-    return array([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 1/focal_distance, 0]])
