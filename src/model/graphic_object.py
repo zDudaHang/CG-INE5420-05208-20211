@@ -119,6 +119,7 @@ class Line(GraphicObject):
 
         painter.drawPath(painter_path)
 
+
 class WireFrame(GraphicObject):
 
     def __init__(self, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool, is_clipped: bool):
@@ -260,6 +261,7 @@ class BSpline(Curve):
                 x_old = x[0][0]
                 y_old = y[0][0]
 
+
 class Object3D(GraphicObject):
     
     def __init__(self, name: str, type: GraphicObjectEnum, coordinates: List[Point3D], color: QColor, edges: List[tuple], faces: List[tuple]):
@@ -294,7 +296,6 @@ class BezierBicubicSurface(GraphicObject):
         if len(coordinates) < 16:
             raise ValueError("[ERRO] Uma superfície bicúbica de Bézier deve ter 16 pontos!")
 
-        # TOTAL DE PONTOS DE UMA CURVA BEZIER = 4 (minimo) + 3n, sendo n pertencente aos numeros naturais
         n = (len(coordinates)) % 16
         if n != 0:
             raise ValueError("[ERRO] Adicionar conjuntos de pontos de controle 16 a 16.")
@@ -327,14 +328,8 @@ class BezierBicubicSurface(GraphicObject):
         # Direção S
         for k, v in points.items():
             for i in range(len(v)-1):
-                if i == 8:
-                    print(v[i].x(), v[i].y(), v[i+1].x(), v[i+1].y())
-
                 x1, y1, x2, y2 = curve_clip(v[i].x(), v[i].y(), v[i+1].x(), v[i+1].y())
-
-                if i == 8:
-                    print(x1, y1, x2, y2)
-                    print('='*30)                    
+                 
                 try:
                     p1 = viewport_transform(Point3D(x1, y1, v[i].z()), viewport_min, viewport_max, viewport_origin)
                     p2 = viewport_transform(Point3D(x2, y2, v[i+1].z()), viewport_min, viewport_max, viewport_origin)
