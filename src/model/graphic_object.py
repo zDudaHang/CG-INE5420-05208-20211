@@ -226,28 +226,42 @@ class BSpline(Curve):
 
 class Object3D(GraphicObject):
     
-    def __init__(self, name: str, coordinates: List[Point3D], color: QColor, edges: List[tuple], faces: List[tuple] = None):
+    def __init__(self, name: str, coordinates: List[Point3D], color: QColor, edges: List[tuple], faces: List[tuple] = None, from_wavefront: bool = False):
         super().__init__(name, GraphicObjectEnum.OBJECT_3D, coordinates, color)
 
         self.edges = edges
         self.faces = faces
+        self.from_wavefront = from_wavefront
 
         self.edges_lines : List[Line] = []
-
-        for edge in edges:
-            first = edge[0] - 1
-            second = edge[1] - 1
-            line = Line('_', [coordinates[first], coordinates[second]])
-            self.edges_lines.append(line)
-
         self.faces_wireframes : List[WireFrame] = []
-        
-        if faces != None:
-            for face in faces:
+
+              
+        if not from_wavefront:
+            for edge in edges:
+                first = edge[0] - 1
+                second = edge[1] - 1
+                line = Line('_', [coordinates[first], coordinates[second]])
+                self.edges_lines.append(line)
+
+            
+
+            if faces != None:
+                for face in faces:
+                    coords = []
+                    for edge in face:
+                        coords.extend(self.edges_lines[edge - 1].coordinates)
+                    self.faces_wireframes.append(WireFrame('_', coords, self.color, False, True))
+
+                
+        else:
+            for face in faces: 
                 coords = []
-                for edge in face:
-                    coords.extend(self.edges_lines[edge - 1].coordinates)
+                for c in face:
+                    coords.append(coordinates[c])
                 self.faces_wireframes.append(WireFrame('_', coords, self.color, False, True))
+               
+
 
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pass
@@ -343,7 +357,7 @@ class BSplineBicubicSurface(BicubicSurface):
 
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \
-    curve_option: CurveEnum = None, edges: str = None, faces: str = None, onError: Callable = None) -> Union[GraphicObject, None]:
+    curve_option: CurveEnum = None, edges: str = None, faces: str = None, from_wavefront: bool = False, onError: Callable = None) -> Union[GraphicObject, None]:
     
     graphic_obj: GraphicObject = None
 
@@ -364,7 +378,7 @@ def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[
                 graphic_obj = BSpline(name, coordinates, color)
         
         if type == GraphicObjectEnum.OBJECT_3D:
-            graphic_obj = Object3D(name, coordinates, color, edges, faces)
+            graphic_obj = Object3D(name, coordinates, color, edges, faces, from_wavefront)
         
         if type == GraphicObjectEnum.BICUBIC:
             if curve_option == CurveEnum.BEZIER:
@@ -408,7 +422,7 @@ def apply_matrix_in_object(object: GraphicObject, m: List[List[float]]) -> Graph
         return create_graphic_object(object.type, object.name, coords, object.color, curve_option=object.curve_type)
 
     if isinstance(object, Object3D):
-        return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces)
+        return create_graphic_object(object.type, object.name, coords, object.color, edges=object.edges, faces=object.faces, from_wavefront=object.from_wavefront)
     return create_graphic_object(object.type, object.name, coords, object.color)
 
 def apply_matrix_in_point(point: Point3D, m: List[List[float]]) -> Point3D:

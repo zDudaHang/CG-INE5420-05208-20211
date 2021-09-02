@@ -23,3 +23,9 @@ def concat_transformation_matrixes(matrixes: List[np.array]) -> np.array:
         final = np.dot(final, m)
 
     return final
+
+def vector_subtraction(u, v):
+    result = []
+    for i in range(len(u)):
+        result.append(u[i] - v[i])
+    return result

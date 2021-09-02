@@ -21,6 +21,7 @@ class WavefrontOBJ:
         self.objects = {}
         self.filled = []
         self.faces = []
+        self.edges = []
 
 
     def parse_mtl(self, filename_mtl ):
@@ -64,7 +65,7 @@ class WavefrontOBJ:
                             t.append(float(v.replace('\U00002013', '-')))
                         else:
                             t.append(float(v))
-                    self.vertices.append(t)
+                    self.vertices.append(Point3D(t[0],t[1],t[2]))
 
                 #Window
                 elif toks[0] == 'w':
@@ -78,7 +79,8 @@ class WavefrontOBJ:
                 
                 #Point
                 elif toks[0] == 'p':
-                    self.objects[self.objects_name[-1]] = [self.vertices[int(toks[1])]]
+
+                    self.objects[self.objects_name[-1]] = [self.vertices[int(toks[1]) - 1]]
                     self.filled.append(False)
                 
                 #Line
@@ -92,12 +94,13 @@ class WavefrontOBJ:
                     self.filled.append(False)
                 
                 elif toks[0] == 'f':
-                    # indices = [ float(v.split('/')[0])-1 for v in toks[1:]]
-                    indices = [ float(v)-1 for v in toks[1:]]
+                    indices = [ int(v)-1 for v in toks[1:]]
+
                     temp = []
-                    for i in indices:
-                        temp.append( self.vertices[int(i)])    
-                    self.faces.append(temp)
+                    for i in range(len(indices)-1):
+                        temp.append([indices[i]+1, indices[i+1]+1])  
+                    self.edges.append(temp)
+                    self.faces.append(indices)
                     self.filled.append(False)           
                     
                 elif toks[0] == 'usemtl':
