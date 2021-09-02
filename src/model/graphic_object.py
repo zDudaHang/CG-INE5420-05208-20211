@@ -115,6 +115,7 @@ class Line(GraphicObject):
         self.draw_lines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
         painter.drawPath(painter_path)
 
+
 class WireFrame(GraphicObject):
 
     def __init__(self, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool, is_clipped: bool):
@@ -221,6 +222,7 @@ class BSpline(Curve):
             Dx, Dy, Dz = generate_curve_initial_values(delta_matrix, gb)
             # ForwardDifferenceValues(initial_x[0][0], initial_x[1:], initial_y[0][0], initial_y[1:], initial_z[0][0], initial_z[1:])
             fwd_diff(n, Dx[0][0], Dx[1][0], Dx[2][0], Dx[3][0], Dy[0][0], Dy[1][0], Dy[2][0], Dy[3][0], Dz[0][0], Dz[1][0], Dz[2][0], Dz[3][0], self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
+
 
 class Object3D(GraphicObject):
     
