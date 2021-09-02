@@ -1,6 +1,6 @@
 from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 from src.model.graphic_object import WireFrame, apply_matrix_in_object, apply_matrix_in_point
-from src.util.math import concat_transformation_matrixes
+from src.util.math import concat_transformation_matrixes, vector_subtraction
 from typing import List
 from math import sin, cos, radians, degrees, atan
 
@@ -129,9 +129,13 @@ def get_vpn(window_coordinates : List[Point3D], vpr : List[List[float]]) -> List
     wc_list_0 = [window_coordinates[0].x(), window_coordinates[0].y(), window_coordinates[0].z()]
     wc_list_1 = [window_coordinates[1].x(), window_coordinates[1].y(), window_coordinates[1].z()]
 
-    v = dot(wc_list_0, vpr)
+    vpr = [vpr.x(),  vpr.y(), vpr.z()]
+
+    v = vector_subtraction(wc_list_0, vpr)
+    u = vector_subtraction(vpr, wc_list_1)
+    # v = dot(wc_list_0, vpr)
     
-    u = dot(vpr, wc_list_1)
+    # u = dot(vpr, wc_list_1)
  
     c_x = v[1]*u[2] - v[2]*u[1]
     c_y = v[2]*u[0] - v[0]*u[2]
@@ -153,8 +157,10 @@ def parallel_projection(window: WireFrame):
     vpr = window.center
     
     t = generate_translation_matrix(-vpr.x(), -vpr.y(), -vpr.z())
+    
+    vpn = get_vpn(window.coordinates, vpr)
     #      x, y, z
-    vpn = [2, 1, 2]
+    # vpn = [1, 1, 1]
 
     teta_x, teta_y = angle_with_vpn(vpn)
 

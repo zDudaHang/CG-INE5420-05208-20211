@@ -52,31 +52,31 @@ class Controller():
 
         }
 
-        self.add_test_objects()
+        # self.add_test_objects()
 
         self.set_handlers()
 
-    def add_test_objects(self):
-        cubo1 : Object3D = Object3D('cubo1', [
-            Point3D(0,0,0), Point3D(0,100,0), Point3D(100,100,0), Point3D(100,0,0), Point3D(0,0,100), Point3D(0,100,100), Point3D(100,100,100), Point3D(100,0,100)
-            ],
-            QColor(0,0,0), [
-                (1,2),(2,3),(3,4),(4,1),(5,6),(6,7),(7,8),(8,5),(2,6),(5,1),(3,7),(8,4)
-            ]
-        )
+    # def add_test_objects(self):
+    #     cubo1 : Object3D = Object3D('cubo1', [
+    #         Point3D(0,0,0), Point3D(0,100,0), Point3D(100,100,0), Point3D(100,0,0), Point3D(0,0,100), Point3D(0,100,100), Point3D(100,100,100), Point3D(100,0,100)
+    #         ],
+    #         QColor(0,0,0), [
+    #             (1,2),(2,3),(3,4),(4,1),(5,6),(6,7),(7,8),(8,5),(2,6),(5,1),(3,7),(8,4)
+    #         ]
+    #     )
 
-        cubo2 : Object3D = Object3D('cubo2', [
-            Point3D(100,100,0), Point3D(200,100,0), Point3D(200,200,0), Point3D(100,200,0), Point3D(100,100,100), Point3D(200,100,100), Point3D(200,200,100), Point3D(100,200,100)
-            ],
-            QColor(0,0,0), [
-                (0,1),(1,2),(2,3),(3,0),(0,4),(1,5),(2,6),(3,7),(4,5),(5,6),(6,7),(7,4)
-            ]
-        )
+    #     cubo2 : Object3D = Object3D('cubo2', [
+    #         Point3D(100,100,0), Point3D(200,100,0), Point3D(200,200,0), Point3D(100,200,0), Point3D(100,100,100), Point3D(200,100,100), Point3D(200,200,100), Point3D(100,200,100)
+    #         ],
+    #         QColor(0,0,0), [
+    #             (0,1),(1,2),(2,3),(3,0),(0,4),(1,5),(2,6),(3,7),(4,5),(5,6),(6,7),(7,4)
+    #         ]
+    #     )
 
-        self.display_file[DisplayFileEnum.WORLD_COORD].append(cubo1)
-        self.display_file[DisplayFileEnum.WORLD_COORD].append(cubo2)
+    #     self.display_file[DisplayFileEnum.WORLD_COORD].append(cubo1)
+    #     self.display_file[DisplayFileEnum.WORLD_COORD].append(cubo2)
 
-        self.calculate_scn_coordinates()
+    #     self.calculate_scn_coordinates()
         
 
     def set_initial_values(self):
@@ -187,23 +187,38 @@ class Controller():
         objs : Dict[str, List[Point3D]]= self.main_window.new_objs
         i = 0
 
-        for key, value in objs.objects.items():
-            list_points = [Point3D(c[0],c[1]) for c in value]
-
-            usemtl = objs.usemtl[i]
-            newmtl = objs.new_mtl.index(usemtl)
-
-            rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]]  
-
-            if len(list_points) == 1:
-                self.add_new_object(key, list_points, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
-            elif len(list_points) == 2:
-                self.add_new_object(key, list_points, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
-            else:
-                self.add_new_object(key, list_points, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
-            i += 1
         
-        self.update_window_values(objs.window)
+        for key, value in objs.objects.items():
+
+            if objs.mtls:
+                usemtl = objs.usemtl[i]
+                newmtl = objs.new_mtl.index(usemtl)
+
+                rgb = [round(int(float(i) * 255)) for i in objs.kd_params[newmtl]] 
+            else:
+                rgb = [0,0,0] 
+
+            if len(value) == 1:
+                self.add_new_object(key, value, GraphicObjectEnum.POINT, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
+            elif len(value) == 2:
+                self.add_new_object(key, value, GraphicObjectEnum.LINE, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
+            else:
+                self.add_new_object(key, value, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
+            i += 1
+
+         
+    
+        if objs.faces:
+            rgb = [0,0,0]
+
+            self.add_new_object("Wavefront_obj_3D", objs.vertices, GraphicObjectEnum.OBJECT_3D, QColor(rgb[0],rgb[1],rgb[2]), edges = objs.edges, faces = objs.faces, from_wavefront=True)
+        
+
+        if objs.window:
+            coords = []
+            for c in objs.window:
+                coords.append([c.x(),c.y(),c.z()])
+            self.update_window_values(coords)
 
         self.calculate_scn_coordinates()
 
@@ -513,8 +528,8 @@ class Controller():
     def parse_coordinates(self, coordinates_expr: str) -> Union[List[Point3D],None]:
         return parse(coordinates_expr)
 
-    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : List[tuple] = None, faces : List[tuple] = None):
-        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, self.main_window.log.add_item)
+    def add_new_object(self, name: str, coordinates: list, type: GraphicObjectEnum, color: QColor, is_filled: bool = False, is_clipped: bool = False, curve_option: CurveEnum = None, edges : List[tuple] = None, faces : List[tuple] = None, from_wavefront: bool = False):
+        graphic_obj : GraphicObject = create_graphic_object(type, name, coordinates, color, is_filled, is_clipped, curve_option, edges, faces, from_wavefront, self.main_window.log.add_item)
 
         if graphic_obj != None:
             self.add_object_to_display_file(graphic_obj)
