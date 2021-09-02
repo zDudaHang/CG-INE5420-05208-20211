@@ -2,8 +2,8 @@ from copy import deepcopy
 from math import ceil, floor
 from numpy.core.fromnumeric import transpose
 from src.model.enum.curve_enum import CurveEnum
-from src.util.curves import ForwardDifferenceValues, blending_function, fwd_diff, generate_curve_initial_values, generate_delta_matrix, get_GB_bezier, get_GB_spline
-from src.util.bicubic import generate_surface_initial_values, get_bicubic_GB, blending_function_bicubic, get_bicubic_geometry_matrix
+from src.util.curves import blending_function, fwd_diff, generate_curve_initial_values, generate_delta_matrix, get_GB_bezier, get_GB_spline
+from src.util.bicubic import generate_surface_initial_values, get_bicubic_GB, blending_function_bicubic, get_bicubic_geometry_matrix, update_DD_values
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
 from abc import ABC, abstractmethod
@@ -326,19 +326,8 @@ class BSplineBicubicSurface(BicubicSurface):
         # t
         for i in range(0, n):
             fwd_diff(n, DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3], DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3], DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3], self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
-            #   //row1 <- row1 + row2
-            DDx[0][0] =  DDx[0][0]+DDx[1][0]; DDx[0][1] = DDx[0][1]+DDx[1][1]; DDx[0][2] = DDx[0][2]+DDx[1][2]; DDx[0][3] = DDx[0][3]+DDx[1][3]
-            DDy[0][0] =  DDy[0][0]+DDy[1][0]; DDy[0][1] = DDy[0][1]+DDy[1][1]; DDy[0][2] = DDy[0][2]+DDy[1][2]; DDy[0][3] = DDy[0][3]+DDy[1][3]
-            DDz[0][0] =  DDz[0][0]+DDz[1][0]; DDz[0][1] = DDz[0][1]+DDz[1][1]; DDz[0][2] = DDz[0][2]+DDz[1][2]; DDz[0][3] = DDz[0][3]+DDz[1][3]
-            # //row2 <- row2 + row3
-            DDx[1][0] =  DDx[1][0]+DDx[2][0]; DDx[1][1] = DDx[1][1]+DDx[2][1]; DDx[1][2] = DDx[1][2]+DDx[2][2]; DDx[1][3] = DDx[1][3]+DDx[2][3]
-            DDy[1][0] =  DDy[1][0]+DDy[2][0]; DDy[1][1] = DDy[1][1]+DDy[2][1]; DDy[1][2] = DDy[1][2]+DDy[2][2]; DDy[1][3] = DDy[1][3]+DDy[2][3]
-            DDz[1][0] =  DDz[1][0]+DDz[2][0]; DDz[1][1] = DDz[1][1]+DDz[2][1]; DDz[1][2] = DDz[1][2]+DDz[2][2]; DDz[1][3] = DDz[1][3]+DDz[2][3]
-            # //row3 <- row3 + row4 
-            DDx[2][0] =  DDx[2][0]+DDx[3][0]; DDx[2][1] = DDx[2][1]+DDx[3][1]; DDx[2][2] = DDx[2][2]+DDx[3][2]; DDx[2][3] = DDx[2][3]+DDx[3][3]
-            DDy[2][0] =  DDy[2][0]+DDy[3][0]; DDy[2][1] = DDy[2][1]+DDy[3][1]; DDy[2][2] = DDy[2][2]+DDy[3][2]; DDy[2][3] = DDy[2][3]+DDy[3][3]
-            DDz[2][0] =  DDz[2][0]+DDz[3][0]; DDz[2][1] = DDz[2][1]+DDz[3][1]; DDz[2][2] = DDz[2][2]+DDz[3][2]; DDz[2][3] = DDz[2][3]+DDz[3][3]
-                    
+            DDx, DDy, DDz = update_DD_values(DDx, DDy, DDz)
+
         DDx, DDy, DDz = generate_surface_initial_values(delta_matrix, transpose(delta_matrix), gb)
 
         DDx = transpose(DDx)
@@ -348,18 +337,7 @@ class BSplineBicubicSurface(BicubicSurface):
         # s
         for j in range(0, n):
             fwd_diff(n, DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3], DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3], DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3], self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
-            #   //row1 <- row1 + row2
-            DDx[0][0] =  DDx[0][0]+DDx[1][0]; DDx[0][1] = DDx[0][1]+DDx[1][1]; DDx[0][2] = DDx[0][2]+DDx[1][2]; DDx[0][3] = DDx[0][3]+DDx[1][3]
-            DDy[0][0] =  DDy[0][0]+DDy[1][0]; DDy[0][1] = DDy[0][1]+DDy[1][1]; DDy[0][2] = DDy[0][2]+DDy[1][2]; DDy[0][3] = DDy[0][3]+DDy[1][3]
-            DDz[0][0] =  DDz[0][0]+DDz[1][0]; DDz[0][1] = DDz[0][1]+DDz[1][1]; DDz[0][2] = DDz[0][2]+DDz[1][2]; DDz[0][3] = DDz[0][3]+DDz[1][3]
-            # //row2 <- row2 + row3
-            DDx[1][0] =  DDx[1][0]+DDx[2][0]; DDx[1][1] = DDx[1][1]+DDx[2][1]; DDx[1][2] = DDx[1][2]+DDx[2][2]; DDx[1][3] = DDx[1][3]+DDx[2][3]
-            DDy[1][0] =  DDy[1][0]+DDy[2][0]; DDy[1][1] = DDy[1][1]+DDy[2][1]; DDy[1][2] = DDy[1][2]+DDy[2][2]; DDy[1][3] = DDy[1][3]+DDy[2][3]
-            DDz[1][0] =  DDz[1][0]+DDz[2][0]; DDz[1][1] = DDz[1][1]+DDz[2][1]; DDz[1][2] = DDz[1][2]+DDz[2][2]; DDz[1][3] = DDz[1][3]+DDz[2][3]
-            # //row3 <- row3 + row4 
-            DDx[2][0] =  DDx[2][0]+DDx[3][0]; DDx[2][1] = DDx[2][1]+DDx[3][1]; DDx[2][2] = DDx[2][2]+DDx[3][2]; DDx[2][3] = DDx[2][3]+DDx[3][3]
-            DDy[2][0] =  DDy[2][0]+DDy[3][0]; DDy[2][1] = DDy[2][1]+DDy[3][1]; DDy[2][2] = DDy[2][2]+DDy[3][2]; DDy[2][3] = DDy[2][3]+DDy[3][3]
-            DDz[2][0] =  DDz[2][0]+DDz[3][0]; DDz[2][1] = DDz[2][1]+DDz[3][1]; DDz[2][2] = DDz[2][2]+DDz[3][2]; DDz[2][3] = DDz[2][3]+DDz[3][3]
+            DDx, DDy, DDz = update_DD_values(DDx, DDy, DDz)
 
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \

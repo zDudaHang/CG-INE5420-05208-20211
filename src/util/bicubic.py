@@ -1,8 +1,7 @@
 from src.util.math import concat_transformation_matrixes
 from typing import List
 from src.model.point import Point3D
-from src.util.curves import ForwardDifferenceValues
-from numpy import array, dot, transpose
+from numpy import array, dot
 
 BEZIER_MATRIX = [
     [-1,  3, -3, 1],
@@ -92,58 +91,6 @@ def blending_function_bicubic(s:float, t: float, gb: List[List[float]]) -> float
 
     return blending
 
-class SurfaceForwardDifferenceValues:
-    def __init__(self, x: List[List[float]], y: List[List[float]], z: List[List[float]]):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def transpose(self):
-        self.x = transpose(self.x)
-        self.y = transpose(self.y)
-        self.z = transpose(self.z)
-
-    def to_fwd_diff(self) -> ForwardDifferenceValues:
-        return ForwardDifferenceValues(x=self.x[0][0], derivx=self.x[0][1:], y=self.y[0][0], derivy=self.y[0][1:], z=self.z[0][0], derivz=self.z[0][1:])
-    
-    def update(self):
-
-        # Linha1 <- Linha1 + Linha2
-        # DDx[0][0] = DDx[0][0]+ DDx[1][0]; 
-        # DDx[0][1] = DDx[0][1]+ DDx[1][1]; 
-        # DDx[0][2] = DDx[0][2]+ DDx[1][2]; 
-        # DDx[0][3] = DDx[0][3]+ DDx[1][3];
-
-        for i in range(0, 4):
-            print(f'self.x[0][{i}] = {self.x[0][i]} + {self.x[1][i]} = {self.x[0][i] + self.x[1][i]}')
-            self.x[0][i] += self.x[1][i]
-            print(f'self.x[0][{i}] = {self.x[0][i]}')
-            self.y[0][i] += self.y[1][i]
-            self.z[0][i] += self.z[1][i]
-        
-        # Linha2 <- Linha2 + Linha3
-        # DDx[1][0] = DDx[1][0] + DDx[2][0]; 
-        # DDx[1][1] = DDx[1][1] + DDx[2][1]; 
-        # DDx[1][2] = DDx[1][2] + DDx[2][2]; 
-        # DDx[1][3] = DDx[1][3] + DDx[2][3];
-
-        for i in range(0, 4):
-            self.x[1][i] += self.x[2][i]
-            self.y[1][i] += self.y[2][i]
-            self.z[1][i] += self.z[2][i]
-        
-        # Linha3 <- Linha3 + Linha4
-        # DDx[2][0] = DDx[2][0] + DDx[3][0]; 
-        # DDx[2][1] = DDx[2][1] + DDx[3][1]; 
-        # DDx[2][2] = DDx[2][2] + DDx[3][2]; 
-        # DDx[2][3] = DDx[2][3] + DDx[3][3];
-
-        for i in range(0, 4):
-            self.x[2][i] += self.x[3][i]
-            self.y[2][i] += self.y[3][i]
-            self.z[2][i] += self.z[3][i]
-
-
 def generate_surface_initial_values(delta_matrix_s: array, delta_matrix_t: array, gb: BicubicSurfaceGeometryMatrix):
     # Cx = M * Gx * M^T
     c_x = concat_transformation_matrixes([BSPLINE_MATRIX, gb.x, TRANSPOSED_BSPLINE_MATRIX])
@@ -156,3 +103,21 @@ def generate_surface_initial_values(delta_matrix_s: array, delta_matrix_t: array
     DD_z = concat_transformation_matrixes([delta_matrix_s, c_z, delta_matrix_t])
 
     return DD_x, DD_y, DD_z
+
+def update_DD_values(DDx: array, DDy: array, DDz: array):
+    #   row1 <- row1 + row2
+    DDx[0][0] =  DDx[0][0]+DDx[1][0]; DDx[0][1] = DDx[0][1]+DDx[1][1]; DDx[0][2] = DDx[0][2]+DDx[1][2]; DDx[0][3] = DDx[0][3]+DDx[1][3]
+    DDy[0][0] =  DDy[0][0]+DDy[1][0]; DDy[0][1] = DDy[0][1]+DDy[1][1]; DDy[0][2] = DDy[0][2]+DDy[1][2]; DDy[0][3] = DDy[0][3]+DDy[1][3]
+    DDz[0][0] =  DDz[0][0]+DDz[1][0]; DDz[0][1] = DDz[0][1]+DDz[1][1]; DDz[0][2] = DDz[0][2]+DDz[1][2]; DDz[0][3] = DDz[0][3]+DDz[1][3]
+    
+    # row2 <- row2 + row3
+    DDx[1][0] =  DDx[1][0]+DDx[2][0]; DDx[1][1] = DDx[1][1]+DDx[2][1]; DDx[1][2] = DDx[1][2]+DDx[2][2]; DDx[1][3] = DDx[1][3]+DDx[2][3]
+    DDy[1][0] =  DDy[1][0]+DDy[2][0]; DDy[1][1] = DDy[1][1]+DDy[2][1]; DDy[1][2] = DDy[1][2]+DDy[2][2]; DDy[1][3] = DDy[1][3]+DDy[2][3]
+    DDz[1][0] =  DDz[1][0]+DDz[2][0]; DDz[1][1] = DDz[1][1]+DDz[2][1]; DDz[1][2] = DDz[1][2]+DDz[2][2]; DDz[1][3] = DDz[1][3]+DDz[2][3]
+    
+    # row3 <- row3 + row4 
+    DDx[2][0] =  DDx[2][0]+DDx[3][0]; DDx[2][1] = DDx[2][1]+DDx[3][1]; DDx[2][2] = DDx[2][2]+DDx[3][2]; DDx[2][3] = DDx[2][3]+DDx[3][3]
+    DDy[2][0] =  DDy[2][0]+DDy[3][0]; DDy[2][1] = DDy[2][1]+DDy[3][1]; DDy[2][2] = DDy[2][2]+DDy[3][2]; DDy[2][3] = DDy[2][3]+DDy[3][3]
+    DDz[2][0] =  DDz[2][0]+DDz[3][0]; DDz[2][1] = DDz[2][1]+DDz[3][1]; DDz[2][2] = DDz[2][2]+DDz[3][2]; DDz[2][3] = DDz[2][3]+DDz[3][3]
+
+    return DDx, DDy, DDz

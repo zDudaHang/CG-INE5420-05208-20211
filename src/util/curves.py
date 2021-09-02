@@ -86,25 +86,6 @@ def generate_delta_matrix(delta: float) -> array:
         [6*delta3, 0, 0, 0]
     ])
 
-class ForwardDifferenceValues:
-    def __init__(self, x: float, derivx: List[float], y: float, derivy: List[float], z: float, derivz: List[float]):
-        self.x = x
-        self.derivx = derivx
-
-        self.y = y
-        self.derivy = derivy
-
-        self.z = z
-        self.derivz = derivz
-
-    def __str__(self) -> str:
-        return f'x={self.x}, dx={self.derivx[0]}, d2x={self.derivx[1]}, d3x={self.derivx[2]}'
-    
-    def update(self):
-        self.x += self.derivx[0]; self.derivx[0] += self.derivx[1]; self.derivx[1] += self.derivx[2]
-        self.y += self.derivy[0]; self.derivy[0] += self.derivy[1]; self.derivy[1] += self.derivy[2]
-        self.z += self.derivz[0]; self.derivz[0] += self.derivz[1]; self.derivz[1] += self.derivz[2]
-
 def generate_curve_initial_values(delta_matrix: array, gb: BSplineGeometryMatrix):
     c_x = dot(BSPLINE_MATRIX, gb.x)
     c_y = dot(BSPLINE_MATRIX, gb.y)
@@ -124,13 +105,10 @@ def fwd_diff(n: int, x: float, Dx: float, D2x: float, D3x: float, y: float, Dy: 
     z_old = z
     while i < n:
         i += 1
-        # values.update()
         x = x + Dx;  Dx = Dx + D2x;  D2x = D2x + D3x
         y = y + Dy;  Dy = Dy + D2y;  D2y = D2y + D3y
         z = z + Dz;  Dz = Dz + D2z;  D2z = D2z + D3z
-
         drawLine(painter, x_old, x, y_old, y, viewport_min, viewport_max, viewport_origin, z_old, z)
-
         x_old = x
         y_old = y
         z_old = z
