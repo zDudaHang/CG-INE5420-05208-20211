@@ -1,3 +1,4 @@
+from src.model.enum.RotateAxisOptionsEnum import RotateAxisOptionsEnum
 from src.model.graphic_object import WireFrame, apply_matrix_in_object, apply_matrix_in_point
 from src.util.math import concat_transformation_matrixes
 from typing import List
@@ -91,6 +92,21 @@ def generate_scale_operation_matrix(center: Point3D, sx: float, sy: float, sz: f
     t2 = generate_translation_matrix(center.x(), center.y(), center.z())
     return concat_transformation_matrixes([t1, scale, t2])
 
+def generate_rotate_on_axis_matrix(d: Point3D, angle: float, axis: RotateAxisOptionsEnum) -> array:
+    t1 = generate_translation_matrix(-d.x(), -d.y(), -d.z())
+    
+    rot = array([])
+    if axis == RotateAxisOptionsEnum.Z:
+        rot = generate_rz_rotation_matrix(angle)
+    elif axis == RotateAxisOptionsEnum.Y:
+        rot = generate_ry_rotation_matrix(angle)
+    else: 
+        rot = generate_rx_rotation_matrix(angle)
+
+    t2 = generate_translation_matrix(d.x(), d.y(), d.z())
+
+    return concat_transformation_matrixes([t1, rot, t2])
+
 def generate_rotate_operation_matrix(d: Point3D, angle: float) -> array:
     t1 = generate_translation_matrix(-d.x(), -d.y(), -d.z())
     rot = generate_rz_rotation_matrix(angle)
@@ -104,7 +120,6 @@ def generate_scn_matrix(center: Point3D, height_w: float, width_w: float, angle:
     s = generate_scaling_matrix(1/(width_w/2), 1/(height_w/2))
 
     return concat_transformation_matrixes([t, r, s])
-
 
 def get_w_homogen(window_coordinates : Point3D) -> List[List[float]]:
     return [[window_coordinates.x(), window_coordinates.y(), window_coordinates.z(), 1]]
@@ -161,10 +176,3 @@ def perspective_projection(window: WireFrame, focal_distance: float) ->  array:
     pa = parallel_projection(window)
 
     return concat_transformation_matrixes([pa, t, per])
-
-def generate_perspective_matrix(focal_distance: float) -> array:
-    return array([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 1/focal_distance, 0]])

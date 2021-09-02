@@ -1,6 +1,7 @@
-from typing import List
+from PyQt5.QtGui import QPainter
+from typing import Callable, List
 from src.model.point import Point3D
-from numpy import dot
+from numpy import array, dot
 
 BEZIER_MATRIX = [
     [-1, 3, -3, 1],
@@ -21,7 +22,7 @@ class BezierGeometryMatrix():
         self.x = x
         self.y = y
 
-def get_GB(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D) -> BezierGeometryMatrix:
+def get_GB_bezier(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D) -> BezierGeometryMatrix:
     gb_x = [
         [p0.x()], 
         [p1.x()], 
@@ -44,12 +45,13 @@ def blending_function(t: float, gb: List[List[float]]) -> float:
     return dot(blending, gb)[0][0]
 
 
-class BSpline:
-    def __init__(self, x: List[List[float]], y: List[List[float]]):
+class BSplineGeometryMatrix:
+    def __init__(self, x: List[List[float]], y: List[List[float]], z: List[List[float]]):
         self.x = x
         self.y = y
+        self.z = z
 
-def get_GB_Spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
+def get_GB_spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
     g_x = [
         [p0.x()], 
         [p1.x()], 
@@ -64,23 +66,50 @@ def get_GB_Spline(p0: Point3D, p1: Point3D, p2: Point3D, p3: Point3D):
         [p3.y()]
     ]
 
-    return BSpline(g_x, g_y)
-
-def forward_differences(d: float, gb: List[List[float]]):
-    
-    matrix_e = [
-        [0, 0, 0, 1],
-        [pow(d, 3), pow(d, 2), d, 0],
-        [6*pow(d, 3), 2*pow(d, 2), 0, 0],
-        [6*pow(d, 3), 0, 0, 0]
+    g_z = [
+        [p0.z()], 
+        [p1.z()], 
+        [p2.z()], 
+        [p3.z()]
     ]
 
+    return BSplineGeometryMatrix(g_x, g_y, g_z)
+
+def generate_delta_matrix(delta: float) -> array:
+    delta2 = pow(delta, 2)
+    delta3 = pow(delta, 3)
+                        
+    return array([
+        [0, 0, 0, 1],
+        [delta3, delta2, delta, 0],
+        [6*delta3, 2*delta2, 0, 0],
+        [6*delta3, 0, 0, 0]
+    ])
+
+def generate_curve_initial_values(delta_matrix: array, gb: BSplineGeometryMatrix):
     c_x = dot(BSPLINE_MATRIX, gb.x)
     c_y = dot(BSPLINE_MATRIX, gb.y)
+    c_z = dot(BSPLINE_MATRIX, gb.z)
 
+    Dx = dot(delta_matrix, c_x)
+    Dy = dot(delta_matrix, c_y)
+    Dz = dot(delta_matrix, c_z)
 
-    fwdd_x = dot(matrix_e, c_x)
-    fwdd_y = dot(matrix_e, c_y)
+    # return ForwardDifferenceValues(initial_x[0][0], initial_x[1:], initial_y[0][0], initial_y[1:], initial_z[0][0], initial_z[1:])
+    return Dx, Dy, Dz
 
+def fwd_diff(n: int, x: float, Dx: float, D2x: float, D3x: float, y: float, Dy: float, D2y: float, D3y: float, z: float, Dz: float, D2z: float, D3z: float, drawLine: Callable[[QPainter, float, float, float, float, Point3D, Point3D, Point3D], None], painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
+    i = 1
+    x_old = x
+    y_old = y
+    z_old = z
+    while i < n:
+        i += 1
+        x = x + Dx;  Dx = Dx + D2x;  D2x = D2x + D3x
+        y = y + Dy;  Dy = Dy + D2y;  D2y = D2y + D3y
+        z = z + Dz;  Dz = Dz + D2z;  D2z = D2z + D3z
+        drawLine(painter, x_old, x, y_old, y, viewport_min, viewport_max, viewport_origin, z_old, z)
+        x_old = x
+        y_old = y
+        z_old = z
 
-    return fwdd_x, fwdd_y

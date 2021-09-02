@@ -61,7 +61,7 @@ class FunctionsMenu(QWidget):
         self.proj_radiobuttons_layout = QHBoxLayout()
         self.proj_layout.addWidget(QLabel('Técnica de projeção'))
 
-        self.projection_method : ProjectionEnum = ProjectionEnum.PARALLEL
+        self.proj_method : ProjectionEnum = ProjectionEnum.PARALLEL
 
         self.proj_button_group = QButtonGroup(self)
         self.parallel_radiobutton = QRadioButton(ProjectionEnum.PARALLEL.value)
@@ -74,7 +74,7 @@ class FunctionsMenu(QWidget):
         self.proj_radiobuttons_layout.addWidget(self.parallel_radiobutton)
 
         self.perspective_radiobutton = QRadioButton(ProjectionEnum.PERSPECTIVE.value)
-        self.perspective_radiobutton.toggled.connect(lambda: self.handle_click(ProjectionEnum.PERSPECTIVE))
+        self.perspective_radiobutton.toggled.connect(lambda: self.handle_proj_click(ProjectionEnum.PERSPECTIVE))
         self.proj_button_group.addButton(self.perspective_radiobutton)
 
         self.proj_updated_action = QAction('Change projection method')
