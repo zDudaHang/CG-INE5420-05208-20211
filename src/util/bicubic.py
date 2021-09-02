@@ -115,7 +115,9 @@ class SurfaceForwardDifferenceValues:
         # DDx[0][3] = DDx[0][3]+ DDx[1][3];
 
         for i in range(0, 4):
+            print(f'self.x[0][{i}] = {self.x[0][i]} + {self.x[1][i]} = {self.x[0][i] + self.x[1][i]}')
             self.x[0][i] += self.x[1][i]
+            print(f'self.x[0][{i}] = {self.x[0][i]}')
             self.y[0][i] += self.y[1][i]
             self.z[0][i] += self.z[1][i]
         
@@ -142,7 +144,7 @@ class SurfaceForwardDifferenceValues:
             self.z[2][i] += self.z[3][i]
 
 
-def generate_surface_initial_values(delta_matrix_s: array, delta_matrix_t, gb: BicubicSurfaceGeometryMatrix) -> SurfaceForwardDifferenceValues:
+def generate_surface_initial_values(delta_matrix_s: array, delta_matrix_t: array, gb: BicubicSurfaceGeometryMatrix):
     # Cx = M * Gx * M^T
     c_x = concat_transformation_matrixes([BSPLINE_MATRIX, gb.x, TRANSPOSED_BSPLINE_MATRIX])
     c_y = concat_transformation_matrixes([BSPLINE_MATRIX, gb.y, TRANSPOSED_BSPLINE_MATRIX])
@@ -153,4 +155,4 @@ def generate_surface_initial_values(delta_matrix_s: array, delta_matrix_t, gb: B
     DD_y = concat_transformation_matrixes([delta_matrix_s, c_y, delta_matrix_t])
     DD_z = concat_transformation_matrixes([delta_matrix_s, c_z, delta_matrix_t])
 
-    return SurfaceForwardDifferenceValues(DD_x, DD_y, DD_z)
+    return DD_x, DD_y, DD_z

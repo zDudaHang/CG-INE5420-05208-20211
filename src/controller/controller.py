@@ -52,7 +52,7 @@ class Controller():
 
         }
 
-        self.add_test_objects()
+        # self.add_test_objects()
 
         self.set_handlers()
 

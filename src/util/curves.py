@@ -96,35 +96,42 @@ class ForwardDifferenceValues:
 
         self.z = z
         self.derivz = derivz
+
+    def __str__(self) -> str:
+        return f'x={self.x}, dx={self.derivx[0]}, d2x={self.derivx[1]}, d3x={self.derivx[2]}'
     
     def update(self):
         self.x += self.derivx[0]; self.derivx[0] += self.derivx[1]; self.derivx[1] += self.derivx[2]
         self.y += self.derivy[0]; self.derivy[0] += self.derivy[1]; self.derivy[1] += self.derivy[2]
         self.z += self.derivz[0]; self.derivz[0] += self.derivz[1]; self.derivz[1] += self.derivz[2]
 
-def generate_curve_initial_values(delta_matrix: array, gb: BSplineGeometryMatrix) -> ForwardDifferenceValues:
+def generate_curve_initial_values(delta_matrix: array, gb: BSplineGeometryMatrix):
     c_x = dot(BSPLINE_MATRIX, gb.x)
     c_y = dot(BSPLINE_MATRIX, gb.y)
     c_z = dot(BSPLINE_MATRIX, gb.z)
 
-    initial_x = dot(delta_matrix, c_x)
-    initial_y = dot(delta_matrix, c_y)
-    initial_z = dot(delta_matrix, c_z)
+    Dx = dot(delta_matrix, c_x)
+    Dy = dot(delta_matrix, c_y)
+    Dz = dot(delta_matrix, c_z)
 
-    return ForwardDifferenceValues(initial_x[0][0], initial_x[1:], initial_y[0][0], initial_y[1:], initial_z[0][0], initial_z[1:])
+    # return ForwardDifferenceValues(initial_x[0][0], initial_x[1:], initial_y[0][0], initial_y[1:], initial_z[0][0], initial_z[1:])
+    return Dx, Dy, Dz
 
-def fwd_diff(n: int, values: ForwardDifferenceValues, drawLine: Callable[[QPainter, float, float, float, float, Point3D, Point3D, Point3D], None], painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
+def fwd_diff(n: int, x: float, Dx: float, D2x: float, D3x: float, y: float, Dy: float, D2y: float, D3y: float, z: float, Dz: float, D2z: float, D3z: float, drawLine: Callable[[QPainter, float, float, float, float, Point3D, Point3D, Point3D], None], painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
     i = 1
-
-    x_old = values.x
-    y_old = values.y
-    z_old = values.z
-
+    x_old = x
+    y_old = y
+    z_old = z
     while i < n:
         i += 1
-        values.update()
-        drawLine(painter, x_old, values.x, y_old, values.y, viewport_min, viewport_max, viewport_origin, z_old, values.z)
-        x_old = values.x
-        y_old = values.y 
-        z_old = values.z
+        # values.update()
+        x = x + Dx;  Dx = Dx + D2x;  D2x = D2x + D3x
+        y = y + Dy;  Dy = Dy + D2y;  D2y = D2y + D3y
+        z = z + Dz;  Dz = Dz + D2z;  D2z = D2z + D3z
+
+        drawLine(painter, x_old, x, y_old, y, viewport_min, viewport_max, viewport_origin, z_old, z)
+
+        x_old = x
+        y_old = y
+        z_old = z
 
