@@ -205,14 +205,11 @@ class Controller():
             else:
                 self.add_new_object(key, value, GraphicObjectEnum.WIREFRAME, QColor(rgb[0],rgb[1],rgb[2]), objs.filled[i])
             i += 1
-
-         
     
         if objs.faces:
             rgb = [0,0,0]
 
-            self.add_new_object("Wavefront_obj_3D", objs.vertices, GraphicObjectEnum.OBJECT_3D, QColor(rgb[0],rgb[1],rgb[2]), edges = objs.edges, faces = objs.faces, from_wavefront=True)
-        
+            self.add_new_object("Wavefront_obj_3D", objs.vertices, GraphicObjectEnum.OBJECT_3D, QColor(rgb[0],rgb[1],rgb[2]), edges = objs.edges, faces = objs.faces, from_wavefront=True)      
 
         if objs.window:
             coords = []
@@ -221,8 +218,6 @@ class Controller():
             self.update_window_values(coords)
 
         self.calculate_scn_coordinates()
-
-        # self.draw_objects()
            
     def export_handler(self):
         WavefrontOBJ.save_obj(self.display_file[DisplayFileEnum.WORLD_COORD], self.center, Point3D(self.window_width, self.window_height))

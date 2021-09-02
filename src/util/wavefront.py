@@ -86,6 +86,7 @@ class WavefrontOBJ:
                 #Line
                 elif toks[0] == 'l':
                     indices = [ float(v)-1 for v in toks[1:]]
+                    indices.append(indices[0])
                     temp = []
                     for i in indices:
                         temp.append( self.vertices[int(i)])                             

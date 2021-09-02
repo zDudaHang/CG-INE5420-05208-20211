@@ -1,10 +1,5 @@
 # INE5420 2021.1 - Computação Gráfica (UFSC)
-Sistema básico de Computação Gráfica 2D da disciplina INE5420 - UFSC. 
-O programa apresenta o display file para 2D capaz de representar pontos, segmentos de retas e polígonos. Cada objeto possui um nome, um tipo e sua lista de coordenadas de tamanho variável dependendo de seu tipo. O programa executa a transformação de viewport em 2D, funções de Panning/navegação 2D e funções de Zooming.
-
-Dimensões utilizadas:
-- Window: (600,400)
-- Viewport: (400,400)
+Sistema básico de Computação Gráfica 2D-3D da disciplina INE5420 - UFSC. 
 
 ## Requisitos
 - Python3 3.6.5

@@ -3,7 +3,7 @@ from math import ceil, floor
 from numpy.core.fromnumeric import transpose
 from src.model.enum.curve_enum import CurveEnum
 from src.util.curves import blending_function, fwd_diff, generate_curve_initial_values, generate_delta_matrix, get_GB_bezier, get_GB_spline
-from src.util.bicubic import generate_surface_initial_values, get_bicubic_GB, blending_function_bicubic, get_bicubic_geometry_matrix
+from src.util.bicubic import generate_surface_initial_values, get_bicubic_GB, blending_function_bicubic, get_bicubic_geometry_matrix, update_DD_values
 from src.model.enum.graphic_object_enum import GraphicObjectEnum
 from typing import Callable, List, Union
 from abc import ABC, abstractmethod
@@ -115,6 +115,7 @@ class Line(GraphicObject):
         self.draw_lines(painter, viewport_min, viewport_max, painter_path, viewport_origin)
         painter.drawPath(painter_path)
 
+
 class WireFrame(GraphicObject):
 
     def __init__(self, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool, is_clipped: bool):
@@ -169,7 +170,7 @@ class BezierCurve(Curve):
         if n != 0:
             raise ValueError("[ERRO] A quantidade de pontos da curva deve estar na imagem da função f(x) = 4 + 3x, sendo x pertencente aos números naturais, para garantir a continuidade G(0). Alguns valores válidos: 4, 7, 10 e 13")
         
-        super().__init__(name, GraphicObjectEnum.CURVE, coordinates, color, CurveEnum.BEZIER)
+        super().__init__(name, coordinates, color, CurveEnum.BEZIER)
 
         self.curve_points = BezierCurve.curve_points
 
@@ -204,7 +205,7 @@ class BSpline(Curve):
         if len(coordinates) < 4:
             raise ValueError("[ERRO] Uma BSpline deve ter pelo menos 4 pontos!")
 
-        super().__init__(name, GraphicObjectEnum.CURVE, coordinates, color, CurveEnum.BSPLINE)
+        super().__init__(name, coordinates, color, CurveEnum.BSPLINE)
     
     def draw(self, painter: QPainter, viewport_min: Point3D, viewport_max: Point3D, viewport_origin: Point3D):
         pen = QPen()
@@ -218,8 +219,10 @@ class BSpline(Curve):
 
         for i in range(len(self.coordinates) - 3):
             gb = get_GB_spline(self.coordinates[i], self.coordinates[i+1], self.coordinates[i+2], self.coordinates[i+3])
-            initial_values = generate_curve_initial_values(delta_matrix, gb)
-            fwd_diff(n, initial_values, self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
+            Dx, Dy, Dz = generate_curve_initial_values(delta_matrix, gb)
+            # ForwardDifferenceValues(initial_x[0][0], initial_x[1:], initial_y[0][0], initial_y[1:], initial_z[0][0], initial_z[1:])
+            fwd_diff(n, Dx[0][0], Dx[1][0], Dx[2][0], Dx[3][0], Dy[0][0], Dy[1][0], Dy[2][0], Dy[3][0], Dz[0][0], Dz[1][0], Dz[2][0], Dz[3][0], self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
+
 
 class Object3D(GraphicObject):
     
@@ -326,7 +329,7 @@ class BSplineBicubicSurface(BicubicSurface):
         painter.setPen(pen)
 
         # Mesmo delta para s e t, logo o mesmo n tambem
-        delta = 0.01
+        delta = 0.1
         n = ceil(1 / delta)
 
         delta_matrix = generate_delta_matrix(delta)
@@ -334,22 +337,23 @@ class BSplineBicubicSurface(BicubicSurface):
         # Valores iniciais:
         gb = get_bicubic_geometry_matrix(self.coordinates)
 
-        initial_values = generate_surface_initial_values(delta_matrix, transpose(delta_matrix), gb)
-        
-        # Cria uma copia para ser usada no lugar da original
-        auxiliary = deepcopy(initial_values)
+        DDx, DDy, DDz = generate_surface_initial_values(delta_matrix, transpose(delta_matrix), gb)
 
         # t
         for i in range(0, n):
-            fwd_diff(n, auxiliary.to_fwd_diff(), self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
-            auxiliary.update()
-        
-        initial_values.transpose()
+            fwd_diff(n, DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3], DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3], DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3], self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
+            DDx, DDy, DDz = update_DD_values(DDx, DDy, DDz)
+
+        DDx, DDy, DDz = generate_surface_initial_values(delta_matrix, transpose(delta_matrix), gb)
+
+        DDx = transpose(DDx)
+        DDy = transpose(DDy)
+        DDz = transpose(DDz)
 
         # s
         for j in range(0, n):
-            fwd_diff(n, initial_values.to_fwd_diff(), self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
-            initial_values.update()
+            fwd_diff(n, DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3], DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3], DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3], self.draw_line, painter, viewport_min, viewport_max, viewport_origin)
+            DDx, DDy, DDz = update_DD_values(DDx, DDy, DDz)
 
 
 def create_graphic_object(type: GraphicObjectEnum, name: str, coordinates: List[Point3D], color: QColor, is_filled: bool = False, is_clipped: bool = False, \

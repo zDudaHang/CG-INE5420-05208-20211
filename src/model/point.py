@@ -15,7 +15,7 @@ class Point3D:
         return self.coordinates[0][2]
 
     def __str__(self) -> str:
-        return f'({round(self.x(), 2)},{round(self.y(),2)},{round(self.z(),2)})'
+        return f'({self.x()},{self.y()},{self.z()})'
 
     def to_QPointF(self) -> QPointF:
         return QPointF(self.x(), self.y())
